@@ -50,4 +50,5 @@ end
 inc 'sh'  (true)
 inc 'sv'  ()
 inc 'cl'  (nil,true)
+inc 'gui'  (nil,true)
 inc 'net' (true)

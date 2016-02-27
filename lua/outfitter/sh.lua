@@ -23,3 +23,13 @@ function FileExistsCached(fpath)
 	end
 	return ret
 end
+
+function GrepModels(l)
+	local t={}
+	for k,v in next,l do
+		if v:find"%.mdl$" then
+			t[#t+1] = v
+		end
+	end
+	return t
+end

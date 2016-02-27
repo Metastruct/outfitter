@@ -120,7 +120,7 @@ function DoOutfitMount(pl,mdl,wsid)
 	if exists then
 		return pl:EnforceModel(mdl,true)
 	end
-	MountWS(wsid,function(paths)
+	FetchWS(wsid,function(paths)
 		if not paths then return end
 		local found
 		for k,v in next,paths do
@@ -136,9 +136,9 @@ function DoOutfitMount(pl,mdl,wsid)
 	end)
 end
 
--- workshop mounting coroutine 
+-- workshop fetching coroutine 
 
-local mounting = {}
+local fetching = {}
 
 local res = {}
 
@@ -172,14 +172,14 @@ end
 
 
 local function cantmount(wsid,reason)
-	mounting[wsid] = false
-	ErrorNoHalt("MountWS("..tostring(wsid)..") failed: "..tostring(reason or ":s").."\n")
+	fetching[wsid] = false
+	ErrorNoHalt("FetchWS("..tostring(wsid)..") failed: "..tostring(reason or ":s").."\n")
 end
 
-function coMountWS(wsid)
+function coFetchWS(wsid)
 	local isdbg = isdbg()
 	
-	local dat = mounting[wsid]
+	local dat = fetching[wsid]
 	
 	if dat then
 		if dat==true then 
@@ -194,7 +194,7 @@ function coMountWS(wsid)
 	end
 	
 	dat = {}
-	mounting[wsid] = dat
+	fetching[wsid] = dat
 	
 	local cb = co.newcb()
 	steamworks.FileInfo(wsid,cb)
@@ -229,6 +229,23 @@ function coMountWS(wsid)
 		return SYNC(dat,false)
 	end
 	
+	local res = path
+	fetching[wsid] = true
+	res[wsid] = res
+	
+	return SYNC(dat,res)
+
+end
+
+function FetchWS(wsid,cb)
+	if co.make(wsid,cb) then return end
+	cb(coFetchWS(wsid))
+end
+
+function MountWS( path )
+	
+	if co.make(path) then return end
+	
 	co.wait(.3)
 	
 	--TODO: HUDPaint notification of mounting
@@ -244,15 +261,6 @@ function coMountWS(wsid)
 	
 	co.wait(.5)
 	
-	mounting[wsid] = true
-	res[wsid] = files or {}
-	return SYNC(dat,files or {})
-
 end
 
-function MountWS(wsid,cb)
-	if co.make(wsid,cb) then return end
-	cb(coMountWS(wsid))
-end
-
---          l outfitter.MountWS(111412589,PrintTable)
+--          l outfitter.FetchWS(111412589,PrintTable)
