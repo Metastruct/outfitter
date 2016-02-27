@@ -1,23 +1,29 @@
 local Tag='outfitter' 
+local NTag = 'OF'
 
 module(Tag,package.seeall)
 
+local SAVE =false  --TODO
+
 local Player = FindMetaTable"Player"
 
-outfitter_enabled = CreateClientConVar("outfitter_enabled","1",true,true)
+--TODO: Make outfitter mount all after enabling?
+outfitter_enabled = CreateClientConVar("outfitter_enabled","1",SAVE,true)
 
 
 --TODO
-outfitter_failsafe = CreateClientConVar("outfitter_failsafe","0",true)
+outfitter_failsafe = CreateClientConVar("outfitter_failsafe","0",SAVE)
 --TODO
-outfitter_maxsize = CreateClientConVar("outfitter_maxsize","5",true)
+outfitter_maxsize = CreateClientConVar("outfitter_maxsize","5",SAVE)
 
 
 function ReserveGMA(path)
 	net.reserve(path)
 end
 
-
+local function Enforce(pl)
+	pl:SetModel(pl.enforce_model)
+end
 
 local enforce_models = {}
 function Think()
@@ -26,7 +32,7 @@ function Think()
 			
 			enforce_models[pl] = count - 1
 			
-			pl:SetModel(pl.enforce_model)
+			Enforce(pl)
 			
 		else
 			enforce_models[pl] = nil
@@ -39,6 +45,7 @@ hook.Add("Think",Tag,Think)
 
 function StartEnforcing(pl)
 	enforce_models[pl] = 3
+	Enforce(pl)
 end
 
 function Player.EnforceModel(pl,mdl,nocheck)
@@ -61,16 +68,36 @@ function Player.GetEnforceModel(pl,mdl)
 	pl.enforce_model = mdl
 end
 
-function NotifyShouldTransmit(pl,should)
-	if pl:IsPlayer() and should then
-		if pl.enforce_model then
-			pl.original_model = pl:GetModel()
-			StartEnforcing(pl)
-		end
+function OnPlayerInPVS(pl)
+	if pl.enforce_model then
+		pl.original_model = pl:GetModel()
+		StartEnforcing(pl)
 	end
 end
 
-hook.Add("NotifyShouldTransmit",Tag,NotifyShouldTransmit)
+-- networked new outfit
+function OnChangeOutfit(pl,mdl,wsid)
+	assert((mdl and wsid) or (not mdl and not wsid))
+	assert(mdl~="")
+	assert(wsid~=0)
+	assert(wsid~=0)
+	
+	if not mdl then
+		if pl.original_model then
+			pl:SetModel(pl.original_model)
+		end
+		
+		pl.enforce_model = nil
+		pl.outfitter_mdl = nil
+		pl.outfitter_wsid = nil
+	end
+	--DoOutfitMount
+	pl.outfitter_mdl,pl.outfitter_wsid = mdl,wsid
+	
+end
+
+
+
 
 
 function OnMessage(len)
@@ -87,6 +114,7 @@ function OnMessage(len)
 end
 
 function DoOutfitMount(pl,mdl,wsid)
+	
 	local exists = HasMDL(mdl)
 	
 	if exists then
@@ -170,21 +198,28 @@ function coMountWS(wsid)
 	
 	local cb = co.newcb()
 	steamworks.FileInfo(wsid,cb)
-	local result = co.waitcb(cb)
+	local fileinfo = co.waitcb(cb)
 	
-	if isdbg then dbg("steamworks.FileInfo",wsid,"->",result) end
+	if isdbg then dbg("steamworks.FileInfo",wsid,"->",fileinfo) end
 	
-	if not result or not result.fileid then
+	if not fileinfo or not fileinfo.fileid then
 		cantmount(wsid,"fileinfo")
 		return SYNC(dat,false)
 	end
 	
+	local maxsz = outfitter_maxsize:GetFloat()
+	
+	if maxsz>0.000001 and (fileinfo.size or 0) > maxsz*1024*1024 then
+		cantmount(wsid,"too big")
+		return SYNC(dat,false)
+	end
+		
 	co.wait(.3)
 	
 	local TIME = isdbg and SysTime()
-	local path = steamworks_Download( result.fileid, true )
+	local path = steamworks_Download( fileinfo.fileid, true )
 	if isdbg then dbg("Download",wsid,"to",path,"took",SysTime()-TIME) end
-	
+
 	-- might return instantly :s
 	
 	assert(path~=true)

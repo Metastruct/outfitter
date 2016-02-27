@@ -1,15 +1,13 @@
-local Tag='costumizer' 
+local Tag='outfitter' 
 
 module(Tag,package.seeall)
 
 util.AddNetworkString(Tag) 
 
 
-function WantCostume(pl,mdl)
-	pl.want_costume = mdl
-end
 
 function OnMessage(len,pl)
-	
+	--TODO?
 end
+
 

@@ -1,10 +1,11 @@
-local Tag='costumizer' 
+local Tag='outfitter' 
 
 module(Tag,package.seeall)
 
 
 function HasMDL(mdl)
-	return file.Exists(mdl,'GAME')
+	mdl = mdl:gsub("%.mdl$","")
+	return file.Exists(mdl..'.mdl','GAME')
 end
 
 net.Receive(Tag,function(...) OnReceive(...) end)
@@ -17,7 +18,7 @@ end
 function FileExistsCached(fpath)
 	local ret = cache[fpath]
 	if ret == nil then
-		ret = file.Exists(fpath,'GAME')
+		ret = HasMDL(fpath)
 		cache[fpath] = ret
 	end
 	return ret
