@@ -54,7 +54,7 @@ if CLIENT then
 	end)
 
 	local function OnPlayerPVS(pl,inpvs)
-		if not inpvs then return end
+		if inpvs==false then return end
 		OnPlayerInPVS(pl)
 	end
 	
@@ -66,8 +66,8 @@ if CLIENT then
 	
 	-- I want to tell others about my outfit
 	function NetworkOutfit(mdl,wsid)
-		assert(not wsid or tonumber(wsid))
-		assert((not mdl and not wsid) or (wsid and mdl))
+		assert(not wsid or tonumber(wsid),('ASSERT: mdl=%q wsid=%q'):format(tostring(mdl),tostring(wsid)))
+		assert((not mdl and not wsid) or (wsid and mdl),('ASSERT: mdl=%q wsid=%q'):format(tostring(mdl),tostring(wsid)))
 		
 		local encoded = mdl and EncodeOW(mdl and mdl:gsub("%.mdl$",""),wsid)
 		dbg("NetworkOutfit",mdl,wsid,('%q'):format(encoded))

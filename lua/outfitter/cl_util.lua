@@ -60,7 +60,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 	-- Set model and start setting it for next 3 ticks while some other forces fight us
 	--TODO: what forces
 	function StartEnforcing(pl)
-		enforce_models[pl] = 3
+		enforce_models[pl] = 34
 		Enforce(pl)
 	end
 
@@ -98,6 +98,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 
 	function OnPlayerInPVS(pl)
 		if pl.enforce_model then
+			dbg("OnPlayerInPVS","enforce",pl)
 			pl.original_model = pl:GetModel()
 			StartEnforcing(pl)
 		end

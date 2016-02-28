@@ -1,6 +1,8 @@
 local Tag='outfitter' 
 local NTag = 'OF'
 
+setfenv(1,_G)
+
 module(Tag,package.seeall)
 
 util.AddNetworkString(Tag) 
@@ -12,16 +14,16 @@ function NetRateLimit(pl,k)
 	local now = RealTime()
 	if nextt < now then
 		nextt = now + (pl.outfitter_limiter or 15)
-		return false,nextt
+		return true,nextt
 	end
-	return true,nextt-now
+	return false,nextt-now
 end
 
-function RateLimitMessage(pl,ratelimit)
-	if ratelimit then
-		pl:ChatPrint"you need to wait more before sending a new outfit"
+function RateLimitMessage(pl,passok)
+	if not passok then
+		pl:ChatPrint"[Outfitter] you need to wait more before sending a new outfit"
 	end
-	return ratelimit
+	return passok
 end
 
 function NetData(pl,k,val)
@@ -33,7 +35,7 @@ function NetData(pl,k,val)
 		return false 
 	end
 	if #val>2048*2 or #val==0 then 
-		dbg("NET","badval",#val,pl)
+		dbg("NetData","badval",#val,pl)
 		return false 
 	end
 	
@@ -44,15 +46,21 @@ function NetData(pl,k,val)
 	pl.outfitter_mdl = mdl
 	pl.outfitter_wsid = wsid
 	
+	dbg("NetData",pl,"outfit",mdl,wsid)
+	
 	if not val then return true end
 		
 	local ret = SanityCheckNData(mdl,wsid)
 	
 	if ret~=nil then 
-		dbg(pl,"sanity check fail",tostring(val):sub(1,256))
+		dbg("NetData",pl,"sanity check fail",tostring(val):sub(1,256))
 		return ret
 	end
 	
-	return RateLimitMessage(pl,NetRateLimit(pl,k))
-	
+	local ret = RateLimitMessage(pl,NetRateLimit(pl,k))
+	if ret~=true then
+		dbg("NetData",pl,"ratelimiting")
+		--return -- TODO
+	end
+	return true
 end

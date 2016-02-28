@@ -45,7 +45,7 @@ function Open(f)
 	local version = from_int(f:Read(4),true)
 	
 	if version>0x30 then
-		return nil,'newformat'
+		return nil,'newformat',version
 	end
 	
 	local T = {

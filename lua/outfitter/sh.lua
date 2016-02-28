@@ -60,9 +60,9 @@ end
 
 -- parse model from file
 function CanPlayerModel(f,sz)
-	local mdl,err = mdlinspect.Open(f)
+	local mdl,err,err2 = mdlinspect.Open(f)
 	if not mdl then
-		return nil,err
+		return nil,err,err2
 	end
 	
 	if mdl.version~=44 and mdl.version~=48 then
