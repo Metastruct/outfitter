@@ -12,12 +12,12 @@ local function RESET(pl)
 	pl.outfitter_wsid = nil
 end
 local function SET(pl,mdl,wsid)
-	pl:EnforceModel(false)
+	pl:EnforceModel(mdl)
 	pl.outfitter_mdl = mdl
 	pl.outfitter_wsid = wsid
 end
 function OnChangeOutfit(pl,mdl,wsid)
-	dbg("OnChangeOutfit",pl,mdl=="false" and "unset" or ('%q'):format(tostring(mdl)),wsid==false and "" or ('%'):format(tostring(wsid)))
+	dbg("OnChangeOutfit",pl,mdl=="false" and "unset" or ('%q'):format(tostring(mdl)),wsid==false and "" or ('%q'):format(tostring(wsid)))
 
 	assert((mdl and wsid) or (not mdl and not wsid))
 	assert(mdl~="")

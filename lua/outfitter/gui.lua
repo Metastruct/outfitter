@@ -32,13 +32,13 @@ hook.Add("HUDPaint",Tag,function()
 	end
 end)
 
-hook.Add("ChatCommand",Tag,function(com,paramstr,v1)
+hook.Add("ChatCommand",Tag,function(com,v1)
 	com = com:lower()
 	
 	if com=="outfit" then
 		local n = v1 and tonumber(v1:Trim())
 		v1=v1 and v1:lower():Trim()
-		
+		dbg("outfitcmd",v1,n)
 		if n then
 			UIChangeModelToID(n)
 		elseif v1 == "apply" or v1=='aply' or v1=='a' or v1 == "send" or v1=='snd' or v1=='s'  then
@@ -160,9 +160,9 @@ function UIChoseWorkshop(wsid)
 	co.sleep(.2)
 	
 	if mdls[2] then
+		UIMsg("Models:")
 		for k,mdl in next,mdls do
-			UIMsg("Models:")
-			UIMsg(" "..k..". "..mdl)
+			UIMsg(" "..k..". "..tostring(mdl and mdl.Name))
 		end
 	else
 		UIMsg("Got model: "..tostring(mdls[1].Name))
