@@ -1,4 +1,33 @@
 do return end
+--[[
+!changemodel ->webbrowser from workshop opens
+open playermodel workshop page, click choose button
+downloading...
+find models
+(this is where it mounts for you)
+dialog with models to choose from
+choose model
+applies it on you
+!applymodel or something -> broadcast to server
+
+server: 
+broadcast to everyone, rate limiting only
+
+everyone:
+(mdl,wsid) changed for player
+(if mdl exists: just change model and done)
+get file info from workshop, check file size
+download
+(check gma for malicious)
+check gma for mdls
+mount (with dialog)
+check all players for this wsid
+    for each player with this wsid: recheck wanted mdl existence
+	
+]]
+
+AddCSLuaFile("includes/modules/gmaparse.lua")
+AddCSLuaFile("includes/modules/mdlinspect.lua")
 
 local Tag='outfitter' 
 
@@ -35,9 +64,12 @@ function dbge(...)
 	ErrorNoHalt(table.concat(t,' ')..'\n')
 end
 
+local path = Tag..'/'
+
+AddCSLuaFile(path..'sh.lua')
 local function inc(str)
 	return function(shared,client)
-		local path = 'srv/'..Tag..'/'..str..'.lua'
+		local path = Tag..'/'..str..'.lua'
 		include(path)
 		if SERVER and (shared or client) then
 			AddCSLuaFile(path)
@@ -52,3 +84,4 @@ inc 'sv'  ()
 inc 'cl'  (nil,true)
 inc 'gui'  (nil,true)
 inc 'net' (true)
+

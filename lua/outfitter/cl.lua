@@ -1,6 +1,9 @@
 local Tag='outfitter' 
 local NTag = 'OF'
 
+require'mdlinspect'
+require'gmaparse'
+
 module(Tag,package.seeall)
 
 local SAVE =false  --TODO

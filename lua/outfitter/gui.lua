@@ -15,13 +15,22 @@ hook.Add("HUDPaint",Tag,function()
 	end
 end)
 
+function GUIFetching(wsid,is)
 
+end
 
 hook.Add("ChatCommand",Tag,function(com,paramstr,msg)
 	if com:lower()=="changemodel" then
 		GUIWantChangeModel()
 	end
 end)
+
+function GUIGetWorkshop(wsid)
+	if co.make(wsid) then return end
+	GUIFetching(wsid,true)
+	coFetchWS( wsid )
+	GUIFetching(wsid,false)
+end
 
 
 local PANEL = {}
@@ -36,7 +45,10 @@ function PANEL:Init()
 		b:SetWidth(b:GetSize()+32)
 		b:SetEnabled(false)
 		b.DoClick=function(b,mc)
-			self:Remove()
+			self:Hide()
+			if self.chosen_id then
+				GUIGetWorkshop(self.chosen_id)
+			end
 		end
 end
 
@@ -62,6 +74,7 @@ vgui.Register(Tag,PANEL,'custombrowser')
 m_vModelDlg = NULL
 function GUIWantChangeModel()
 	if ValidPanel(m_vModelDlg) then
+		m_vModelDlg:Show()
 		return m_vModelDlg
 	end
 	

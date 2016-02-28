@@ -2,11 +2,29 @@ local Tag='mdlinspect'
 
 module(Tag,package.seeall)
 
-local Tag='mdlinspect' 
+local function from_int(s,...)
+	local size = 4
+	local n = from_u_int(s,...)
+	if n >= 2^(size*8-1) then
+		return n - 2^(size*8)
+	end
+	return n
+end
 
-module(Tag,package.seeall)
 
 -- Format: https:--developer.valvesoftware.com/wiki/MDL#File_format
+local vstruct
+local needvstruct needvstruct = function()
+	vstruct = vstruct or _G.vstruct 
+	if not vstruct then
+		local ok,ret = pcall(require,'vstruct') 
+		if ok then vstruct=ret or _G.vstruct end
+	end
+	
+	needvstruct=function() return vstruct end
+	
+	return vstruct
+end
 
 local MDL = {}
 local _M = {__index = MDL,__tostring=function(self) return "MDL Parser" end}
@@ -24,7 +42,7 @@ function Open(f)
 		return nil,"notmdl"
 	end
 	
-	local version = from_u_int(f:Read(4),true)
+	local version = from_int(f:Read(4),true)
 	
 	if version>0x30 then
 		return nil,'newformat'
@@ -114,7 +132,7 @@ function MDL:Validate(filesize)
 		return nil,"size"
 	end
 	
-	--local checksum = from_u_int(self.checksum,true)
+	--local checksum = from_int(self.checksum,true)
 	--local crc = util.CRC(dat)
 	--dat = nil
 	--
@@ -140,93 +158,93 @@ function MDL:ParseHeader()
 	name = name:match'^[^%z]*' or ""
 	res.name = name
 	
-	local dataLength = from_u_int(f:Read(4),true)
+	local dataLength = from_int(f:Read(4),true)
 	res.dataLength = dataLength
 	
 	-- TODO: skip Vectors, read elsewhere
 	f:Seek( f:Tell()+4 * 3 *6 ) 
 	
-	res.flags=from_u_int(f:Read(4),true)
+	res.flags=from_int(f:Read(4),true)
 	
 	-- mstudiobone_t
-	res.bone_count = from_u_int(f:Read(4),true)	-- Number of data sections (of type mstudiobone_t)
-	res.bone_offset = from_u_int(f:Read(4),true)	-- Offset of first data section
+	res.bone_count = from_int(f:Read(4),true)	-- Number of data sections (of type mstudiobone_t)
+	res.bone_offset = from_int(f:Read(4),true)	-- Offset of first data section
  
 	-- mstudiobonecontroller_t
-	res.bonecontroller_count = from_u_int(f:Read(4),true)
-	res.bonecontroller_offset = from_u_int(f:Read(4),true)
+	res.bonecontroller_count = from_int(f:Read(4),true)
+	res.bonecontroller_offset = from_int(f:Read(4),true)
  
 	-- mstudiohitboxset_t
-	res.hitbox_count = from_u_int(f:Read(4),true)
-	res.hitbox_offset = from_u_int(f:Read(4),true)
+	res.hitbox_count = from_int(f:Read(4),true)
+	res.hitbox_offset = from_int(f:Read(4),true)
  
 	-- mstudioanimdesc_t
-	res.localanim_count = from_u_int(f:Read(4),true)
-	res.localanim_offset = from_u_int(f:Read(4),true)
+	res.localanim_count = from_int(f:Read(4),true)
+	res.localanim_offset = from_int(f:Read(4),true)
  
 	-- mstudioseqdesc_t
-	res.localseq_count = from_u_int(f:Read(4),true)
-	res.localseq_offset = from_u_int(f:Read(4),true)
+	res.localseq_count = from_int(f:Read(4),true)
+	res.localseq_offset = from_int(f:Read(4),true)
  
-	res.activitylistversion = from_u_int(f:Read(4),true) -- ??
-	res.eventsindexed = from_u_int(f:Read(4),true)	-- ??
+	res.activitylistversion = from_int(f:Read(4),true) -- ??
+	res.eventsindexed = from_int(f:Read(4),true)	-- ??
  
 	-- VMT texture filenames
 	-- mstudiotexture_t
-	res.texture_count = from_u_int(f:Read(4),true)
-	res.texture_offset = from_u_int(f:Read(4),true)
+	res.texture_count = from_int(f:Read(4),true)
+	res.texture_offset = from_int(f:Read(4),true)
  
 	-- This offset points to a series of ints.
 		-- Each int value, in turn, is an offset relative to the start of this header/the-file,
 		-- At which there is a null-terminated string.
-	res.texturedir_count = from_u_int(f:Read(4),true)
-	res.texturedir_offset = from_u_int(f:Read(4),true)
+	res.texturedir_count = from_int(f:Read(4),true)
+	res.texturedir_offset = from_int(f:Read(4),true)
  
 	-- Each skin-family assigns a texture-id to a skin location
-	res.skinreference_count = from_u_int(f:Read(4),true)
-	res.skinrfamily_count = from_u_int(f:Read(4),true)
-	res.skinreference_index = from_u_int(f:Read(4),true)
+	res.skinreference_count = from_int(f:Read(4),true)
+	res.skinrfamily_count = from_int(f:Read(4),true)
+	res.skinreference_index = from_int(f:Read(4),true)
  
 	-- mstudiobodyparts_t
-	res.bodypart_count = from_u_int(f:Read(4),true)
-	res.bodypart_offset = from_u_int(f:Read(4),true)
+	res.bodypart_count = from_int(f:Read(4),true)
+	res.bodypart_offset = from_int(f:Read(4),true)
  
 	-- Local attachment points		
 	-- mstudioattachment_t
-	res.attachment_count = from_u_int(f:Read(4),true)
-	res.attachment_offset = from_u_int(f:Read(4),true)
+	res.attachment_count = from_int(f:Read(4),true)
+	res.attachment_offset = from_int(f:Read(4),true)
  
 	-- Node values appear to be single bytes, while their names are null-terminated strings.
-	res.localnode_count = from_u_int(f:Read(4),true)
-	res.localnode_index = from_u_int(f:Read(4),true)
-	res.localnode_name_index = from_u_int(f:Read(4),true)
+	res.localnode_count = from_int(f:Read(4),true)
+	res.localnode_index = from_int(f:Read(4),true)
+	res.localnode_name_index = from_int(f:Read(4),true)
  
 	-- mstudioflexdesc_t
-	res.flexdesc_count = from_u_int(f:Read(4),true)
-	res.flexdesc_index = from_u_int(f:Read(4),true)
+	res.flexdesc_count = from_int(f:Read(4),true)
+	res.flexdesc_index = from_int(f:Read(4),true)
  
 	-- mstudioflexcontroller_t
-	res.flexcontroller_count = from_u_int(f:Read(4),true)
-	res.flexcontroller_index = from_u_int(f:Read(4),true)
+	res.flexcontroller_count = from_int(f:Read(4),true)
+	res.flexcontroller_index = from_int(f:Read(4),true)
  
 	-- mstudioflexrule_t
-	res.flexrules_count = from_u_int(f:Read(4),true)
-	res.flexrules_index = from_u_int(f:Read(4),true)
+	res.flexrules_count = from_int(f:Read(4),true)
+	res.flexrules_index = from_int(f:Read(4),true)
  
 	-- IK probably referse to inverse kinematics
 	-- mstudioikchain_t
-	res.ikchain_count = from_u_int(f:Read(4),true)
-	res.ikchain_index = from_u_int(f:Read(4),true)
+	res.ikchain_count = from_int(f:Read(4),true)
+	res.ikchain_index = from_int(f:Read(4),true)
  
 	-- Information about any "mouth" on the model for speech animation
 	-- More than one sounds pretty creepy.
 	-- mstudiomouth_t
-	res.mouths_count = from_u_int(f:Read(4),true) 
-	res.mouths_index = from_u_int(f:Read(4),true)
+	res.mouths_count = from_int(f:Read(4),true) 
+	res.mouths_index = from_int(f:Read(4),true)
  
 	-- mstudioposeparamdesc_t
-	res.localposeparam_count = from_u_int(f:Read(4),true)
-	res.localposeparam_index = from_u_int(f:Read(4),true)
+	res.localposeparam_count = from_int(f:Read(4),true)
+	res.localposeparam_index = from_int(f:Read(4),true)
  
 	--[[
 	 * For anyone trying to follow along, as of this writing,
@@ -235,43 +253,43 @@ function MDL:ParseHeader()
 	 --]]
  
 	-- Surface property value (single null-terminated string)
-	res.surfaceprop_index = from_u_int(f:Read(4),true)
+	res.surfaceprop_index = from_int(f:Read(4),true)
  
 	-- Unusual: In this one index comes first, then count.
 	-- Key-value data is a series of strings. If you can't find
 	-- what you're interested in, check the associated PHY file as well.
-	res.keyvalue_index = from_u_int(f:Read(4),true)
-	res.keyvalue_count = from_u_int(f:Read(4),true)	
+	res.keyvalue_index = from_int(f:Read(4),true)
+	res.keyvalue_count = from_int(f:Read(4),true)	
  
 	-- More inverse-kinematics
 	-- mstudioiklock_t
-	res.iklock_count = from_u_int(f:Read(4),true)
-	res.iklock_index = from_u_int(f:Read(4),true)
+	res.iklock_count = from_int(f:Read(4),true)
+	res.iklock_index = from_int(f:Read(4),true)
  
  
 	res.mass = f:ReadFloat() -- Mass of object (4-bytes)
-	res.contents = from_u_int(f:Read(4),true)	-- ??
+	res.contents = from_int(f:Read(4),true)	-- ??
  
 	-- Other models can be referenced for re-used sequences and animations
 	-- (See also: The $includemodel QC option.)
 	-- mstudiomodelgroup_t
-	res.includemodel_count = from_u_int(f:Read(4),true)
-	res.includemodel_index = from_u_int(f:Read(4),true)
+	res.includemodel_count = from_int(f:Read(4),true)
+	res.includemodel_index = from_int(f:Read(4),true)
  
-	res.virtualModel = from_u_int(f:Read(4),true)	-- Placeholder for mutable-void*
+	res.virtualModel = from_int(f:Read(4),true)	-- Placeholder for mutable-void*
  
 	-- mstudioanimblock_t
-	res.animblocks_name_index = from_u_int(f:Read(4),true)
-	res.animblocks_count = from_u_int(f:Read(4),true)
-	res.animblocks_index = from_u_int(f:Read(4),true)
+	res.animblocks_name_index = from_int(f:Read(4),true)
+	res.animblocks_count = from_int(f:Read(4),true)
+	res.animblocks_index = from_int(f:Read(4),true)
  
-	res.animblockModel = from_u_int(f:Read(4),true) -- Placeholder for mutable-void*
+	res.animblockModel = from_int(f:Read(4),true) -- Placeholder for mutable-void*
  
 	-- Points to a series of bytes?
-	res.bonetablename_index = from_u_int(f:Read(4),true)
+	res.bonetablename_index = from_int(f:Read(4),true)
  
-	res.vertex_base = from_u_int(f:Read(4),true)	-- Placeholder for void*
-	res.offset_base = from_u_int(f:Read(4),true)	-- Placeholder for void*
+	res.vertex_base = from_int(f:Read(4),true)	-- Placeholder for void*
+	res.offset_base = from_int(f:Read(4),true)	-- Placeholder for void*
  
 	-- Used with $constantdirectionallight from the QC 
 	-- Model should have flag #13 set if enabled
@@ -283,11 +301,11 @@ function MDL:ParseHeader()
 	res.numAllowedRootLods = f:Read(1);	
  
 	f:Read(1)--		unused; -- ??
-	res.unused = from_u_int(f:Read(4),true) -- ??
+	res.unused = from_int(f:Read(4),true) -- ??
  
 	-- mstudioflexcontrollerui_t
-	res.flexcontrollerui_count = from_u_int(f:Read(4),true)
-	res.flexcontrollerui_index = from_u_int(f:Read(4),true)
+	res.flexcontrollerui_count = from_int(f:Read(4),true)
+	res.flexcontrollerui_index = from_int(f:Read(4),true)
  
 	--[[*
 	 * Offset for additional header information.
@@ -295,7 +313,7 @@ function MDL:ParseHeader()
 	 * follows this studiohdr_t
 	 --]]
 	-- studiohdr2_t
-	res.studiohdr2index = from_u_int(f:Read(4),true)
+	res.studiohdr2index = from_int(f:Read(4),true)
 	
 	return true
 	
@@ -315,10 +333,10 @@ function MDL:IncludedModels()
 	
 	for i=1,self.includemodel_count do
 	
-		local pos = f:Tell()
+		local pos = self:Tell()
 		
-		local labelOffset = from_u_int(f:Read(4),true)
-		local fileNameOffset = from_u_int(f:Read(4),true)
+		local labelOffset = from_int(f:Read(4),true)
+		local fileNameOffset = from_int(f:Read(4),true)
 		offsetreaderinfo_1[i]=labelOffset 		+ pos
 		offsetreaderinfo_2[i]=fileNameOffset	+ pos
 	end
@@ -357,7 +375,7 @@ local bone_section_size =
 
 	+ 4*3 --Vector				posscale;
 	+ 4*3 --Vector				rotscale;
-	+ 4*3*4 --matrix3x4_t			poseToBone;
+	+ 4*1 --matrix3x4_t			poseToBone;
 
 	+ 4*4 --Quaternion			qAlignment;
 	+ 4 --int					flags;
@@ -366,52 +384,74 @@ local bone_section_size =
 	+ 4 --mutable int			physicsbone;	// index into physically simulated bone
 	+ 4 --int					surfacepropidx;	// index into string tablefor property name
 	+ 4 --int					contents;		// See BSPFlags.h for the contents flags
-	+ 4 --int					unused[8];		// remove as appropriate
+	+ 4 --int 					surfacepropLookup
+	+ 4*7 --int					unused[7];		// remove as appropriate
+	+ 44 -- OMG WTF
 	
+function MDL:offsetBone( i )
+	assert(i>=0 and i<=self.bone_count)
+	return self.bone_offset + bone_section_size * i
+end
+
+local asd = {
+["ValveBiped.Bip01_Pelvis"   ] = 0,
+["ValveBiped.Bip01_L_Thigh"  ] = 1,
+["ValveBiped.Bip01_L_Calf"   ] = 2,
+["ValveBiped.Bip01_L_Foot"   ] = 3,
+["ValveBiped.Bip01_R_Thigh"  ] = 4,
+["ValveBiped.Bip01_R_Calf"   ] = 5,
+["ValveBiped.Bip01_R_Foot"   ] = 6,
+["ValveBiped.Bip01_Spine"    ] = 7,
+}
+
 function MDL:BoneNames()
 	local f = self.file 
 	local t = self.bone_nameslist
 	if t then return t end
 	
+	--if not needvstruct() then return nil,"vstruct" end
 	
 	t = {}
 	
-	
-	for i=1,self.bone_count do
-
-		local ok = self:SeekTo(self.bone_offset + bone_section_size * (i))
-		assert(ok)
-		assert((f:Size()-f:Tell())>bone_section_size,"sz too small")
+	for i=0,self.bone_count-1 do -- mstudiobone_t --
 		
-		local pos = f:Tell()
-
-		local nameoffset = from_u_int(f:Read(4),true)
-		assert((nameoffset + pos)<f:Tell(),"nameoffset out of bounds on bone "..i)
-		
-		offsetreaderinfo_1[i]=nameoffset + pos
-		
-		
-		local parent = from_u_int(f:Read(4),true)
-		
-		assert(parent<=self.bone_count,"parent bone too big for bone "..tostring(i)..': '..tostring(parent))
-		
-	end
-	for i=1,self.bone_count do
-	
-		local nameoffset = offsetreaderinfo_1[i]
-		
-		assert(self:SeekTo(nameoffset))
-		local name = f:Read(1)
-		if name ~='\0' then
-			name = name..f:ReadString()
+		if true or i==0 then
+			local thispos = self:offsetBone(i)
+			assert(self:SeekTo(thispos))
+			
+			local nameoffset = from_int(f:Read(4),true)
+			
+			assert(self:SeekTo(thispos + nameoffset))
+			local name = f:ReadString()
+			
+			t[#t+1] = name
+			
+			--print(('AAH %q'):format(tostring(name)))
 		else
-			name = "empty"
+		
+			print("=========================================",i)
+			for j=-256,256 do
+				pcall(function()
+					local thispos = self:offsetBone(i) + j
+					assert(self:SeekTo(thispos))
+
+					local nameoffset = from_int(f:Read(4),true)
+
+					assert(self:SeekTo(thispos + nameoffset))
+					local s = f:ReadString()
+					for k,v in next,asd do
+						if k == s and v==i then
+							print(j,('AAH %q'):format(tostring(s)),v)
+						end
+					end
+								
+				end)
+			end
+			if i>6 then return {} end
 		end
 		
-		t[i] = name
-		
 	end
-	
+
 	self.bone_nameslist = t
 	
 	return t
@@ -423,18 +463,24 @@ function MDL:SeekTo(offset)
 	local f = self.file
 	local off = self.initial_offset + offset
 	
-	if off>f:Size() then print("offset too big",off-f:Size()) return false end
+	if off>f:Size() then 
+		--print("offset too big",off-f:Size()) 
+		return false 
+	end
 	
 	f:Seek(off)
 	return f:Tell()==off
 	
 end
 
+function MDL:Tell()
+	return self.file:Tell()-self.initial_offset
+end
 
---[[ -- test
+-- [[ -- test
 local fp ="models/player/"
 local flist = file.Find(fp..'*.mdl','GAME')
-flist = {'matress.mdl'}
+-- flist = {'matress.mdl'}
 
 for _,fn in next,flist do
 print("\n\n==== "..fn.." ====")
@@ -449,25 +495,20 @@ if not mdl then print("Parser init fail",err) return end
 local ok ,err = mdl:ParseHeader()
 if not ok then print("header parse failed",err) return end
 
-print("VERSION",mdl.version,"","","VALIDATE:",mdl:Validate())
+print("VERSION",mdl.version,"","","VALIDATE:",mdl:Validate(),mdl.initial_offset)
 print("NAME",("%q"):format(mdl.name))
---print("bones",mdl.bone_count,mdl.bone_offset)
 --print("bonec",mdl.bonecontroller_count,mdl.bonecontroller_offset)
 --print("incmd",mdl.includemodel_count,mdl.includemodel_index)
 --print("",mdl.includemodel_count)
 --print("",mdl.includemodel_index)
 
--- PrintTable(mdl.flags,mdl:ListFlags())
+if mdl.flags~=0 then PrintTable("flags",mdl:ListFlags()) end
 
 for k,v in next,mdl:IncludedModels() do
-	print("",v[2],file.Exists(v[2],'GAME'))
+	print("",('%q'):format(v[2]),file.Exists(v[2],'GAME'))
 end
 
-for k,v in next,mdl:BoneNames() do
-	print(("%q"):format(v))
-end
-
-do return end
+print("bones",mdl.bone_count,mdl.bone_offset,mdl:BoneNames() [1],mdl:BoneNames() [2])
 
 end
 
