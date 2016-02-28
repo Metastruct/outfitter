@@ -106,20 +106,21 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","5",SAVE)
 		local instant
 		local path
 		local cb = co.newcb()
-		local function cb2(...)
-			dbg("SWDL",fileid,instant==false and "" or "instant?","result",...)
+		local function cb2(a,b)
+			dbg("SWDL",fileid,instant==false and "" or "instant?","result",a,b)
 			if instant==nil then
-				path = ...
+				path = a
 				instant = true
 				return 
 			end
-			return cb(...)
+			cb(a,b)
 		end
 		steamworks.Download( fileid, uncomp, cb2 )
 		instant = false
 		if instant==nil then
 			path = co.waitcb(cb)
 		end
+		dbg("SWDL","returning",path,"instant:",instant)
 		return path
 	end
 
@@ -154,7 +155,12 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","5",SAVE)
 		steamworks.FileInfo(wsid,cb)
 		local fileinfo = co.waitcb(cb)
 		
-		if isdbg then dbg("steamworks.FileInfo",wsid,"->",fileinfo) end
+		if isdbg then
+			dbg("steamworks.FileInfo",wsid,"->",fileinfo)
+			if istable(fileinfo) then
+				PrintTable(fileinfo)
+			end
+		end
 		
 		if not fileinfo or not fileinfo.fileid then
 			cantmount(wsid,"fileinfo")
@@ -172,9 +178,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","5",SAVE)
 		
 		local TIME = isdbg and SysTime()
 		local path = steamworks_Download( fileinfo.fileid, true )
-		if isdbg then dbg("Download",wsid,"to",path,"took",SysTime()-TIME) end
-
-		-- might return instantly :s
+		if isdbg then dbg("Download",wsid,"to",path or "<ERROR>","took",SysTime()-TIME) end
 		
 		assert(path~=true)
 		
@@ -290,10 +294,15 @@ end
 	
 	
 function GMAPlayerModels(fpath)
-	dbg("GMAPlayerModels",fpath)
+	assert(fpath)
 	local f = file.Open(fpath,'rb','MOD')
-
-	local gma,err = Parser(f)
+	dbg("GMAPlayerModels",fpath,f and "" or "INVALIDFILE")
+	
+	if not f then
+		return nil,"file"
+	end
+	
+	local gma,err = gmaparse.Parser(f)
 	if not gma then return nil,err end
 
 	local ok ,err = gma:ParseHeader()
@@ -314,7 +323,7 @@ function GMAPlayerModels(fpath)
 	--TODO: Check CRC?
 	for k,entry in next,mdls do
 	
-		local seekok = gma:SeekToFileOffset(entry.Offset)
+		local seekok = gma:SeekToFileOffset(entry)
 		if not seekok then return nil,"seekfail" end
 		local can,err = CanPlayerModel(gma:GetFile())
 		if can==nil then dbge("CanPlayerModel",err) end
