@@ -26,6 +26,7 @@ local needvstruct needvstruct = function()
 	return vstruct
 end
 
+MAX_FORMAT = 49
 local MDL = {}
 local _M = {__index = MDL,__tostring=function(self) return "MDL Parser" end}
 function Open(f)
@@ -44,7 +45,7 @@ function Open(f)
 	
 	local version = from_int(f:Read(4),true)
 	
-	if version>0x30 then
+	if version>MAX_FORMAT then
 		return nil,'newformat',version
 	end
 	

@@ -48,7 +48,11 @@ end
 
 function dbg(...)
 	if isdbg() then
-		Msg"[Outfitter] "print(...)
+		if outfitter_dbg:GetInt()==2 then
+			easylua.Print(...)
+		else
+			Msg"[Outfitter] "print(...)
+		end
 	end
 end
 function dbge(...)

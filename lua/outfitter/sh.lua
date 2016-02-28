@@ -65,7 +65,7 @@ function CanPlayerModel(f,sz)
 		return nil,err,err2
 	end
 	
-	if mdl.version~=44 and mdl.version~=48 then
+	if mdl.version<44 or mdl.version>49 then
 		return false,"version"
 	end
 	
@@ -85,7 +85,14 @@ function CanPlayerModel(f,sz)
 	local found = false
 	for k,v in next,mdl:IncludedModels() do
 		v=v[2]
-		if v:find"%.mdl$" and ( v:find("anim",1,true) or v:find('/m_',1,true) or v:find('/f_',1,true) ) then
+		if v 
+			and v:find"%.mdl$" 
+			and ( 
+				v:find("anim",1,true) 
+				or v:find('/m_',1,true) 
+				or v:find('/f_',1,true) 
+				or v:find('/cs_',1,true) ) 
+		then
 			found = true
 			break
 		end

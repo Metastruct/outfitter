@@ -70,6 +70,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 		if not mdl then
 			if pl.original_model then
 				pl:SetModel(pl.original_model)
+				pl.original_model = nil
 			end
 			pl.enforce_model = nil
 			return true
@@ -97,11 +98,13 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 	end
 
 	function OnPlayerInPVS(pl)
-		if pl.enforce_model then
-			dbg("OnPlayerInPVS","enforce",pl)
-			pl.original_model = pl:GetModel()
-			StartEnforcing(pl)
-		end
+		if not pl.enforce_model then return end
+		
+		local orig = pl.original_model
+		local neworig = pl:GetModel()
+		-- pl.original_model = neworig
+		dbg("OnPlayerInPVS","enforce",pl,pl.enforce_model,"orig",orig,orig==neworig)
+		StartEnforcing(pl)
 	end
 
 	
