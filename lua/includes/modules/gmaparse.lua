@@ -2,6 +2,8 @@ local Tag='gmaparse'
 
 module(Tag,package.seeall)
 
+-- Format: https://github.com/garrynewman/gmad/blob/master/include/AddonReader.h
+
 local GMA = {}
 local _M = {__index = GMA,__tostring=function(self) return "GMAD Parser" end}
 function Parser(f)
@@ -207,3 +209,5 @@ gma:Close()
 
 	
 --]]
+
+return _M
