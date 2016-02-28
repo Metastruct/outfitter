@@ -107,6 +107,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","5",SAVE)
 		local path
 		local cb = co.newcb()
 		local function cb2(...)
+			dbg("SWDL",fileid,instant==false and "" or "instant?","result",...)
 			if instant==nil then
 				path = ...
 				instant = true
@@ -134,7 +135,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","5",SAVE)
 		
 		if dat then
 			if dat==true then 
-				--return res[wsid] or true
+				return res[wsid] or true
 			elseif istable(dat) then
 				local cb = co.newcb()
 				dat[#dat+1] = cb
@@ -182,11 +183,11 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","5",SAVE)
 			return SYNC(dat,false)
 		end
 		
-		local res = path
+		local result = path
 		fetching[wsid] = true
-		res[wsid] = res
+		res[wsid] = result
 		
-		return SYNC(dat,res)
+		return SYNC(dat,result)
 
 	end
 

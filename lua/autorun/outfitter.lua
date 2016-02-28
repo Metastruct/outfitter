@@ -1,4 +1,4 @@
-do return end
+--do return end
 --[[
 !changemodel ->webbrowser from workshop opens
 open playermodel workshop page, click choose button
@@ -63,26 +63,31 @@ function dbge(...)
 	end
 	ErrorNoHalt(table.concat(t,' ')..'\n')
 end
+--concommand.Add()
 
-local path = Tag..'/'
-
-AddCSLuaFile(path..'sh.lua')
+local S=SERVER
+local C=CLIENT
 local function inc(str)
-	return function(shared,client)
+	return function(m)
 		local path = Tag..'/'..str..'.lua'
-		include(path)
-		if SERVER and (shared or client) then
+		
+		if S and (m=='sh' or m=='cl') then
 			AddCSLuaFile(path)
-		elseif SERVER and shared or SERVER and not client or CLIENT and client or CLIENT and shared then
+		end
+		
+		if m == 'sh' 
+			or (S and m=='sv')
+			or (C and m=='cl') 
+		then	
 			include(path)
 		end
 	end
 end
 
-inc 'sh'  (true)
-inc 'sv'  ()
-inc 'cl_util'  (nil,true)
-inc 'cl'  (nil,true)
-inc 'gui'  (nil,true)
-inc 'net' (true)
+inc 'sh'		'sh'
+inc 'sv'		'sv'
+inc 'cl_util'	'cl'
+inc 'cl'		'cl'
+inc 'gui'		'cl'
+inc 'net'		'sh'
 
