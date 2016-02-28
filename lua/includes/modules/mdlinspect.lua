@@ -126,7 +126,9 @@ function MDL:Validate(filesize)
 	local size = self.dataLength
 	
 	local f=self.file
+	--TODO: can be wrong
 	local fsize = filesize or (f:Size()-self.initial_offset)
+	
 
 	if fsize ~=size then
 		return nil,"size"

@@ -212,7 +212,29 @@ end
 		self.chosen_id = tonumber(id)
 		print(id)
 	end
-
+	
+	function PANEL:InjectScripts(browser)
+		--dbg("Injecting browser code",browser or "NOBROWSER")
+		browser:QueueJavascript[[
+		
+			function SubscribeItem() {
+				gmod.wssubscribe();
+			};
+			
+			setTimeout(function() {
+				function SubscribeItem() {
+					gmod.wssubscribe();
+				};
+			
+				var sub = document.getElementById("SubscribeItemOptionAdd"); 
+				if (sub) {
+					sub.innerText = "Select";
+				};
+			}, 0);
+			
+		]]
+	end
+	
 	function PANEL:Think()
 		self.BaseClass.Think(self)
 		--print(self.LoadedURL)
@@ -234,90 +256,3 @@ end
 		d:OpenURL'http://steamcommunity.com/workshop/browse/?appid=4000&searchtext=playermodel&childpublishedfileid=0&browsesort=trend&section=readytouseitems&requiredtags%5B%5D=Model'
 		return d
 	end
-
-
---GUIChooseModel
-	local PANEL = {}
-	function PANEL:Init()
-		local b = vgui.Create('DButton',self.top,'choose button')
-			
-			self.chooseb = b
-			b:Dock(RIGHT)
-			b:SetIcon("icon16/eye.png")
-			b:SetText"CHOOSE THIS WORKSHOP ADDON"
-			b:SizeToContents()
-			b:SetWidth(b:GetSize()+32)
-			b:SetEnabled(false)
-			b.DoClick=function(b,mc)
-				self:Hide()
-				if self.chosen_id then
-					UIChoseWorkshop(self.chosen_id)
-				end
-			end
-		
-		self:GetBrowser():AddFunction( "gmod", "wssubscribe", 
-			function()
-				if self.chosen_id then
-					UIChoseWorkshop(self.chosen_id)
-				end
-			end )
-		
-	end
-
-	function PANEL:LoadedURL(url,title)
-		self.BaseClass.LoadedURL(self,url,title)
-		if not url or url=="" then return end
-		
-		-- sharedfiles/filedetails/?id=422403917&searchtext=playermodel
-
-
-		local id = url:match'://steamcommunity.com/sharedfiles/filedetails/.*[%?%&]id=(%d+)'
-		self.chooseb:SetEnabled(id and true or false)
-		self.chosen_id = tonumber(id)
-		print(id)
-	end
-
-	function PANEL:Think()
-		self.BaseClass.Think(self)
-		--print(self.LoadedURL)
-	end
-	function PANEL:InjectScripts(browser)
-		dbg("Injecting browser code",browser or "NOBROWSER")
-		browser:QueueJavascript[[
-		
-			function SubscribeItem() {
-				gmod.wssubscribe();
-			};
-			
-			setTimeout(function() {
-				function SubscribeItem() {
-					gmod.wssubscribe();
-				};
-			
-				var sub = document.getElementById("SubscribeItemOptionAdd"); 
-				if (sub) {
-					sub.innerText = "Choose!";
-				};
-			}, 0);
-			
-		]]
-	end
-	
-	local pnl_generator = vgui.RegisterTable(PANEL,Tag..'_chooser')
-	m_vChooseModel = NULL
-	function GUIChooseModel(mdls)
-		if ValidPanel(m_vChooseModel) then
-			m_vChooseModel:Remove()
-		end
-		
-		local d = vgui.CreateFromTable(pnl_generator,nil,Tag)
-		m_vChooseModel = d
-		
-		d:Setup(mdls)
-		return d
-	end
-	
-	
-	
--- Notifications?
-

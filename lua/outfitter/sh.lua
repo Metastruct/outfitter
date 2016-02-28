@@ -59,7 +59,7 @@ function DecodeOW(str)
 end
 
 -- parse model from file
-function CanPlayerModel(f)
+function CanPlayerModel(f,sz)
 	local mdl,err = mdlinspect.Open(f)
 	if not mdl then
 		return nil,err
@@ -74,9 +74,12 @@ function CanPlayerModel(f)
 		return false,err or "hdr" 
 	end
 
-	local valid = mdl:Validate()
-	if not valid then 
-		return false,"valid" 
+	if sz then
+		local valid,err = mdl:Validate(sz)
+		if not valid then 
+			dbg("CanPlayerModel",f,"validate error",err)
+			return false,"valid" 
+		end
 	end
 	
 	local found = false

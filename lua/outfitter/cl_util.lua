@@ -374,7 +374,7 @@ function GMAPlayerModels(fpath)
 	
 		local seekok = gma:SeekToFileOffset(entry)
 		if not seekok then return nil,"seekfail" end
-		local can,err = CanPlayerModel(gma:GetFile())
+		local can,err = CanPlayerModel(gma:GetFile(),entry.Size)
 		if can==nil then dbge("CanPlayerModel",err) end
 		if not can then
 			dbg("","Bad",entry.Name,err,IsUnsafe() and "UNSAFE ALLOW" or "")
