@@ -96,7 +96,7 @@ function CanPlayerModel(f,sz)
 	
 	local bname = mdl:BoneNames() [1]
 	if bname~= "ValveBiped.Bip01_Pelvis" then
-		return false,"bones"
+		return false,"bones",bname
 	end
 	
 	return true

@@ -122,7 +122,7 @@ function UIChangeModelToID(n)
 		return UIError"The workshop addon could not be mounted"
 	end
 	
-	OnChangeOutfit(LocalPlayer(),mdl,wsid)
+	OnChangeOutfit(LocalPlayer(),mdl.Name,wsid)
 	
 end
 
@@ -163,7 +163,7 @@ function UIChoseWorkshop(wsid)
 			UIMsg(" "..k..". "..mdl)
 		end
 	else
-		UIMsg("Got model: "..mdls[1])
+		UIMsg("Got model: "..tostring(mdls[1].Name))
 	end
 	
 	chosen_wsid = wsid
@@ -193,13 +193,18 @@ end
 			b:SetWidth(b:GetSize()+32)
 			b:SetEnabled(false)
 			b.DoClick=function(b,mc)
-				self:Hide()
-				if self.chosen_id then
-					UIChoseWorkshop(self.chosen_id)
-				end
+				self:WSChoose()
 			end
+			self:GetBrowser():AddFunction( "gmod", "wssubscribe", function() self:WSChoose() end )
+			
 	end
 
+	function PANEL:WSChoose()
+		self:Hide()
+		if self.chosen_id then
+			UIChoseWorkshop(self.chosen_id)
+		end
+	end
 	function PANEL:LoadedURL(url,title)
 		self.BaseClass.LoadedURL(self,url,title)
 		if not url or url=="" then return end
