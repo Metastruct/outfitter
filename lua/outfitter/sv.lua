@@ -26,14 +26,21 @@ end
 
 function NetData(pl,k,val)
 	if k~=NTag then return end
-	if not isstring(val) and val~=nil then return false end
-	if #val>2048*2 or #val==0 then return false end
+	dbg("NetData",pl)
+	
+	if not isstring(val) and val~=nil then
+		dbg(pl,"val",type(val))
+		return false 
+	end
+	if #val>2048*2 or #val==0 then 
+		dbg("NET","badval",#val,pl)
+		return false 
+	end
 	
 	local mdl,wsid 
 	if val then
 		mdl,wsid = DecodeOW(val)
 	end
-	
 	pl.outfitter_mdl = mdl
 	pl.outfitter_wsid = wsid
 	

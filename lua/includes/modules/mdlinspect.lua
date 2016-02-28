@@ -477,7 +477,7 @@ function MDL:Tell()
 	return self.file:Tell()-self.initial_offset
 end
 
--- [[ -- test
+--[[ -- test
 local fp ="models/player/"
 local flist = file.Find(fp..'*.mdl','GAME')
 -- flist = {'matress.mdl'}

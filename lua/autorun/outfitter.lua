@@ -81,6 +81,7 @@ end
 
 inc 'sh'  (true)
 inc 'sv'  ()
+inc 'cl_util'  (nil,true)
 inc 'cl'  (nil,true)
 inc 'gui'  (nil,true)
 inc 'net' (true)

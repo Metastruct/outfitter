@@ -31,6 +31,9 @@ function SanityCheckNData(mdl,wsid)
 	if mdl=="" or #mdl>2048*2 then return false end
 	if mdl:find("  ",1,true) or mdl:find("..",1,true) or mdl:find("\t",1,true) or mdl:find("\n",1,true) then return false end
 	if wsid<=0 then return false end
+	
+	return nil
+	
 end
 
 
@@ -45,15 +48,17 @@ end
 
 --TODO: hex encoding at least
 function EncodeOW(o,w)
-	return w..','..o
+	return w and o and (w..','..o) or nil
 end
 
 function DecodeOW(str)
+	if not str then return end
 	local w,o = str:match'^(%d-),(.*)$'
 	w = tonumber(w)
 	return o,w
 end
 
+-- parse model from file
 function CanPlayerModel(f)
 	local mdl,err = mdlinspect.Open(f)
 	if not mdl then
@@ -61,17 +66,17 @@ function CanPlayerModel(f)
 	end
 	
 	if mdl.version~=44 and mdl.version~=48 then
-		return nil,"version"
+		return false,"version"
 	end
 	
 	local ok ,err = mdl:ParseHeader()
 	if not ok then 
-		return nil,err or "hdr" 
+		return false,err or "hdr" 
 	end
 
 	local valid = mdl:Validate()
 	if not valid then 
-		return nil,"valid" 
+		return false,"valid" 
 	end
 	
 	local found = false
@@ -83,18 +88,18 @@ function CanPlayerModel(f)
 		end
 	end
 	if not found then 
-		return nil,"includemdls" 
+		return false,"includemdls" 
 	end
 	
 	local bname = mdl:BoneNames() [1]
 	if bname~= "ValveBiped.Bip01_Pelvis" then
-		return nil,"bones"
+		return false,"bones"
 	end
-	
 	
 	return true
 end
 
+--[[
 local fp ="models/player/"
 local flist = file.Find(fp..'*.mdl','GAME')
 -- flist = {'matress.mdl'}
@@ -106,14 +111,6 @@ for _,fn in next,flist do
 	print(('%50s'):format(fn),CanPlayerModel(f))
 	f:Close()
 	
-end
+end--]]
 
-function GrepModels(l)
-	local t={}
-	for k,v in next,l do
-		if v:find"%.mdl$" then
-			t[#t+1] = v
-		end
-	end
-	return t
-end
+

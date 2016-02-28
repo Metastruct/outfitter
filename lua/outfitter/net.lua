@@ -17,10 +17,10 @@ if CLIENT then
 		--assert(t)
 		--t.outfitter_mdl,t.outfitter_wsid = DecodeOW(val)
 		local pl = findpl(plid)
-		dbg("NET",pl or plid,k,"<-",val)
+		dbg("netData",pl or plid,k,"<-",val)
 		if pl then OnPlayerVisible(pl) end
 	end
-	
+		
 	function OnPlayerVisible(pl)
 		
 		-- check for changed outfit data
@@ -30,9 +30,17 @@ if CLIENT then
 		if new~=old then
 			pl.outfitter_nvar = new
 			
+			--if old == true then return end
+			
 			local mdl,wsid
 			if new then
 				mdl,wsid = DecodeOW(new)
+			end
+			
+			dbg("OnPlayerVisible",pl==LocalPlayer() and "SKIP" or pl,mdl or "UNSET?",wsid)
+			
+			if pl==LocalPlayer() then
+				return
 			end
 			
 			OnChangeOutfit(pl,mdl,wsid)
@@ -45,6 +53,11 @@ if CLIENT then
 		OnPlayerVisible(pl) 
 	end)
 
+	local function OnPlayerPVS(pl,inpvs)
+		if not inpvs then return end
+		OnPlayerInPVS(pl)
+	end
+	
 	hook.Add("NotifyShouldTransmit",Tag,function(pl,inpvs)
 		if pl:IsPlayer() then
 			OnPlayerPVS(pl,inpvs)
@@ -52,9 +65,11 @@ if CLIENT then
 	end)
 	
 	-- I want to tell others about my outfit
-	function BroadcastOutfit(mdl,wsid)
+	function NetworkOutfit(mdl,wsid)
 		assert(wsid and tonumber(wsid))
-		LocalPlayer():SetNetData(Tag,EncodeOW(mdl:gsub("%.mdl$",""),wsid))
+		local encoded = EncodeOW(mdl:gsub("%.mdl$",""),wsid)
+		dbg("NetworkOutfit",mdl,wsid,('%q'):format(encoded))
+		LocalPlayer():SetNetData(Tag,encoded)
 	end	
 	
 end
