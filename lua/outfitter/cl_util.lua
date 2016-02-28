@@ -33,7 +33,7 @@ function IsFailsafe()
 end
 
 --TODO
-outfitter_maxsize = CreateClientConVar("outfitter_maxsize","25",SAVE)
+outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 
 -- Model enforcing
 	local function Enforce(pl)
@@ -110,7 +110,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","25",SAVE)
 	local fetching = {}
 
 	local res = {}
-
+	
 	local function SYNC(cbs,ret)
 		for k,cb in next,cbs do
 			cb(ret)
@@ -141,10 +141,18 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","25",SAVE)
 		return path
 	end
 
-
+	local lme
+	local lwsid
+	function GetLastMountErr(wsid)
+		if lwsid and lwsid~=wsid then return end
+		return lme
+	end
+	
 	local function cantmount(wsid,reason)
 		fetching[wsid] = false
-		dbge("FetchWS","failed for",wsid,reason)
+		dbge("FetchWS","downloading",wsid,"failed for",reason)
+		lme= reason or "?"
+		lwsid=wsid
 	end
 
 	function coFetchWS(wsid)
@@ -208,7 +216,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","25",SAVE)
 		maxsz = maxsz*1024*1024
 		
 		if maxsz>0.1 and (fileinfo.size or 0) > maxsz then
-			cantmount(wsid,"big")
+			cantmount(wsid,"oversize")
 			return SYNC(dat,false)
 		end
 			
@@ -358,7 +366,10 @@ function GMAPlayerModels(fpath)
 		end
 	end
 	
+	local potential={}
+	
 	--TODO: Check CRC?
+	local one_error
 	for k,entry in next,mdls do
 	
 		local seekok = gma:SeekToFileOffset(entry)
@@ -366,8 +377,11 @@ function GMAPlayerModels(fpath)
 		local can,err = CanPlayerModel(gma:GetFile())
 		if can==nil then dbge("CanPlayerModel",err) end
 		if not can then
-			dbg("","Bad",entry.Name)
-			mdls[k]=false
+			dbg("","Bad",entry.Name,err,IsUnsafe() and "UNSAFE ALLOW" or "")
+			potential[entry]=err or "?"
+			if not IsUnsafe() then
+				mdls[k]=false
+			end
 		end
 	end
 	-- purge bad
@@ -376,6 +390,10 @@ function GMAPlayerModels(fpath)
 			table.remove(mdls,i)
 		end
 	end
-	dbg("GMAPlayerModels post",table.Count(mdls))
-
+	dbg("GMAPlayerModels post",#mdls)
+	if #mdls>0 then
+		return mdls,nil,potential
+	else
+		return nil,"nomdls",potential
+	end
 end

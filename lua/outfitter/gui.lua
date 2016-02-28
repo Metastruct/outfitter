@@ -142,7 +142,7 @@ function UIChoseWorkshop(wsid)
 	SetUIFetching(wsid,false)
 	if not path then
 		dbg("UIChoseWorkshop",wsid,"fail",err)
-		return UIError("Download failed for workshop "..wsid..": "..tostring(err))
+		return UIError("Download failed for workshop "..wsid..": "..tostring(err~=nil and tostring(err) or GetLastMountErr and GetLastMountErr()))
 	end
 	co.sleep(.2)
 	local mdls,err = GMAPlayerModels( path )
@@ -282,25 +282,22 @@ end
 		--print(self.LoadedURL)
 	end
 	function PANEL:InjectScripts(browser)
-		dbg("Injecting",browser)
+		dbg("Injecting browser code",browser or "NOBROWSER")
 		browser:QueueJavascript[[
 		
 			function SubscribeItem() {
 				gmod.wssubscribe();
-			}
+			};
 			
 			setTimeout(function() {
 				function SubscribeItem() {
 					gmod.wssubscribe();
-				}
+				};
 			
 				var sub = document.getElementById("SubscribeItemOptionAdd"); 
 				if (sub) {
-					console.log("Changing text");
 					sub.innerText = "Choose!";
-				} else {
-					console.log("Cant change text, not found");
-				}
+				};
 			}, 0);
 			
 		]]
