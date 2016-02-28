@@ -70,7 +70,7 @@ if CLIENT then
 		assert((not mdl and not wsid) or (wsid and mdl),('ASSERT: mdl=%q wsid=%q'):format(tostring(mdl),tostring(wsid)))
 		
 		local encoded = mdl and EncodeOW(mdl and mdl:gsub("%.mdl$",""),wsid)
-		dbg("NetworkOutfit",mdl,wsid,('%q'):format(encoded))
+		dbg("NetworkOutfit",mdl,wsid,('%q'):format(tostring(encoded)))
 		if not encoded then encoded=nil end
 		LocalPlayer():SetNetData(NTag,encoded)
 	end	

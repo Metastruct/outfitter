@@ -34,15 +34,19 @@ function NetData(pl,k,val)
 		dbg(pl,"val",type(val))
 		return false 
 	end
-	if #val>2048*2 or #val==0 then 
-		dbg("NetData","badval",#val,pl)
-		return false 
-	end
 	
 	local mdl,wsid 
 	if val then
+		
+		if #val>2048*2 or #val==0 then 
+			dbg("NetData","badval",#val,pl)
+			return false 
+		end
+		
 		mdl,wsid = DecodeOW(val)
+		
 	end
+	
 	pl.outfitter_mdl = mdl
 	pl.outfitter_wsid = wsid
 	
