@@ -12,11 +12,28 @@ local Player = FindMetaTable"Player"
 
 --TODO: Make outfitter mount all after enabling?
 outfitter_enabled = CreateClientConVar("outfitter_enabled","1",SAVE,true)
+cvars.AddChangeCallback("outfitter_enabled",function(cvar,old,new)
+	if new=='0' then
+		dbg("DISABLE")
+	elseif new=='1' then
+		dbg("ENABLE")
+	end
+end)
 
 --TODO
-outfitter_failsafe = CreateClientConVar("outfitter_failsafe","0",SAVE)
+local outfitter_unsafe = CreateClientConVar("outfitter_unsafe","0",SAVE)
+function IsUnsafe()
+	return outfitter_unsafe:GetBool()
+end
+
 --TODO
-outfitter_maxsize = CreateClientConVar("outfitter_maxsize","5",SAVE)
+local outfitter_failsafe = CreateClientConVar("outfitter_failsafe","0",SAVE)
+function IsFailsafe()
+	return outfitter_failsafe:GetBool()
+end
+
+--TODO
+outfitter_maxsize = CreateClientConVar("outfitter_maxsize","25",SAVE)
 
 -- Model enforcing
 	local function Enforce(pl)
@@ -116,11 +133,11 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","5",SAVE)
 			cb(a,b)
 		end
 		steamworks.Download( fileid, uncomp, cb2 )
-		instant = false
 		if instant==nil then
+			instant = false
 			path = co.waitcb(cb)
 		end
-		dbg("SWDL","returning",path,"instant:",instant)
+		dbg("SWDL",fileid,"returning",path,"instant:",instant)
 		return path
 	end
 
@@ -158,7 +175,27 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","5",SAVE)
 		if isdbg then
 			dbg("steamworks.FileInfo",wsid,"->",fileinfo)
 			if istable(fileinfo) then
-				PrintTable(fileinfo)
+				dbg("","title",fileinfo.title)
+				dbg("","owner",fileinfo.owner)
+				dbg("","tags",fileinfo.tags)
+				dbg("","size",string.NiceSize(fileinfo.size or 0))
+				dbg("","fileid",fileinfo.fileid)
+				
+				--TODO: Check banned
+				--TODO: Check popularity before mounting
+				
+				local banned = fileinfo.banned
+				local installed = fileinfo.installed
+				local disabled = fileinfo.disabled
+				if banned then
+					dbge(wsid,"BANNED!?")
+				end
+				if disabled then
+					dbge("","Disabled?")
+				end
+				if installed then
+					dbge("","installed?")
+				end
 			end
 		end
 		
@@ -168,9 +205,10 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","5",SAVE)
 		end
 		
 		local maxsz = outfitter_maxsize:GetFloat()
+		maxsz = maxsz*1024*1024
 		
-		if maxsz>0.000001 and (fileinfo.size or 0) > maxsz*1024*1024 then
-			cantmount(wsid,"too big")
+		if maxsz>0.1 and (fileinfo.size or 0) > maxsz then
+			cantmount(wsid,"big")
 			return SYNC(dat,false)
 		end
 			
