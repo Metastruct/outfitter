@@ -145,7 +145,7 @@ function UIChoseWorkshop(wsid)
 		return UIError("Download failed for workshop "..wsid..": "..tostring(err))
 	end
 	co.sleep(.2)
-	local mdls,err = GMAPlayerModels()
+	local mdls,err = GMAPlayerModels( path )
 	if not mdls then
 		dbge("UIChoseWorkshop","GMAPlayerModels",wsid,"fail",err)
 		return UIError("Parsing workshop addon "..wsid.." failed: "..tostring(err))
@@ -281,8 +281,8 @@ end
 		self.BaseClass.Think(self)
 		--print(self.LoadedURL)
 	end
-	function PANEL:InjectScripts()
-		
+	function PANEL:InjectScripts(browser)
+		dbg("Injecting",browser)
 		browser:QueueJavascript[[
 		
 			function SubscribeItem() {
@@ -290,9 +290,16 @@ end
 			}
 			
 			setTimeout(function() {
+				function SubscribeItem() {
+					gmod.wssubscribe();
+				}
+			
 				var sub = document.getElementById("SubscribeItemOptionAdd"); 
 				if (sub) {
+					console.log("Changing text");
 					sub.innerText = "Choose!";
+				} else {
+					console.log("Cant change text, not found");
 				}
 			}, 0);
 			
