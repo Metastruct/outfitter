@@ -122,7 +122,9 @@ function UIChangeModelToID(n)
 		return UIError"The workshop addon could not be mounted"
 	end
 	
-	OnChangeOutfit(LocalPlayer(),mdl.Name,wsid)
+	assert(mdl.Name)
+	
+	OnChangeOutfit(LocalPlayer(),mdl.Name,chosen_wsid)
 	
 end
 

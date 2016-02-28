@@ -17,6 +17,8 @@ local function SET(pl,mdl,wsid)
 	pl.outfitter_wsid = wsid
 end
 function OnChangeOutfit(pl,mdl,wsid)
+	dbg("OnChangeOutfit",pl,mdl=="false" and "unset" or ('%'):format(tostring(mdl)),wsid==false and "" or ('%'):format(tostring(wsid)))
+
 	assert((mdl and wsid) or (not mdl and not wsid))
 	assert(mdl~="")
 	assert(wsid~=0)
@@ -24,7 +26,6 @@ function OnChangeOutfit(pl,mdl,wsid)
 	
 	mdl = mdl and mdl:gsub("%.mdl$","")
 	
-	dbg("OnChangeOutfit",pl,mdl=="false" and "unset" or ('%'):format(tostring(mdl)),wsid==false and "" or ('%'):format(tostring(wsid)))
 
 	if not mdl then
 		RESET(pl)
