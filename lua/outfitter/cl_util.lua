@@ -308,7 +308,7 @@ function NeedWS(wsid)
 	
 	co.sleep(.2)
 	
-	local mdls,err = GMAPlayerModels()
+	local mdls,err = GMAPlayerModels(path)
 	
 	if not mdls then
 		dbge("NeedWS","GMAPlayerModels",wsid,"fail",err)

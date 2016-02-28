@@ -254,6 +254,14 @@ end
 					UIChoseWorkshop(self.chosen_id)
 				end
 			end
+		
+		self:GetBrowser():AddFunction( "gmod", "wssubscribe", 
+			function()
+				if self.chosen_id then
+					UIChoseWorkshop(self.chosen_id)
+				end
+			end )
+		
 	end
 
 	function PANEL:LoadedURL(url,title)
@@ -272,6 +280,23 @@ end
 	function PANEL:Think()
 		self.BaseClass.Think(self)
 		--print(self.LoadedURL)
+	end
+	function PANEL:InjectScripts()
+		
+		browser:QueueJavascript[[
+		
+			function SubscribeItem() {
+				gmod.wssubscribe();
+			}
+			
+			setTimeout(function() {
+				var sub = document.getElementById("SubscribeItemOptionAdd"); 
+				if (sub) {
+					sub.innerText = "Choose!";
+				}
+			}, 0);
+			
+		]]
 	end
 	
 	local pnl_generator = vgui.RegisterTable(PANEL,Tag..'_chooser')
