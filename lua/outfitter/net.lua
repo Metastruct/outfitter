@@ -3,11 +3,11 @@ local NTag = 'OF'
 
 module(Tag,package.seeall)
 
-function SetNeworked(o,w,pl)
-	if CLIENT then pl = LocalPlayer() end
-	local dat = EncodeOW(o,w)
-	pl:SetNetData(NTag,dat)
-end
+--function SetNeworked(o,w,pl)
+--	if CLIENT then pl = LocalPlayer() end
+--	local dat = EncodeOW(o,w)
+--	pl:SetNetData(NTag,dat)
+--end
 
 if CLIENT then
 	
@@ -17,7 +17,7 @@ if CLIENT then
 		--assert(t)
 		--t.outfitter_mdl,t.outfitter_wsid = DecodeOW(val)
 		local pl = findpl(plid)
-		dbg("netData",pl or plid,k,"<-",val)
+		dbg("NetData",pl or plid,k,"<-",val)
 		if pl then OnPlayerVisible(pl) end
 	end
 		
@@ -66,10 +66,13 @@ if CLIENT then
 	
 	-- I want to tell others about my outfit
 	function NetworkOutfit(mdl,wsid)
-		assert(wsid and tonumber(wsid))
-		local encoded = EncodeOW(mdl:gsub("%.mdl$",""),wsid)
+		assert(not wsid or tonumber(wsid))
+		assert((not mdl and not wsid) or (wsid and mdl))
+		
+		local encoded = mdl and EncodeOW(mdl and mdl:gsub("%.mdl$",""),wsid)
 		dbg("NetworkOutfit",mdl,wsid,('%q'):format(encoded))
-		LocalPlayer():SetNetData(Tag,encoded)
+		if not encoded then encoded=nil end
+		LocalPlayer():SetNetData(NTag,encoded)
 	end	
 	
 end

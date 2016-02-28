@@ -1,4 +1,5 @@
 local Tag='outfitter' 
+local NTag = 'OF'
 
 module(Tag,package.seeall)
 
@@ -6,8 +7,8 @@ util.AddNetworkString(Tag)
 
 
 
-function NetRateLimit(self,k)
-	local nextt = self.outfitter_next or 0
+function NetRateLimit(pl,k)
+	local nextt = pl.outfitter_next or 0
 	local now = RealTime()
 	if nextt < now then
 		nextt = now + (pl.outfitter_limiter or 15)
@@ -23,10 +24,9 @@ function RateLimitMessage(pl,ratelimit)
 	return ratelimit
 end
 
-
 function NetData(pl,k,val)
 	if k~=NTag then return end
-	dbg("NetData",pl)
+	dbg("NetData","receiving outfit from",pl)
 	
 	if not isstring(val) and val~=nil then
 		dbg(pl,"val",type(val))
