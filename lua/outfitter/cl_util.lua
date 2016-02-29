@@ -111,17 +111,20 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 	local recursing
 	local localpl
 	hook.Add("PrePlayerDraw",Tag,function(p)
-		if recursing then return end
-		recursing=true
 		localpl = localpl or LocalPlayer()
 		if p~=localpl then 
-			recursing=false
 			return
 		end
 		
-		Enforce(p)
+		if recursing then return end
+		recursing=true
+		
+			p:InvalidateBoneCache()
+			Enforce(p)
+			p:DrawModel()
 		
 		recursing=false
+		return true
 	end)
 
 	
