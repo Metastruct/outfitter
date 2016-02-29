@@ -65,13 +65,13 @@ function NetData(pl,k,val)
 		dbg("NetData",pl,"ratelimiting")
 		--return -- TODO
 	end
-	
-	local loaded = util.IsModelLoaded(mdl)
-	if not loaded and StringTable then
-		dbg("adding to stringtable",mdl)
-		StringTable("modelprecache"):AddString(true,mdl)
+	if mdl then
+		local loaded = util.IsModelLoaded(mdl)
+		if not loaded and StringTable then
+			dbg("adding to stringtable",('%q'):format(mdl))
+			StringTable("modelprecache"):AddString(true,mdl)
+		end
 	end
-
 	
 	return true
 end

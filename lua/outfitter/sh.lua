@@ -48,13 +48,14 @@ end
 
 --TODO: hex encoding at least
 function EncodeOW(o,w)
-	return w and o and (w..','..o) or nil
+	return w and o and (w..','..(o:gsub("%.mdl$",""))) or nil
 end
 
 function DecodeOW(str)
 	if not str then return end
 	local w,o = str:match'^(%d-),(.*)$'
 	w = tonumber(w)
+	if o then o=o..'.mdl' end
 	return o,w
 end
 
