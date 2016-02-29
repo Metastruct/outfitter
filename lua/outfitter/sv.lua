@@ -1,7 +1,6 @@
 local Tag='outfitter' 
 local NTag = 'OF'
 
-setfenv(1,_G)
 
 module(Tag,package.seeall)
 

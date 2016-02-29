@@ -72,7 +72,9 @@ if CLIENT then
 		local encoded = mdl and EncodeOW(mdl and mdl:gsub("%.mdl$",""),wsid)
 		dbg("NetworkOutfit",mdl,wsid,('%q'):format(tostring(encoded)))
 		if not encoded then encoded=nil end
+		
 		LocalPlayer():SetNetData(NTag,encoded)
+		
 	end	
 	
 end

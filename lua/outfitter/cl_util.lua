@@ -106,6 +106,23 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 		dbg("OnPlayerInPVS","enforce",pl,pl.enforce_model,"orig",orig,orig==neworig)
 		StartEnforcing(pl)
 	end
+	
+	--TODO: non tpose :(
+	local recursing
+	local localpl
+	hook.Add("PrePlayerDraw",Tag,function(p)
+		if recursing then return end
+		recursing=true
+		localpl = localpl or LocalPlayer()
+		if p~=localpl then 
+			recursing=false
+			return
+		end
+		
+		Enforce(p)
+		
+		recursing=false
+	end)
 
 	
 	

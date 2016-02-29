@@ -65,6 +65,7 @@ function DoChangeOutfit(...)
 	
 end
 
+
 function BroadcastMyOutfit(mdl,wsid)
 		local mdl = mdl or LocalPlayer().outfitter_mdl 
 		local wsid = wsid or LocalPlayer().outfitter_wsid
