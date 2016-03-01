@@ -9,6 +9,7 @@ function UIMounting(yes)
 	if is then
 		notification.AddProgress( Tag, 
 			"Mounting outfitter outfit!" )
+		surface.PlaySound( "buttons/button15.wav" )
 	else
 		notification.Kill( Tag )
 	end
@@ -19,6 +20,7 @@ function SetUIFetching(wsid,is)
 	if is then
 		notification.AddProgress( Tag..wsid, 
 			"Downloading "..wsid )
+		surface.PlaySound( "buttons/button15.wav" )
 	else
 		notification.Kill( Tag..wsid )
 	end
@@ -61,13 +63,27 @@ end)
 
 CWHITE = Color(255,255,255,255)
 CBLACK = Color(0,0,0,0)
+local ns = 0
 function UIError(...)
 	local t= {Color(200,50,10),'[Outfitter Err] ',CWHITE,...}
+	local now = RealTime()
+	if ns<now then 
+		ns=now + 1
+		surface.PlaySound("common/warning.wav")
+		return 
+	end
 	chat.AddText(unpack(t))
 end
 
+local ns = 0
 function UIMsg(...)
 	local t= {Color(50,200,10),'[Outfitter] ',CWHITE,...}
+	local now = RealTime()
+	if ns<now then 
+		ns=now + 1
+		surface.PlaySound("weapons/grenade/tick1.wav")
+		return 
+	end
 	chat.AddText(unpack(t))
 end
 
@@ -126,6 +142,33 @@ function UIChangeModelToID(n)
 	
 	OnChangeOutfit(LocalPlayer(),mdl.Name,chosen_wsid)
 	
+	notification.AddLegacy( "Outfit changed!", NOTIFY_UNDO, 2 ) 
+	surface.PlaySound( "buttons/button15.wav" )
+	UIMsg"Write '!outfit send' to send this outfit to everyone"
+	
+end
+
+function MDLToUI(s)
+	if not s then return s end
+	if #s==0 then return s end
+	s=s:gsub("^models/player/","")
+	s=s:gsub("^models/","")
+	  
+	s=s:gsub("_([a-z])",function(a) return ' '..a:upper() end)
+	s=s:gsub("_"," ")
+	  
+	s=s:gsub("%.mdl","")
+	  
+	s=s:gsub("/([a-z])",function(a) return '/'..a:upper() end)
+	
+	local a,b = s:match'^(.+)/(.-)$'
+	if b then
+		s = ('%s ( %s )'):format(b,a)
+	end
+	
+	s=s:gsub("/",", ")
+	
+	return s
 end
 
 function UIChoseWorkshop(wsid)
@@ -162,10 +205,10 @@ function UIChoseWorkshop(wsid)
 	if mdls[2] then
 		UIMsg("Models:")
 		for k,mdl in next,mdls do
-			UIMsg(" "..k..". "..tostring(mdl and mdl.Name))
+			UIMsg(" "..k..". "..tostring(mdl and MDLToUI(mdl.Name)))
 		end
 	else
-		UIMsg("Got model: "..tostring(mdls[1].Name))
+		UIMsg("Got model: "..tostring(MDLToUI(mdls[1].Name)))
 	end
 	
 	chosen_wsid = wsid
@@ -173,7 +216,7 @@ function UIChoseWorkshop(wsid)
 	mount_path = path
 	
 	if mdls[2] then
-		UIMsg"Write !outfit <model number> to choose model"
+		UIMsg"Write !outfit <model number> to choose a model"
 		UIMsg"Finally, write '!outfit send' to send the chosen model to everyone or !outfit cancel to cancel"
 	else
 		UIChangeModelToID(1)
@@ -199,11 +242,13 @@ end
 			end
 			self:GetBrowser():AddFunction( "gmod", "wssubscribe", function() self:WSChoose() end )
 			
+			
 	end
 
 	function PANEL:WSChoose()
 		self:Hide()
 		if self.chosen_id then
+			surface.PlaySound"npc/vort/claw_swing1.wav"
 			UIChoseWorkshop(self.chosen_id)
 		end
 	end

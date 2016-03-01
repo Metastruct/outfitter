@@ -10,6 +10,11 @@ local SAVE =false  --TODO: make save after end of debugging
 
 local Player = FindMetaTable"Player"
 
+function Fullupdate()
+	LocalPlayer():ConCommand("record removeme",true)
+	RunConsoleCommand'stop'
+end
+
 --TODO: Make outfitter mount all after enabling?
 outfitter_enabled = CreateClientConVar("outfitter_enabled","1",SAVE,true)
 cvars.AddChangeCallback("outfitter_enabled",function(cvar,old,new)
@@ -67,6 +72,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 	-- Set or unset actual model to be enforced clientside
 	function Player.EnforceModel(pl,mdl,nocheck)
 		dbg("EnforceModel",pl,mdl or "UNENFORCE")
+		
 		if not mdl then
 			if pl.original_model then
 				pl:SetModel(pl.original_model)
@@ -81,13 +87,21 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 			if not exists then return false,"invalid" end
 		end
 		
-		if not pl.original_model then
+		local curmdl = pl:GetModel()
+		local curenforce = pl.enforce_model
+		local origmdl = pl.original_model
+		
+		if not origmdl then
 			pl.original_model = pl:GetModel()
 		end
 		
 		StartEnforcing(pl)
 		
 		pl.enforce_model = mdl
+		
+		if pl==LocalPlayer() and curmdl ~= mdl then
+			Fullupdate()
+		end
 		
 		return true
 		
@@ -400,6 +414,13 @@ function GMAPlayerModels(fpath)
 		if not seekok then return nil,"seekfail" end
 		local can,err,err2 = CanPlayerModel(gma:GetFile(),entry.Size)
 		if can==nil then dbge("CanPlayerModel",err,err2) end
+		if can then
+			local n = entry.Name
+			if n:find("_arms.",1,true) then can,er =false,"arms" end
+			if n:find("_hands.",1,true) then can,er =false,"arms" end
+			if n:find("/c_",1,true) then can,er =false,"viewmodel" end
+			if n:find("/w_",1,true) then can,er =false,"worldmodel" end
+		end
 		if not can then
 			dbg("","Bad",entry.Name,err,IsUnsafe() and "UNSAFE ALLOW" or "")
 			potential[entry]=err or "?"
