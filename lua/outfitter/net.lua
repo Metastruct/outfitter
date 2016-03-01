@@ -52,7 +52,7 @@ if CLIENT then
 
 	hook.Add("NetworkEntityCreated",Tag,function(ent) 
 		if ent:IsPlayer() then
-			OnPlayerVisible(pl)
+			OnPlayerVisible(ent)
 		elseif ent:GetClass() == "class C_HL2MPRagdoll" then
 			local owner = ent:GetRagdollOwner()
 			if owner:IsValid() then
