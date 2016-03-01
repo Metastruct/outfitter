@@ -37,7 +37,7 @@ if CLIENT then
 				mdl,wsid = DecodeOW(new)
 			end
 			
-			dbg("OnPlayerVisible",pl==LocalPlayer() and "SKIP" or pl,mdl or "UNSET?",wsid)
+			dbgn(2,"OnPlayerVisible",pl==LocalPlayer() and "SKIP" or pl,mdl or "UNSET?",wsid)
 			
 			if pl==LocalPlayer() then
 				return

@@ -48,7 +48,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 	end
 
 	local enforce_models = {}
-	function Think()
+	function ThinkEnforce()
 		for pl,count in next,enforce_models do
 			if pl:IsValid() and count>0 then
 				
@@ -60,7 +60,6 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 			end
 		end
 	end
-	hook.Add("Think",Tag,Think)
 
 	-- Set model and start setting it for next 3 ticks while some other forces fight us
 	--TODO: what forces
@@ -117,7 +116,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 		local orig = pl.original_model
 		local neworig = pl:GetModel()
 		-- pl.original_model = neworig
-		dbg("OnPlayerInPVS","enforce",pl,pl.enforce_model,"orig",orig,orig==neworig)
+		dbgn(2,"OnPlayerInPVS","enforce",pl,pl.enforce_model,"orig",orig,orig==neworig)
 		StartEnforcing(pl)
 	end
 	
@@ -442,3 +441,9 @@ function GMAPlayerModels(fpath)
 		return nil,"nomdls",potential
 	end
 end
+
+
+local function Think()
+	ThinkEnforce()
+end
+hook.Add("Think",Tag,Think)

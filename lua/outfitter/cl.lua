@@ -18,7 +18,9 @@ local function SET(pl,mdl,wsid)
 end
 function OnChangeOutfit(pl,mdl,wsid)
 	dbg("OnChangeOutfit",pl,mdl=="false" and "unset" or ('%q'):format(tostring(mdl)),wsid==false and "" or ('%q'):format(tostring(wsid)))
-
+	
+	assert(pl and pl:IsValid())
+	pl:GetModel()
 	assert((mdl and wsid) or (not mdl and not wsid))
 	assert(mdl~="")
 	assert(wsid~=0)
@@ -51,6 +53,11 @@ function DoChangeOutfit(...)
 	if not NeedWS(wsid) then 
 		dbg("DoChangeOutfit","NeedWS failed, continuing",...) 
 		-- return -- it doesnt hurt to recheck
+	end
+	
+	if not pl:IsValid() then 
+		dbg("Player vanished!!!",pl)
+		return 
 	end
 
 	if not HasMDL(mdl) then

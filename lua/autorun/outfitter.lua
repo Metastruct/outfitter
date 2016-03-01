@@ -39,22 +39,30 @@ _M.this = setmetatable({},{__index = function(self,k) return rawget(_M,k) end,__
 this.Tag =Tag
 this.NTag = 'OF'
 
+local outfitter_dbg_tosv = SERVER and CreateConVar("outfitter_dbg_tosv","0") or CreateClientConVar("outfitter_dbg_tosv","0",false,false)
 local outfitter_dbg = SERVER and CreateConVar("outfitter_dbg","1") or CreateClientConVar("outfitter_dbg","1",false,false)
 _M.outfitter_dbg = outfitter_dbg
 
-function isdbg()
-	return outfitter_dbg:GetBool()
+function isdbg(n)
+	return outfitter_dbg:GetInt()>(n or 0)
 end
 
 function dbg(...)
 	if isdbg() then
-		if outfitter_dbg:GetInt()==2 then
-			easylua.Print(...)
+		if outfitter_dbg_tosv:GetBool() then
+			Msg"[Outfitter] "easylua.Print(...)
 		else
 			Msg"[Outfitter] "print(...)
 		end
 	end
 end
+
+function dbgn(n,...)
+	if isdbg(n) then
+		return dbg(...)
+	end
+end
+
 function dbge(...)
 	--if not outfitter_dbg:GetBool() then return end
 	
