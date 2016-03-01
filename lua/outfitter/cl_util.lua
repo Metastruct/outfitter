@@ -41,6 +41,67 @@ end
 outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 
 -- Model enforcing
+	
+	-- ragdoll model
+
+	local function Enforce(rag)
+		local mdl = rag.enforce_model
+		if mdl then
+			rag:InvalidateBoneCache()
+			rag:SetModel(mdl)
+			rag:InvalidateBoneCache()
+		end
+	end
+
+	local enforce_models = {}
+	function ThinkEnforce_DeathRagdoll()
+		for rag,count in next,enforce_models do
+			if rag:IsValid() and count>0 then
+				
+				enforce_models[rag] = count - 1
+				Enforce(rag)
+				
+			else
+				enforce_models[rag] = nil
+			end
+		end
+	end
+
+
+	function DeathRagdoll_RenderOverride(rag)
+		if rag.enforce_model then
+			rag:SetModel(rag.enforce_model)
+			if enforce_models[rag] then
+				rag:InvalidateBoneCache()
+			end
+		end
+		rag:DrawModel()
+	end
+
+	function OnDeathRagdollCreated(rag,pl)
+		local mdl = pl:GetEnforceModel()
+		if not mdl then return end
+		
+		local mdlr = rag:GetModel()
+		local mdlp = pl:GetModel()
+		
+		local hasenforced   = mdlr==mdl
+		local isplyenforced = mdlp==mdl
+		dbg("DeathRagdollEnforce",pl,rag,mdl,hasenforced and ("ENFORCED RAG: "..tostring(mdlr)) or "" ,isplyenforced and "" or ("NOT ENFORCED PLY: "..tostring(mdlp)) )
+		
+		rag.enforce_model = mdl
+		enforce_models[rag] = 8
+		Enforce(rag)
+		
+		rag.RenderOverride=DeathRagdoll_RenderOverride
+		
+	end
+
+
+
+
+
+	-- player model
 	local function Enforce(pl)
 		if pl.enforce_model then
 			pl:SetModel(pl.enforce_model)
@@ -445,5 +506,6 @@ end
 
 local function Think()
 	ThinkEnforce()
+	ThinkEnforce_DeathRagdoll()
 end
 hook.Add("Think",Tag,Think)

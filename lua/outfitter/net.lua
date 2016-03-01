@@ -48,9 +48,18 @@ if CLIENT then
 		
 	end
 
-	hook.Add("NetworkEntityCreated",Tag,function(pl) 
-		if not pl:IsPlayer() then return end 
-		OnPlayerVisible(pl) 
+
+
+	hook.Add("NetworkEntityCreated",Tag,function(ent) 
+		if ent:IsPlayer() then
+			OnPlayerVisible(pl)
+		elseif ent:GetClass() == "class C_HL2MPRagdoll" then
+			local owner = ent:GetRagdollOwner()
+			if owner:IsValid() then
+				OnDeathRagdollCreated(ent,owner)
+				return 
+			end
+		end
 	end)
 
 	local function OnPlayerPVS(pl,inpvs)
