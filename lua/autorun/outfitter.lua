@@ -1,28 +1,40 @@
 --do return end
 --[[
-!changemodel ->webbrowser from workshop opens
-open playermodel workshop page, click choose button
-downloading...
-find models
-(this is where it mounts for you)
-dialog with models to choose from
-choose model
-applies it on you
-!applymodel or something -> broadcast to server
 
-server: 
-broadcast to everyone, rate limiting only
+OUTFITTER REJECTS
+	191146401
+	164449803
+	503568129
+	393931403
 
-everyone:
-(mdl,wsid) changed for player
-(if mdl exists: just change model and done)
-get file info from workshop, check file size
-download
-(check gma for malicious)
-check gma for mdls
-mount (with dialog)
-check all players for this wsid
-    for each player with this wsid: recheck wanted mdl existence
+Interlock functions so they don't execute at the same time?
+	At least prevent more than 2 downloads
+	LZMA decompress in separate step
+	
+fix not loading after join for some reason
+add loading outfit only when seeing in PVS
+Bodygroups/skin editor
+
+002 CCollisionProperty::m_vecMaxsPreScaled - vec[] differs (1st diff) (net 7.413762 28.663610 71.754700 - pred 16.000000 16.000000 72.000000) delta(8.586238 -12.663610 0.245300)
+003 CCollisionProperty::m_vecMins - vec[] differs (1st diff) (net -16.088356 -28.536236 -4.704368 - pred -16.000000 -16.000000 0.000000) delta(0.088356 12.536236 4.704368)
+004 CCollisionProperty::m_vecMaxs - vec[] differs (1st diff) (net 7.413762 28.663610 71.754700 - pred 16.000000 16.000000 72.000000) delta(8.586238 -12.663610 0.245300)
+
+More sounds / notifications
+	npc/vort/claw_swing1.wav
+
+	npc/scanner/scanner_scan1.wav
+	npc/scanner/scanner_scan2.wav
+
+	common/warning.wav
+	buttons/button2.wav
+	BEP BEP BEP ui/system_message_alert.wav
+
+	ui/buttonclick.wav
+
+	items/suitchargeok1.wav
+
+	items/suitchargeno1.wav
+
 	
 ]]
 

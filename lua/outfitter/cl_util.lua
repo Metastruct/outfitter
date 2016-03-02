@@ -87,7 +87,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 		
 		local hasenforced   = mdlr==mdl
 		local isplyenforced = mdlp==mdl
-		dbg("DeathRagdollEnforce",pl,rag,mdl,hasenforced and ("ENFORCED RAG: "..tostring(mdlr)) or "" ,isplyenforced and "" or ("NOT ENFORCED PLY: "..tostring(mdlp)) )
+		dbgn(2,"DeathRagdollEnforce",pl,rag,mdl,hasenforced and ("ENFORCED RAG: "..tostring(mdlr)) or "" ,isplyenforced and "" or ("NOT ENFORCED PLY: "..tostring(mdlp)) )
 		
 		rag.enforce_model = mdl
 		enforce_models[rag] = 8
@@ -253,6 +253,58 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 		lwsid=wsid
 	end
 
+	function co.cacher(wrapped_function)
+		local cache = {}
+		local sync_callbacks = setmetatable({},{__mode='v'})
+		local function cacher(unique_id,...)
+			local cached = cache[unique_id]
+			if cached == nil then
+				cache[unique_id] = true
+				local cbs = {}
+				sync_callbacks[unique_id] = cbs
+				cached = {wrapped_function(unique_id,...)}
+				cache[unique_id] = cached
+				sync_callbacks[unique_id] = nil
+				for i=1,#cbs do
+					local callback = cbs[i]
+					callback() -- Should never error
+				end
+			elseif cached == true then
+				local cbs = sync_callbacks[unique_id]
+				if not cbs then
+					error("function has failed somewhere in the past with this unique_id")
+				end
+				local cb = co.newcb()
+				cbs[#cbs+1] = cb
+				co.waitcb(cb)
+				cached = cache[unique_id]
+			end
+			return unpack(cached)
+		end
+		return cacher,cache
+	end
+	
+	coSWFileInfo = co.cacher(function(wsid) 
+		local cb = co.newcb()
+		steamworks.FileInfo(wsid,cb)
+		local fileinfo = co.waitcb(cb)
+		return fileinfo
+	end)
+
+	--[[
+	local cache = {}
+	function coSWFileInfo(wsid)
+		local cached = cache[wsid]
+		if cached == nil then
+			local cb = co.newcb()
+			steamworks.FileInfo(wsid,cb)
+			local fileinfo = co.waitcb(cb)
+			cache[wsid] = cached
+		else
+			return cache
+		end
+	end--]]
+	
 	function coFetchWS(wsid)
 		
 		local dat = fetching[wsid]
@@ -274,9 +326,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 		dat = {}
 		fetching[wsid] = dat
 		
-		local cb = co.newcb()
-		steamworks.FileInfo(wsid,cb)
-		local fileinfo = co.waitcb(cb)
+		local fileinfo = coSWFileInfo(wsid)
 		
 		if isdbg then
 			dbg("steamworks.FileInfo",wsid,"->",fileinfo)
@@ -359,7 +409,6 @@ function MountWS( path )
 	if result~=nil then return result end
 
 	local isdbg = isdbg()
-	--TODO: HUDPaint notification of mounting
 	
 	local TIME = isdbg and SysTime()
 	dbg("MountGMA",path)
@@ -379,7 +428,7 @@ function coMountWS(path,cb)
 	if cb and co.make(path,cb) then return end
 	
 	UIMounting(true)
-	co.sleep(0.8)
+	co.sleep(1.5)
 		local res = MountWS( path )
 	co.sleep(.5)
 	UIMounting(false)
