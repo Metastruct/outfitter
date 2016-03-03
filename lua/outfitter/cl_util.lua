@@ -268,23 +268,26 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 		lwsid=wsid
 	end
 	
-	co_steamworks_FileInfo = 
-		co.worker( 
-			co.work_cacher_filter(function(key,fileinfo)
+	do
+		local worker,cache = co.work_cacher_filter(
+			function(key,fileinfo)
 				return (not key) or fileinfo
 			end,
-			co.work_cacher(function(wsid)
 			
-				local cb = co.newcb()
-					steamworks.FileInfo(wsid,cb)
-				local fileinfo = co.waitcb(cb)
-				
-				dbgn(2,"FileInfo",wsid,fileinfo and fileinfo.title or "TITLE??")
-				return fileinfo
-				
-			end,true))
-		)
-		
+			co.work_cacher(
+				function(wsid)
+					print("FILEINFO",wsid)
+					local cb = co.newcb()
+						steamworks.FileInfo(wsid,cb)
+					local fileinfo = co.waitcb(cb)
+					
+					return fileinfo
+					
+				end)
+			)
+		co_steamworks_FileInfo = co.worker(worker) 
+	end
+	
 	function coFetchWS(wsid,skip_maxsize)
 		
 		if skip_maxsize then
