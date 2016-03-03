@@ -46,6 +46,10 @@ More sounds / notifications
 
 AddCSLuaFile("includes/modules/gmaparse.lua")
 AddCSLuaFile("includes/modules/mdlinspect.lua")
+AddCSLuaFile("includes/modules/co.lua")
+
+require"co"
+
 
 local Tag='outfitter' 
 
