@@ -15,6 +15,15 @@ function UIMounting(yes)
 	end
 end
 
+function UIFullupdate()
+	notification.AddLegacy( "Warning: Fullupdate requested", NOTIFY_ERROR, 4 )
+	surface.PlaySound'items/cart_explode_trigger.wav'
+end
+
+function UIOnEnforce(pl)
+	--TODO: exists check. alt: ambient/alarms/warningbell1.wav
+	pl:EmitSound'items/powerup_pickup_agility.wav'
+end
 
 function SetUIFetching(wsid,is)
 	if is then

@@ -8,6 +8,9 @@ OUTFITTER REJECTS
 	393931403
 	252519802
 
+Try to get hands model?
+
+
 Interlock functions so they don't execute at the same time?
 	At least prevent more than 2 downloads
 	LZMA decompress in separate step
@@ -36,6 +39,8 @@ More sounds / notifications
 
 	items/suitchargeno1.wav
 
+	Great scott
+	vo/trainyard/kl_morewarn01.wav
 	
 ]]
 

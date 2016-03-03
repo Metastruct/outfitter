@@ -12,10 +12,15 @@ local function RESET(pl)
 	pl.outfitter_wsid = nil
 end
 local function SET(pl,mdl,wsid)
-	pl:EnforceModel(mdl)
+	local ret = pl:EnforceModel(mdl)
 	pl.outfitter_mdl = mdl
 	pl.outfitter_wsid = wsid
+	if not ret then
+		dbge("SET FAIL?",ret,mdl,wsid)
+	end
+	UIOnEnforce(pl)
 end
+
 function OnChangeOutfit(pl,mdl,wsid)
 	dbg("OnChangeOutfit",pl,mdl=="false" and "unset" or ('%q'):format(tostring(mdl)),wsid==false and "" or ('%q'):format(tostring(wsid)))
 	
@@ -54,6 +59,9 @@ function DoChangeOutfit(...)
 		dbg("DoChangeOutfit","NeedWS failed, continuing",...) 
 		-- return -- it doesnt hurt to recheck
 	end
+	
+	--TODO: check player is not asking for another outfit already 
+	-- Only one can be running at a time for a player
 	
 	if not pl:IsValid() then 
 		dbg("Player vanished!!!",pl)

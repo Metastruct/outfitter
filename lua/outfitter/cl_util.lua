@@ -11,6 +11,7 @@ local SAVE =false  --TODO: make save after end of debugging
 local Player = FindMetaTable"Player"
 
 function Fullupdate()
+	UIFullupdate()
 	LocalPlayer():ConCommand("record removeme",true)
 	RunConsoleCommand'stop'
 end
@@ -102,9 +103,11 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 
 
 	-- player model
+	-- TODO: ResetHull()
 	local function Enforce(pl)
 		if pl.enforce_model then
 			pl:SetModel(pl.enforce_model)
+			pl:ResetHull() -- sorry PAC
 		end
 	end
 
@@ -128,8 +131,10 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 		enforce_models[pl] = 34
 		Enforce(pl)
 	end
-
+	
+	
 	-- Set or unset actual model to be enforced clientside
+	--TODO: Check if loaded, if not: Refine so that the model is parsed for materials, load materials and then enforce model. less lag!
 	function Player.EnforceModel(pl,mdl,nocheck)
 		dbg("EnforceModel",pl,mdl or "UNENFORCE")
 		
@@ -413,7 +418,7 @@ function MountWS( path )
 	local TIME = isdbg and SysTime()
 	dbg("MountGMA",path)
 	local ok, files = game.MountGMA( path )
-	if isdbg then dbg("MountGMA",wsid,path,"took",(SysTime()-TIME)) end
+	if isdbg then dbg("MountGMA",path,"took",(SysTime()-TIME)) end
 
 	result = ok or false
 	res[path] = result
