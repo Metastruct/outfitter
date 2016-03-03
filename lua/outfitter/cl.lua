@@ -58,7 +58,7 @@ function OnChangeOutfit(pl,mdl,wsid)
 	
 	mdl = mdl and mdl:gsub("%.mdl$","")
 	
-	co(coDoChangeOutfit,pl,mdl..'.mdl',wsid)
+	co(coDoChangeOutfit,pl,mdl and mdl..'.mdl',wsid)
 	
 	return 
 end
