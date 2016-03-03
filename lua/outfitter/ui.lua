@@ -65,6 +65,8 @@ hook.Add("ChatCommand",Tag,function(com,v1)
 		local n = v1 and tonumber(v1)
 		if n then
 			UIChoseWorkshop(n)
+		elseif v1 and v1:len()>0 then
+			GUIWantChangeModel(v1)
 		end
 	end
 	

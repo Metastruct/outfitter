@@ -65,7 +65,26 @@ module(Tag,package.seeall)
 			
 		]]
 	end
-	
+	function PANEL:Show(str)
+		
+		local dourl = not self.already_loaded
+		self.already_loaded = true
+		
+		local url = 'http://steamcommunity.com/workshop/browse/?appid=4000&searchtext=playermodel&childpublishedfileid=0&browsesort=trend&section=readytouseitems&requiredtags%5B%5D=Model'
+		if str then
+			str = str and tostring(str)
+			str = str and #str>0 and str
+			if str then
+				str = string.urlencode and string.urlencode(str) or str
+				url = 'http://steamcommunity.com/workshop/browse/?appid=4000&searchtext=playermodel+'..str..'&childpublishedfileid=0&browsesort=trend&section=readytouseitems&requiredtags%5B%5D=Model'
+			end
+		end
+		
+		if dourl then
+			self:OpenURL(url)
+		end
+		self.BaseClass.Show(self)
+	end
 	function PANEL:Think()
 		self.BaseClass.Think(self)
 		--print(self.LoadedURL)
@@ -73,9 +92,11 @@ module(Tag,package.seeall)
 	vgui.Register(Tag,PANEL,'custombrowser')
 
 	m_vModelDlg = NULL
-	function GUIWantChangeModel()
+	function GUIWantChangeModel(str)
+		
+		
 		if ValidPanel(m_vModelDlg) then
-			m_vModelDlg:Show()
+			m_vModelDlg:Show(str)
 			return m_vModelDlg
 		end
 		
@@ -83,7 +104,6 @@ module(Tag,package.seeall)
 		m_vModelDlg = d
 		
 		
-		d:Show()
-		d:OpenURL'http://steamcommunity.com/workshop/browse/?appid=4000&searchtext=playermodel&childpublishedfileid=0&browsesort=trend&section=readytouseitems&requiredtags%5B%5D=Model'
+		d:Show(str)
 		return d
 	end

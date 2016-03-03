@@ -153,6 +153,12 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 				pl.original_model = nil
 			end
 			pl.enforce_model = nil
+				
+			-- need to fullupdate or it doesn't reset either
+			if pl==LocalPlayer() then
+				Fullupdate()
+			end
+			
 			return true
 		end
 		
