@@ -12,6 +12,9 @@ local function RESET(pl)
 	pl.outfitter_wsid = nil
 end
 local function SET(pl,mdl,wsid)
+	
+	if mdl and not IsEnabled() then return end
+	
 	local ret = pl:EnforceModel(mdl)
 	pl.outfitter_mdl = mdl
 	pl.outfitter_wsid = wsid
@@ -20,6 +23,27 @@ local function SET(pl,mdl,wsid)
 	end
 	UIOnEnforce(pl)
 	return ret
+end
+
+function DisableEverything()
+	dbg("DisableEverything")
+	for _,pl in next,player.GetAll() do
+		if pl.outfitter_nvar then
+			pl.outfitter_nvar = nil
+			
+			-- force instant disable
+			pl.latest_want = nil 
+			OnChangeOutfit(pl,nil,nil)
+			
+		end
+	end
+end
+
+function EnableEverything()
+	dbg("EnableEverything")
+	for _,pl in next,player.GetAll() do
+		OnPlayerVisible(pl)
+	end
 end
 
 function OnChangeOutfit(pl,mdl,wsid)
@@ -90,7 +114,7 @@ function coDoChangeOutfit(pl,mdl,wsid)
 	end
 	
 	
-	local ok, err = NeedWS(wsid)
+	local ok, err = NeedWS(wsid,pl,mdl)
 	if not ok then 
 		dbg("DoChangeOutfit","NeedWS failed",err,"continuing...",pl,mdl,wsid) 
 		-- return -- it doesnt hurt to recheck

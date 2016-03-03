@@ -122,6 +122,7 @@ inc 'sh'		'sh'
 inc 'sv'		'sv'
 inc 'cl_util'	'cl'
 inc 'cl'		'cl'
+inc 'ui'		'cl'
 inc 'gui'		'cl'
 inc 'net'		'sh'
 

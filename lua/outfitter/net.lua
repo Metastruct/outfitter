@@ -26,8 +26,18 @@ if CLIENT then
 		-- check for changed outfit data
 		local new = pl:GetNetData(NTag)
 		local old = pl.outfitter_nvar
-
 		if new~=old then
+			
+			local me = LocalPlayer()
+			
+			if pl~=me then
+				if not IsEnabled() then
+					pl.outfitter_nvar = nil
+					dbgn(2,"OnPlayerVisible","IsEnabled",pl)
+					return
+				end
+			end
+			
 			pl.outfitter_nvar = new
 			
 			--if old == true then return end
@@ -37,9 +47,10 @@ if CLIENT then
 				mdl,wsid = DecodeOW(new)
 			end
 			
-			dbgn(2,"OnPlayerVisible",pl==LocalPlayer() and "SKIP" or pl,mdl or "UNSET?",wsid)
+			dbgn(2,"OnPlayerVisible",pl==me and "SKIP" or pl,mdl or "UNSET?",wsid)
 			
-			if pl==LocalPlayer() then
+			if pl==me then
+				dbg("OnPlayerVisible","SKIP","LocalPlayer")
 				return
 			end
 			
@@ -47,7 +58,6 @@ if CLIENT then
 		end
 		
 	end
-
 
 
 	hook.Add("NetworkEntityCreated",Tag,function(ent) 

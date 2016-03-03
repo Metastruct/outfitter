@@ -20,16 +20,25 @@ end
 outfitter_enabled = CreateClientConVar("outfitter_enabled","1",SAVE,true)
 cvars.AddChangeCallback("outfitter_enabled",function(cvar,old,new)
 	if new=='0' then
-		dbg("DISABLE")
+		DisableEverything()
 	elseif new=='1' then
-		dbg("ENABLE")
+		EnableEverything()
 	end
 end)
 
+do
+	local outfitter_enabled = outfitter_enabled
+	function IsEnabled()
+		return outfitter_enabled:GetBool()
+	end
+end
+
 --TODO
-local outfitter_unsafe = CreateClientConVar("outfitter_unsafe","0",SAVE)
-function IsUnsafe()
-	return outfitter_unsafe:GetBool()
+do
+	local outfitter_unsafe = CreateClientConVar("outfitter_unsafe","0",SAVE)
+	function IsUnsafe()
+		return outfitter_unsafe:GetBool()
+	end
 end
 
 --TODO
@@ -213,7 +222,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 	local fetching = {}
 
 	local res = {}
-	
+	local skip_maxsizes = {}
 	local function SYNC(cbs,ret)
 		for k,cb in next,cbs do
 			cb(ret)
@@ -253,64 +262,34 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 	
 	local function cantmount(wsid,reason)
 		fetching[wsid] = false
+		res[wsid] = reason or "failed?"
 		dbge("FetchWS","downloading",wsid,"failed for",reason)
 		lme= reason or "?"
 		lwsid=wsid
 	end
-
-	function co.cacher(wrapped_function)
-		local cache = {}
-		local sync_callbacks = setmetatable({},{__mode='v'})
-		local function cacher(unique_id,...)
-			local cached = cache[unique_id]
-			if cached == nil then
-				cache[unique_id] = true
-				local cbs = {}
-				sync_callbacks[unique_id] = cbs
-				cached = {wrapped_function(unique_id,...)}
-				cache[unique_id] = cached
-				sync_callbacks[unique_id] = nil
-				for i=1,#cbs do
-					local callback = cbs[i]
-					callback() -- Should never error
-				end
-			elseif cached == true then
-				local cbs = sync_callbacks[unique_id]
-				if not cbs then
-					error("function has failed somewhere in the past with this unique_id")
-				end
+	
+	co_steamworks_FileInfo = 
+		co.worker( 
+			co.work_cacher_filter(function(key,fileinfo)
+				return (not key) or fileinfo
+			end,
+			co.work_cacher(function(wsid)
+			
 				local cb = co.newcb()
-				cbs[#cbs+1] = cb
-				co.waitcb(cb)
-				cached = cache[unique_id]
-			end
-			return unpack(cached)
+					steamworks.FileInfo(wsid,cb)
+				local fileinfo = co.waitcb(cb)
+				
+				dbgn(2,"FileInfo",wsid,fileinfo and fileinfo.title or "TITLE??")
+				return fileinfo
+				
+			end,true))
+		)
+		
+	function coFetchWS(wsid,skip_maxsize)
+		
+		if skip_maxsize then
+			skip_maxsizes[wsid] = true
 		end
-		return cacher,cache
-	end
-	
-	coSWFileInfo = co.cacher(function(wsid) 
-		local cb = co.newcb()
-		steamworks.FileInfo(wsid,cb)
-		local fileinfo = co.waitcb(cb)
-		return fileinfo
-	end)
-
-	--[[
-	local cache = {}
-	function coSWFileInfo(wsid)
-		local cached = cache[wsid]
-		if cached == nil then
-			local cb = co.newcb()
-			steamworks.FileInfo(wsid,cb)
-			local fileinfo = co.waitcb(cb)
-			cache[wsid] = cached
-		else
-			return cache
-		end
-	end--]]
-	
-	function coFetchWS(wsid)
 		
 		local dat = fetching[wsid]
 		
@@ -322,7 +301,11 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 				dat[#dat+1] = cb
 				return co.waitcb()
 			elseif dat==false then
-				return false
+				local res = res[wsid]
+				local canskip = res=="oversize" and skip_maxsize
+				if not canskip then
+					return false,res[wsid]
+				end
 			end
 		end
 		
@@ -331,7 +314,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 		dat = {}
 		fetching[wsid] = dat
 		
-		local fileinfo = coSWFileInfo(wsid)
+		local fileinfo = co_steamworks_FileInfo(wsid)
 		
 		if isdbg then
 			dbg("steamworks.FileInfo",wsid,"->",fileinfo)
@@ -352,10 +335,10 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 					dbge(wsid,"BANNED!?")
 				end
 				if disabled then
-					dbge("","Disabled?")
+					dbge(wsid,"Disabled?")
 				end
 				if installed then
-					dbge("","installed?")
+					dbge(wsid,"installed?")
 				end
 			end
 		end
@@ -369,8 +352,14 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 		maxsz = maxsz*1024*1024
 		
 		if maxsz>0.1 and (fileinfo.size or 0) > maxsz then
-			cantmount(wsid,"oversize")
-			return SYNC(dat,false)
+			skip_maxsize = skip_maxsize or skip_maxsizes[wsid]
+
+			dbg("FetchWS","MAXSIZE",skip_maxsize and "OVERRIDE" or "",wsid,string.NiceSize(fileinfo.size or 0))
+			
+			if not skip_maxsize then
+				cantmount(wsid,"oversize")
+				return SYNC(dat,false)
+			end
 		end
 			
 		co.wait(.3)
@@ -446,19 +435,21 @@ end
 	--          l outfitter.FetchWS(111412589,PrintTable)
 
 --TODO: own cache
-function NeedWS(wsid)
-	if co.make(wsid) then return end
+function NeedWS(wsid,pl,mdl)
+	if co.make(wsid,pl,mdl) then return end
 	
 	local result = WasAlreadyMounted(path)
 	if result~=nil then 
 		if not result then return nil,"mount" end
-		return result 
+		return result
 	end
 	
 	SetUIFetching(wsid,true)
+	
 		co.sleep(.5)
-			local path,err = coFetchWS( wsid ) -- also decompresses
-		co.sleep(.2)
+		
+		local path,err = coFetchWS( wsid ) -- also decompresses
+		
 	SetUIFetching(wsid,false)
 	
 	if not path then
