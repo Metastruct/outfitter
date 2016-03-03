@@ -72,6 +72,10 @@ function DoChangeOutfit(...)
 	
 end
 
+function RemoveOutfit()
+	NetworkOutfit()
+	OnChangeOutfit(LocalPlayer())
+end
 
 function BroadcastMyOutfit(mdl,wsid)
 		local mdl = mdl or LocalPlayer().outfitter_mdl 

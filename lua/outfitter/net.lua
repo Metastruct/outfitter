@@ -76,7 +76,8 @@ if CLIENT then
 	-- I want to tell others about my outfit
 	function NetworkOutfit(mdl,wsid)
 		assert(not wsid or tonumber(wsid),('ASSERT: mdl=%q wsid=%q'):format(tostring(mdl),tostring(wsid)))
-		assert((not mdl and not wsid) or (wsid and mdl),('ASSERT: mdl=%q wsid=%q'):format(tostring(mdl),tostring(wsid)))
+		
+		if not mdl then mdl=nil wsid=nil end
 		
 		local encoded = mdl and EncodeOW(mdl and mdl:gsub("%.mdl$",""),wsid)
 		dbg("NetworkOutfit",mdl,wsid,('%q'):format(tostring(encoded)))
@@ -84,8 +85,8 @@ if CLIENT then
 		
 		LocalPlayer():SetNetData(NTag,encoded)
 		
-	end	
-	
+	end
+
 end
 
 hook.Add("NetData",Tag,function(...) return NetData(...) end)

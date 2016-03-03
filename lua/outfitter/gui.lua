@@ -45,7 +45,7 @@ hook.Add("ChatCommand",Tag,function(com,v1)
 			UIChangeModelToID(n)
 		elseif v1 == "apply" or v1=='aply' or v1=='a' or v1 == "send" or v1=='snd' or v1=='s'  then
 			UIBroadcastMyOutfit()
-		elseif v1 == "cancel" or v1=='c' or v1=='canecl' then
+		elseif v1 == "cancel" or v1=='c' or v1=='canecl'  or v1=='d'  or v1=='del'  or v1=='delete' or v1=='remove' then
 			UICancelAll()
 		else
 			GUIWantChangeModel()
@@ -102,7 +102,7 @@ function UICancelAll()
 	tried_mounting = nil
 	chosen_mdl = nil
 	
-	LocalPlayer():EnforceModel(false)
+	RemoveOutfit()
 end
 
 function UIBroadcastMyOutfit(mdl)
@@ -217,10 +217,8 @@ function UIChoseWorkshop(wsid)
 	
 	if mdls[2] then
 		UIMsg"Write !outfit <model number> to choose a model"
-		UIMsg"Finally, write '!outfit send' to send the chosen model to everyone or !outfit cancel to cancel"
 	else
 		UIChangeModelToID(1)
-		UIMsg"Write !outfit send to send this outfit to everyone"
 	end
 	
 end
