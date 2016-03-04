@@ -433,8 +433,8 @@ function coMountWS(path,cb)
 	UIMounting(true)
 	co.sleep(1.5)
 		local res = MountWS( path )
-	co.sleep(.5)
 	UIMounting(false)
+	co.sleep(.5)
 	
 	if cb then cb(res) end
 	

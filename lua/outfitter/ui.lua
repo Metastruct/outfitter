@@ -12,6 +12,7 @@ function UIMounting(yes)
 		surface.PlaySound( "buttons/button15.wav" )
 	else
 		notification.Kill( Tag )
+		surface.PlaySound"garrysmod/content_downloaded.wav"
 	end
 end
 
@@ -57,7 +58,7 @@ hook.Add("ChatCommand",Tag,function(com,v1)
 		elseif v1 == "cancel" or v1=='c' or v1=='canecl'  or v1=='d'  or v1=='del'  or v1=='delete' or v1=='remove' then
 			UICancelAll()
 		else
-			GUIWantChangeModel()
+			GUIOpen()
 			--UIError"Invalid command"
 		end
 		
@@ -67,6 +68,8 @@ hook.Add("ChatCommand",Tag,function(com,v1)
 			UIChoseWorkshop(n)
 		elseif v1 and v1:len()>0 then
 			GUIWantChangeModel(v1)
+		else
+			GUIOpen()
 		end
 	end
 	
@@ -104,6 +107,19 @@ local tried_mounting
 local mount_path
 local chosen_mdl
 
+function UIGetMDLList()
+	return mdllist
+end
+function UITriedMounting()
+	return tried_mounting
+end
+function UIGetChosenMDL()
+	return chosen_mdl
+end
+function UIGetWSID()
+	return chosen_wsid
+end
+
 function UICancelAll()
 	UIMsg"Unsetting everything"
 	
@@ -117,23 +133,33 @@ function UICancelAll()
 end
 
 function UIBroadcastMyOutfit(mdl)
-	BroadcastMyOutfit(mdl,chosen_wsid)
+	
+	local mdl,wsid = BroadcastMyOutfit(mdl,chosen_wsid)
+	if mdl then
+		surface.PlaySound"ui/item_robot_arm_pickup.wav"
+	else
+		surface.PlaySound"ui/item_robot_arm_drop.wav"
+	end
+	return mdl,wsid
 end
 
-function UIChangeModelToID(n)
+function UIChangeModelToID(n,opengui)
 	
 	dbg("UIChangeModelToID",n)
 	
-	if co.make(n) then return end
+	if co.make(n,opengui) then return end
 	
 	if not chosen_wsid then
+		if opengui then GUIOpen() end
 		return UIError"Type only !outfit first to choose workshop addon"
 	end
 	if not mdllist or #mdllist==0 then
+		if opengui then GUIOpen() end
 		return UIError"No models to choose from"
 	end
 	local mdl = mdllist[n]
 	if not mdl then
+		if opengui then GUIOpen() end
 		return UIError"Invalid model index"
 	end
 	
@@ -146,6 +172,7 @@ function UIChangeModelToID(n)
 		ok = coMountWS( mount_path )
 	end
 	if not ok then
+		if opengui then GUIOpen() end
 		return UIError"The workshop addon could not be mounted"
 	end
 	
@@ -157,6 +184,10 @@ function UIChangeModelToID(n)
 	surface.PlaySound( "buttons/button15.wav" )
 	UIMsg"Write '!outfit send' to send this outfit to everyone"
 	
+	if opengui then 
+		GUIOpen() 
+	end
+
 end
 
 function MDLToUI(s)
@@ -182,8 +213,8 @@ function MDLToUI(s)
 	return s
 end
 
-function UIChoseWorkshop(wsid)
-	if co.make(wsid) then return end
+function UIChoseWorkshop(wsid,opengui)
+	if co.make(wsid,opengui) then return end
 	
 	mdllist = nil
 	chosen_wsid = nil
@@ -198,16 +229,19 @@ function UIChoseWorkshop(wsid)
 	SetUIFetching(wsid,false)
 	if not path then
 		dbg("UIChoseWorkshop",wsid,"fail",err)
+		if opengui then GUIOpen() end
 		return UIError("Download failed for workshop "..wsid..": "..tostring(err~=nil and tostring(err) or GetLastMountErr and GetLastMountErr()))
 	end
 	co.sleep(.2)
 	local mdls,err = GMAPlayerModels( path )
 	if not mdls then
 		dbge("UIChoseWorkshop","GMAPlayerModels",wsid,"fail",err)
+		if opengui then GUIOpen() end
 		return UIError("Parsing workshop addon "..wsid.." failed: "..tostring(err))
 	end
 	if not mdls[1] then
 		dbge("UIChoseWorkshop","GMAPlayerModels",wsid,"no models!?")
+		if opengui then GUIOpen() end
 		return UIError("Workshop addon "..wsid.." has no playermodels")
 	end
 	
@@ -228,8 +262,10 @@ function UIChoseWorkshop(wsid)
 	
 	if mdls[2] then
 		UIMsg"Write !outfit <model number> to choose a model"
+		if opengui then GUIOpen() end
 	else
-		UIChangeModelToID(1)
+		UIChangeModelToID(1,opengui)
 	end
 	
+
 end
