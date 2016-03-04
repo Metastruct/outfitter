@@ -524,8 +524,8 @@ function GUIOpen(_,trychoose_mdl)
 end
 
 	
-	
-	
-	
-	
+concommand.Add(Tag..'_open',function()
+	GUIOpen()
+end)
+
 	
