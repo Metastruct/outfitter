@@ -17,7 +17,7 @@ function UIMounting(yes)
 end
 
 function UIFullupdate()
-	notification.AddLegacy( "Warning: Fullupdate requested", NOTIFY_ERROR, 4 )
+	notification.AddLegacy( "Requesting fullupdate...", NOTIFY_ERROR, 4 )
 	surface.PlaySound'items/cart_explode_trigger.wav'
 end
 
@@ -26,13 +26,31 @@ function UIOnEnforce(pl)
 	pl:EmitSound'items/powerup_pickup_agility.wav'
 end
 
-function SetUIFetching(wsid,is)
+local fstatus = {}
+function SetUIFetching(wsid,is,title)
+	local ID=Tag..wsid
+	
 	if is then
-		notification.AddProgress( Tag..wsid, 
-			"Downloading "..wsid )
+		if fstatus[wsid] then return end
+		fstatus[wsid] = true
+		notification.AddProgress( ID, "Downloading "..wsid )
 		surface.PlaySound( "buttons/button15.wav" )
+
+		co(function()
+			local fileinfo = co_steamworks_FileInfo(wsid)
+			
+			if not fileinfo then return end
+			local title = fileinfo.title
+			if not title then return end
+			
+			if not fstatus[wsid] then return end
+			notification.Kill( ID )
+			notification.AddProgress( ID, "Downloading "..title )
+		end)
+
 	else
-		notification.Kill( Tag..wsid )
+		notification.Kill( ID )
+		fstatus[wsid] = false
 	end
 end
 

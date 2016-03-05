@@ -75,6 +75,10 @@ function CanPlayerModel(f,sz)
 		return false,err or "hdr" 
 	end
 
+	if not mdl.bone_count or mdl.bone_count<=2 then
+		return false,"nobones"
+	end
+	
 	if sz then
 		local valid,err = mdl:Validate(sz)
 		if not valid then 
@@ -83,27 +87,64 @@ function CanPlayerModel(f,sz)
 		end
 	end
 	
+	--print(mdl,mdl.bodypart_count,mdl.skinreference_count)
+	
 	local found = false
-	for k,v in next,mdl:IncludedModels() do
-		v=v[2]
-		if v 
-			and v:find"%.mdl$" 
-			and ( 
-				v:find("anim",1,true) 
-				or v:find('/m_',1,true) 
-				or v:find('/f_',1,true) 
-				or v:find('/cs_',1,true) ) 
-		then
-			found = true
-			break
-		end
-	end
-	if not found then 
-		return false,"includemdls" 
+	local imdls = mdl:IncludedModels()
+	
+	if mdl.bonecontroller_count ~= mdl.bone_count then
+		--dbg("bonecontroller_count differs?!",mdl.bonecontroller_count,mdl.bone_count)
 	end
 	
+	local attachments = mdl:Attachments()
+	if not attachments or not next(attachments) then
+		return false,"noattachments"
+	end
+	--PrintTable("ASD",mdl:BoneNames())
+	local found
+	for k,v in next,attachments do
+		local name = v[1]
+		--print(name)
+		if name=="eyes" or name=="anim_attachment_head" or name=="mouth" or name=="anim_attachment_RH" or name=="anim_attachment_LH" then found=true break end
+	end
+	if not found then
+		--PrintTable(mdl:Attachments())
+		return false,"attachments" 
+	end
+	
+	local found 
+	for k,v in next,imdls do
+		v=v[2]
+		if v and v:find("_arms_",1,true) then
+			return false,"arms"
+		end
+		
+		if v and not v:find"%.mdl$" then
+			return false,"badinclude",v
+		end
+		
+		--if v 
+		--	and v:find"%.mdl$" 
+		--	and ( 
+		--		v:find("anim",1,true) 
+		--		or v:find('/m_',1,true) 
+		--		or v:find('/f_',1,true) 
+		--		or v:find('/cs_',1,true) ) 
+		--then
+		--	found = true
+		--	break
+		--end
+	end
+	--if not found then 
+	--	return false,"includemdls" 
+	--end
+	
 	local bname = mdl:BoneNames() [1]
-	if bname~= "ValveBiped.Bip01_Pelvis" then
+	if not bname or (	not bname:lower():find"bname" 
+						and bname~="Root"  
+						and bname~="pelvis"  
+						and bname~="root") 
+	then
 		return false,"bones",bname
 	end
 	

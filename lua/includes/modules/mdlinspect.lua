@@ -367,6 +367,50 @@ function MDL:IncludedModels()
 	return t
 end
 
+
+local mstudioattachment_t_size = 
+	4 			-- int					sznameindex;
+	+4 			-- unsigned int			flags;
+	+4			-- int					localbone;
+	+(3*4)*4	-- matrix3x4_t			local; // attachment point
+	+4*8    	-- int					unused[8];
+
+function MDL:offsetAttachment( i )
+	assert(i>=0 and i<=self.attachment_count)
+	return self.attachment_offset + mstudioattachment_t_size * i
+end
+
+function MDL:Attachments()
+	local f = self.file 
+	local t = self.attachment_nameslist
+	if t then return t end
+	
+	t = {}
+	
+	for i=0,self.attachment_count-1 do -- mstudioattachment_t --
+		
+			local thispos = self:offsetAttachment(i)
+			assert(self:SeekTo(thispos))
+			
+			local sznameindex = from_int(f:Read(4),true)
+			
+			local flags = from_u_int(f:Read(4),true)
+			
+			assert(self:SeekTo(thispos + sznameindex))
+			local name = f:ReadString()
+			
+			t[#t+1] = {name,flags}
+			
+	end
+
+	self.attachment_nameslist = t
+	
+	return t
+end
+
+
+
+
 local bone_section_size = 
 	  4 -- int  
 	+ 4  -- int parent
@@ -378,7 +422,7 @@ local bone_section_size =
 
 	+ 4*3 --Vector				posscale;
 	+ 4*3 --Vector				rotscale;
-	+ 4*1 --matrix3x4_t			poseToBone;
+	+ 48 --matrix3x4_t			poseToBone;
 
 	+ 4*4 --Quaternion			qAlignment;
 	+ 4 --int					flags;
@@ -389,69 +433,32 @@ local bone_section_size =
 	+ 4 --int					contents;		// See BSPFlags.h for the contents flags
 	+ 4 --int 					surfacepropLookup
 	+ 4*7 --int					unused[7];		// remove as appropriate
-	+ 44 -- OMG WTF
 	
 function MDL:offsetBone( i )
 	assert(i>=0 and i<=self.bone_count)
 	return self.bone_offset + bone_section_size * i
 end
 
-local asd = {
-["ValveBiped.Bip01_Pelvis"   ] = 0,
-["ValveBiped.Bip01_L_Thigh"  ] = 1,
-["ValveBiped.Bip01_L_Calf"   ] = 2,
-["ValveBiped.Bip01_L_Foot"   ] = 3,
-["ValveBiped.Bip01_R_Thigh"  ] = 4,
-["ValveBiped.Bip01_R_Calf"   ] = 5,
-["ValveBiped.Bip01_R_Foot"   ] = 6,
-["ValveBiped.Bip01_Spine"    ] = 7,
-}
 
 function MDL:BoneNames()
 	local f = self.file 
 	local t = self.bone_nameslist
 	if t then return t end
 	
-	--if not needvstruct() then return nil,"vstruct" end
-	
 	t = {}
 	
 	for i=0,self.bone_count-1 do -- mstudiobone_t --
+	
+		local thispos = self:offsetBone(i)
+		assert(self:SeekTo(thispos))
 		
-		if true or i==0 then
-			local thispos = self:offsetBone(i)
-			assert(self:SeekTo(thispos))
-			
-			local nameoffset = from_int(f:Read(4),true)
-			
-			assert(self:SeekTo(thispos + nameoffset))
-			local name = f:ReadString()
-			
-			t[#t+1] = name
-			
-			--print(('AAH %q'):format(tostring(name)))
-		else
+		local nameoffset = from_int(f:Read(4),true)
 		
-			print("=========================================",i)
-			for j=-256,256 do
-				pcall(function()
-					local thispos = self:offsetBone(i) + j
-					assert(self:SeekTo(thispos))
-
-					local nameoffset = from_int(f:Read(4),true)
-
-					assert(self:SeekTo(thispos + nameoffset))
-					local s = f:ReadString()
-					for k,v in next,asd do
-						if k == s and v==i then
-							print(j,('AAH %q'):format(tostring(s)),v)
-						end
-					end
-								
-				end)
-			end
-			if i>6 then return {} end
-		end
+		assert(self:SeekTo(thispos + nameoffset))
+		local name = f:ReadString()
+		
+		t[#t+1] = name
+		
 		
 	end
 
