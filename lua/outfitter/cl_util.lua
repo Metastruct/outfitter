@@ -36,6 +36,28 @@ do
 	end
 end
 
+do
+
+	local outfitter_nohighperf = CreateClientConVar("outfitter_nohighperf","0",false)
+	local highperf=0
+	function IsHighPerf()
+		return not outfitter_nohighperf:GetBool() and highperf>0
+	end
+
+	function SetHighPerf(mode,refresh_all)
+		local washigh = highperf>0
+		highperf = highperf + (mode and 1 or -1)
+		highperf = highperf<0 and 0 or highperf
+		assert(highperf < 12,"HIGHPERF FAIL")
+		local ishigh = highperf>0
+		
+		if ishigh~=washigh and refresh_all then
+			RefreshPlayers()
+		end
+	end
+	
+end
+
 --TODO
 do
 	local outfitter_unsafe = CreateClientConVar("outfitter_unsafe","0",SAVE)

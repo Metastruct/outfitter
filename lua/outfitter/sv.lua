@@ -6,23 +6,36 @@ module(Tag,package.seeall)
 
 util.AddNetworkString(Tag) 
 
-
-
-function NetRateLimit(pl,k)
-	local nextt = pl.outfitter_next or 0
-	local now = RealTime()
-	if nextt < now then
-		nextt = now + (pl.outfitter_limiter or 15)
-		return true,nextt
-	end
-	return false,nextt-now
+function RateLimitMessage(pl)
+	--TODO: better
+	pl:ChatPrint"[Outfitter] you need to wait more before sending a new outfit"
 end
 
-function RateLimitMessage(pl,passok)
-	if not passok then
-		pl:ChatPrint"[Outfitter] you need to wait more before sending a new outfit"
+local ent
+function PrecacheModel(mdl)
+
+	local loaded = util.IsModelLoaded(mdl)
+	if loaded then return end
+	
+	dbg("ADDING TO LIST",('%q'):format(mdl))
+	
+	if StringTable then
+		StringTable("modelprecache"):AddString(true,mdl)
+		return
 	end
-	return passok
+	
+	if not ent or not ent:IsValid() then
+		ent = ents.Create'base_entity'
+		if not ent or not ent:IsValid() then return end
+		
+		ent:SetNoDraw(true)
+		ent:Spawn()
+		ent:SetNoDraw(true)
+		
+	end
+	
+	ent:SetModel(mdl)
+	
 end
 
 function NetData(pl,k,val)
@@ -63,17 +76,16 @@ function NetData(pl,k,val)
 		return ret
 	end
 	
-	local ret = RateLimitMessage(pl,NetRateLimit(pl,k))
-	if ret~=true then
-		dbg("NetData",pl,"ratelimiting")
-		--return -- TODO
+	local should,remaining = pl:NetDataShouldLimit(NTag,5)
+	
+	if should then
+		RateLimitMessage(pl,remaining)
+		dbg("NetData",pl,"ratelimiting",string.NiceTime(remaining))
+		return -- TODO
 	end
+	
 	if mdl then
-		local loaded = util.IsModelLoaded(mdl)
-		if not loaded and StringTable then
-			dbg("adding to stringtable",('%q'):format(mdl))
-			StringTable("modelprecache"):AddString(true,mdl)
-		end
+		PrecacheModel(mdl)
 	end
 	
 	return true

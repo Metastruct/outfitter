@@ -147,7 +147,7 @@ function PANEL:Init()
 		self.btn_choose = b
 
 		b:Dock(TOP)
-		b:SetText("Choose outfit")
+		b:SetText("Browse workshop")
 		b:SetTooltip[[Choose a workshop addon which contains an outfit]]
 
 		b.DoClick= function()
@@ -342,8 +342,8 @@ function PANEL:Init()
 	local b = functions:Add('DButton','Send button')
 		self.btn_send= b
 		b:Dock(BOTTOM)
-		b:SetText("Send outfit")
-		b:SetTooltip[[This broadcassts the outfit you have chosen to the whole server]]
+		b:SetText("Broadcast outfit")
+		b:SetTooltip[[This broadcasts the outfit you have chosen to the whole server]]
 		b.DoClick= function()
 			GUIBroadcastMyOutfit()
 			b._set_enabled  = false
@@ -568,8 +568,13 @@ function PANEL:DoRefresh(trychoose_mdl)
 			if wsid~=UIGetWSID() then 
 				return
 			end
+			if not info or not info.title then 
+				self.lbl_chosen:SetText("-")
+			else
+				local str = ("%s (%s)"):format(info.title,string.NiceSize(info.size or 0))
+				self.lbl_chosen:SetText(str)
+			end
 			
-			self.lbl_chosen:SetText(info and info.title or "")
 			
 		end)
 	end

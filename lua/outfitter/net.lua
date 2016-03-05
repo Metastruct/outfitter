@@ -40,7 +40,10 @@ if CLIENT then
 				
 			end
 			
-			
+			if IsHighPerf() then
+				dbgn(2,"OnPlayerVisible","high perf blocking")
+				return 
+			end
 			--if old == true then return end
 			
 			local mdl,wsid

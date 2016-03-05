@@ -39,11 +39,15 @@ function DisableEverything()
 	end
 end
 
-function EnableEverything()
-	dbg("EnableEverything")
+function RefreshPlayers()
 	for _,pl in next,player.GetAll() do
 		OnPlayerVisible(pl)
 	end
+end
+
+function EnableEverything()
+	dbg("EnableEverything")
+	RefreshPlayers()
 end
 
 function OnChangeOutfit(pl,mdl,wsid)
@@ -174,3 +178,4 @@ function BroadcastMyOutfit(mdl,wsid)
 		return mdl,wsid
 		
 end
+
