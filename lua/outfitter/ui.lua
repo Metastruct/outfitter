@@ -27,12 +27,14 @@ function UIOnEnforce(pl)
 end
 
 local fstatus = {}
-function SetUIFetching(wsid,is,title)
+function SetUIFetching(wsid,is,FR)
 	local ID=Tag..wsid
 	
 	if is then
-		if fstatus[wsid] then return end
-		fstatus[wsid] = true
+		local title = fstatus[wsid]
+		if title then return end
+		title = true
+		fstatus[wsid] = title
 		notification.AddProgress( ID, "Downloading "..wsid )
 		surface.PlaySound( "buttons/button15.wav" )
 
@@ -40,19 +42,40 @@ function SetUIFetching(wsid,is,title)
 			local fileinfo = co_steamworks_FileInfo(wsid)
 			
 			if not fileinfo then return end
-			local title = fileinfo.title
-			if not title then return end
+			local name = fileinfo.title
+			if not name then return end
 			
-			if not fstatus[wsid] then return end
-			notification.Kill( ID )
-			notification.AddProgress( ID, "Downloading "..title )
+			co.waittick()
+			co.waittick()
+			local title2 = fstatus[wsid]
+			
+			if not title2 or title2~=title then return end
+			fstatus[wsid] = name
+			notification.AddProgress( ID, name..' (Downloading)' )
+			--TODO: Timeout?
 		end)
 
 	else
-		notification.Kill( ID )
-		fstatus[wsid] = false
+		local title = fstatus[wsid] fstatus[wsid] = false
+		if not title then return end
+		
+		title = title~=true and title or wsid
+		
+		notification.AddProgress( ID, title.." ("..(FR and tostring(FR) or "Finished")..")" )
+		
+		co(function()
+			co.sleep(1)
+			
+			local status = fstatus[wsid] 
+			
+			if status then return end
+			
+			notification.Kill( ID )
+		end)
+		
 	end
 end
+
 
 
 hook.Add("HUDPaint",Tag,function()
@@ -62,7 +85,7 @@ hook.Add("HUDPaint",Tag,function()
 	end
 end)
 
-hook.Add("ChatCommand",Tag,function(com,v1)
+local function Command(com,v1)
 	com = com:lower()
 	
 	if com=="outfit" then
@@ -89,8 +112,20 @@ hook.Add("ChatCommand",Tag,function(com,v1)
 		else
 			GUIOpen()
 		end
-	end
-	
+	end	
+end
+
+
+concommand.Add(Tag..'_cmd',function(_,_,args)
+	Command('outfit',unpack(args))
+end)
+
+concommand.Add(Tag,function(_,_,args)
+	Command(Tag,unpack(args))
+end)
+
+hook.Add("ChatCommand",Tag,function(com,v1)
+	Command(com,v1)
 end)
 
 CWHITE = Color(255,255,255,255)
@@ -104,6 +139,17 @@ function UIError(...)
 		surface.PlaySound("common/warning.wav")
 		return 
 	end
+
+	local t={}
+	for i=1,select('#',...) do
+		local v=select(i,...)
+		v=tostring(v) or "no value"
+		t[i]=v
+	end
+	local str = table.concat(t,' ')	
+	
+	notification.AddLegacy( str, NOTIFY_ERROR, 4 )
+	MsgC(Color(255,100,0),unpack(t))
 	chat.AddText(unpack(t))
 end
 
@@ -242,21 +288,26 @@ function UIChoseWorkshop(wsid,opengui)
 	
 	SetUIFetching(wsid,true)
 	co.sleep(.5)
-	local path,err = coFetchWS( wsid ) -- also decompresses
+	local path,err,err2 = coFetchWS( wsid ) -- also decompresses
 	co.sleep(.2)
 	SetUIFetching(wsid,false)
 	if not path then
-		dbg("UIChoseWorkshop",wsid,"fail",err)
+		dbg("UIChoseWorkshop",wsid,"fail",err,err2)
 		if opengui then GUIOpen() end
 		return UIError("Download failed for workshop "..wsid..": "..tostring(err~=nil and tostring(err) or GetLastMountErr and GetLastMountErr()))
 	end
 	co.sleep(.2)
-	local mdls,err = GMAPlayerModels( path )
+	
+	local mdls,err,err2 = GMAPlayerModels( path )
 	if not mdls then
-		dbge("UIChoseWorkshop","GMAPlayerModels",wsid,"fail",err)
+		dbge("UIChoseWorkshop",wsid,"GMAPlayerModels failed:",err,err2)
+		notification.AddLegacy( '[Outfitter] '..tostring(err=="nomdls" and "no valid models found" or err), NOTIFY_ERROR, 2 )
 		if opengui then GUIOpen() end
-		return UIError("Parsing workshop addon "..wsid.." failed: "..tostring(err))
+		
+	
+		return UIError("Parsing workshop addon "..wsid.." failed: "..tostring(err=="nomdls" and "no valid models found" or err))
 	end
+	
 	if not mdls[1] then
 		dbge("UIChoseWorkshop","GMAPlayerModels",wsid,"no models!?")
 		if opengui then GUIOpen() end

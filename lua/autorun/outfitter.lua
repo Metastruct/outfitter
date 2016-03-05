@@ -91,8 +91,7 @@ end
 function dbge(...)
 	--if not outfitter_dbg:GetBool() then return end
 	
-	local t = {'[Outfitter]'}
-	local t={}
+	local t = {'[OF]'}
 	for i=1,select('#',...) do
 		local v=select(i,...)
 		v=tostring(v) or "no value"

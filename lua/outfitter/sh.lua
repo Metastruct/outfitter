@@ -140,11 +140,12 @@ function CanPlayerModel(f,sz)
 	--end
 	
 	local bname = mdl:BoneNames() [1]
-	if not bname or (	not bname:lower():find"bname" 
+	if not bname or (	not bname:lower():find("pelvis",1,true) 
 						and bname~="Root"  
 						and bname~="pelvis"  
 						and bname~="root") 
 	then
+		print("WTF",bname)
 		return false,"bones",bname
 	end
 	

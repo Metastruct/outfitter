@@ -455,18 +455,18 @@ function NeedWS(wsid,pl,mdl)
 	
 	SetUIFetching(wsid,true)
 	
-		co.sleep(.5)
+		co.sleep(.1)
 		
 		local path,err = coFetchWS( wsid ) -- also decompresses
 		
-	SetUIFetching(wsid,false)
+		co.sleep(1)
+		
+	SetUIFetching(wsid,false,not path and (err and tostring(err) or "FAILED?"))
 	
 	if not path then
 		dbg("NeedWS",wsid,"fail",err)
 		return nil,err or "fetchws"
 	end
-	
-	co.sleep(.2)
 	
 	local mdls,err = GMAPlayerModels(path)
 	
@@ -481,6 +481,7 @@ function NeedWS(wsid,pl,mdl)
 	end
 	
 	local ok = coMountWS( path )
+	
 	if not ok then
 		dbg("NeedWS",wsid,"mount fail")
 		return nil,err or "mount"
@@ -536,7 +537,7 @@ function GMAPlayerModels(fpath)
 			if n:find("/w_",1,true) then can,er =false,"worldmodel" end
 		end
 		if not can then
-			dbg("","Bad",entry.Name,err,IsUnsafe() and "UNSAFE ALLOW" or "")
+			dbg("","Bad",entry.Name,err,err2 or "",IsUnsafe() and "UNSAFE ALLOW" or "")
 			potential[entry]=err or "?"
 			if not IsUnsafe() then
 				mdls[k]=false
