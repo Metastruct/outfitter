@@ -129,33 +129,101 @@ function PANEL:Init()
 	local functions = self:Add('DPanelList','settings')
 	functions:Dock(LEFT)
 	functions:SetWidth(300)
-	functions:DockMargin(16,16,24,0)
+	functions:DockMargin(4,1,24,0)
 	
 	functions:EnableVerticalScrollbar()
 	
-	local enabled = functions:Add( "DCheckBoxLabel" )
-	 	enabled:SetConVar(Tag.."_enabled")
-		enabled:SetText( "Enabled")
-		enabled:SizeToContents()
-		enabled:Dock(TOP)
+	local check = functions:Add( "DCheckBoxLabel" )
+	 	check:SetConVar(Tag.."_enabled")
+		check:SetText( "Enabled")
+		check:SizeToContents()
+		check:SetTooltip[[Toggle this if someone's outfit got blocked or should be showing]]
+		check:Dock(TOP)
+		check:DockMargin(1,0,1,1)
+		local btn_en = check
+		
+	local check = functions:Add( "DCheckBoxLabel" )
+	 	check:SetConVar(Tag.."_friendsonly")
+		check:SetText( "Load only outfits of friends")
+		check:SetTooltip[[When non friend wears an outfit it gets blocked]]
+		check:SizeToContents()
+		check:Dock(TOP)
+		check:DockMargin(1,4,1,1)
+
+	local slider = functions:Add( "DNumSlider" )
+		slider:SetText( "Maximum download size (in MB)" )
+		slider:SizeToContents()
+		slider:DockPadding(0,16,0,0)
+		slider.Label:Dock(TOP)
+		slider.Label:DockMargin(0,-16,0,0)
+		
+		slider:SetTooltip[[This is how big an outfit you can receive without it being blocked]]
+		slider:Dock(TOP)
+		slider:DockMargin(1,4,1,1)
+		slider:SetMin( 0 )				 
+		slider:SetMax( 256 )			
+		slider:SetDecimals( 0 )			 
+		slider:SetConVar( Tag..'_maxsize' )
+		local sld_dl = slider
+	--TODO
+	--local check = functions:Add( "DCheckBoxLabel" )
+	-- 	check:SetConVar(Tag.."_ask")
+	--	check:SetText( "Ask mode")
+	--	check:SizeToContents()
+	--	check:Dock(TOP)
+	--	check:DockMargin(1,4,1,1)
+	
+	
 	local debug = functions:Add( "DCheckBoxLabel" )
 	 	debug:SetConVar(Tag.."_dbg")
-		debug:SetText( "Debug output")
+		debug:SetText( "Debug")
+		debug:SetTooltip[[Print debug stuff to console. Enable this if something is wrong and in the bugreport give the log output.]]
 		debug:SizeToContents()
 		debug:Dock(TOP)
+		debug:DockMargin(1,4,1,1)
+		local d_3 = debug
+	local check = functions:Add( "DCheckBoxLabel" )
+	 	check:SetConVar(Tag.."_unsafe")
+		check:SetText( "Unsafe")
+		check:SizeToContents()
+		check:Dock(TOP)
+		check:SetTooltip[[Remove some outfit checks (for yourself only). This should not be needed ever.]]
+		check:DockMargin(1,4,1,1)
+		local d_1 = check
+	local check = functions:Add( "DCheckBoxLabel" )
+	 	check:SetConVar(Tag.."_failsafe")
+		check:SetText( "Failsafe")
+		check:SizeToContents()
+		check:SetTooltip[[This gets ticked if you were detected to crash right after applying outfit.]]
+		check:Dock(TOP)
+		check:DockMargin(1,4,1,1)
+		local d_2 = check
+	
+	local b = functions:Add('DButton','thirdperson')
+		b:Dock(TOP)
+		b:SetText("Toggle thirdperson")
+		b:SetTooltip[[Enables/disable thirdperson if player has one]]
+
+		b.DoClick=function() ToggleThirdperson() end
+		b:DockMargin(16,1,16,1)
+		b:SetImage'icon16/eye.png'
+	
+	
 	
 	local b = functions:Add('DButton','choose button')
 		self.btn_choose = b
 
 		b:Dock(TOP)
 		b:SetText("Choose outfit")
+		b:SetTooltip[[Choose a workshop addon which contains an outfit]]
+
 		b.DoClick= function()
 			
 			GUIWantChangeModel(nil,true)
 			
 			self:GetParent():Hide()
 		end
-		b:DockMargin(0,24,32,0)
+		b:DockMargin(0,24,1,8)
 		b:SetImage'icon16/folder_user.png'
 	
 	
@@ -165,16 +233,19 @@ function PANEL:Init()
 		l:Dock(TOP)
 		l:DockMargin(1,1,1,1)
 		l:SetWrap(true)
-		l:SetText("\n")
+		l:SetTooltip[[Title of the chosen workshop addon]]
+		l:SetText("Please choose a workshop addon")
 		l:SetTall(44)
+		
 		
 	
 	local mdllist = functions:Add( "DListView",'modelname' )
 		mdllist:SetMultiSelect( false )
 		mdllist:AddColumn( "Model" )
 		self.mdllist = mdllist
+		mdllist:SetTooltip[[Click one of the models on this list to choose as your outfit]]
 		mdllist:DockMargin(0,5,0,0)
-		mdllist:Dock(TOP)
+		mdllist:Dock(FILL)
 		mdllist:SetTall(128)
 		mdllist.OnRowSelected = function(mdllist,n,itm)
 			local ret = GUIChooseMDL(n)
@@ -184,9 +255,10 @@ function PANEL:Init()
 		end
 		--TODO : OnRowRightClick
 	
+	local rightpanel = self:Add"EditablePanel"
+	rightpanel:Dock(RIGHT)
 	
-	
-	local l = self:Add( "DLabel",'hist' )
+	local l = rightpanel:Add( "DLabel",'hist' )
 		l:Dock(TOP)
 		l:DockMargin(1,1,1,1)
 		l:SetText"Previously used workshop models"
@@ -194,25 +266,26 @@ function PANEL:Init()
 		
 		
 		
-	local mdllist = self:Add( "DListView",'mdlhist' )
-		mdllist:DockMargin(4,4,4,4)
-		mdllist:SetMultiSelect( false )
-		mdllist:AddColumn( "Title" )
-		mdllist:AddColumn( "Model" )
-		self.mdlhist = mdllist
+	local mdlhist = rightpanel:Add( "DListView",'mdlhist' )
+		mdlhist:DockMargin(4,4,4,4)
+		mdlhist:SetMultiSelect( false )
+		mdlhist:AddColumn( "Title" )
+		mdlhist:AddColumn( "Model" )
+		self.mdlhist = mdlhist
 		
-		mdllist:DockMargin(0,5,0,0)
+		mdlhist:DockMargin(0,5,0,0)
 	
 		
-		mdllist:Dock(FILL)
-		mdllist.OnRowSelected = function(mdllist,n,itm)
+		mdlhist:Dock(FILL)
+		mdlhist.OnRowSelected = function(mdlhist,n,itm)
 			local dat = GUIGetHistory()[n]
 			if not dat then return end
 			self:WantOutfitMDL(unpack(dat))
 		end
+	
+	
 		
-		
-	local b = self:Add('DButton','choose button')
+	local b = rightpanel:Add('DButton','choose button')
 		self.btn_clearhist = b
 
 		b:Dock(BOTTOM)
@@ -223,32 +296,81 @@ function PANEL:Init()
 		b:DockMargin(0,5,0,0)
 		b:SetImage'icon16/bin.png'
 	
-	
-	local b = functions:Add('DButton','Send button')
-		self.btn_send= b
-		b:Dock(TOP)
-		b:SetText("Send outfit")
-		b.DoClick= function()
-			GUIBroadcastMyOutfit()
-			self:GetParent():Hide()
-		end
-		b:DockMargin(0,5,32,0)
-		b:SetImage'icon16/transmit.png'
-		
 	local b = functions:Add('DButton','Clear button')
 		self.btn_clear = b
-		
-		b:Dock(TOP)
-		b:SetText("Clear outfit")
+		b:SetTooltip[[This removes all traces of you wearing an outfit]]
+		b:Dock(BOTTOM)
+		b:SetText("Remove outfit")
+		b:SetTall(b:GetTall()+4)
 		b.DoClick= function()
 			UICancelAll()
 			self:GetParent():Hide()
 		end
-		b:DockMargin(0,5,32,0)
+		b:DockMargin(1,16,1,1)
 		b:SetImage'icon16/user_delete.png'
+	
+	local b = functions:Add('DButton','Send button')
+		self.btn_send= b
+		b:Dock(BOTTOM)
+		b:SetText("Send outfit")
+		b:SetTooltip[[This broadcassts the outfit you have chosen to the whole server]]
+		b.DoClick= function()
+			GUIBroadcastMyOutfit()
+			b._set_enabled  = false
+			self:GetParent():Hide()
+		end
+		b:SetTall(b:GetTall()+24)
+		b:DockMargin(24,5,24,0)
+		b:SetImage'icon16/transmit.png'
+		self.btnSendOutfit = b
+		function b.SetEnabled2(b,v)
+			print("SetEnabled2",v)
+			b:SetDisabled(not v)
+			b._set_enabled = v
+		end
+		b.PaintOver= function(b,w,h)
+			if b._set_enabled then
+				if UIGetChosenMDL() and UIGetMDLList() and LocalPlayer().latest_want~=UIGetMDLList()[UIGetChosenMDL()] then
+					surface.SetDrawColor(55,240,55,40+25*math.sin(RealTime()*7)^2)
+					surface.DrawRect(1,1,w-2,h-2)
+				end
+			end
+		end
+	
+	functions._PerformLayout = functions.PerformLayout or function() end
+	functions.PerformLayout = function(functions,w,h)
+		functions._PerformLayout(functions,w,h)
+		w,h = functions:GetSize()
+		d_1:SetVisible(h>400)
+		d_2:SetVisible(h>400)
+		d_3:SetVisible(h>400)
+		self.lbl_chosen:SetVisible(h>300)
+		sld_dl:SetVisible(h>400)
 		
+		local parent = self:GetParent()
+		parent = parent and parent:IsValid() and parent.btnCheck
+		
+		btn_en:SetVisible(not parent or not parent:IsValid() or not parent:IsVisible())
+		self.btn_choose:DockMargin(0,h>300 and 24 or 4,1,8)
+	end
+	
+	
+	local div = self:Add"DHorizontalDivider"
+	div:Dock( FILL )
+	
+	functions:Dock(NODOCK)
+	rightpanel:Dock(NODOCK)
+	div:SetCookieName(Tag)
+	div:SetLeft( functions )
+	div:SetRight( rightpanel )
+	div:SetDividerWidth( 4 ) --set the divider width. DEF: 8
+	div:SetLeftMin( 150 )	 --set the minimun width of left side
+	div:SetRightMin( 0 )
+	div:SetLeftWidth( 300 )
+	
 end
 
+gui_readytosend = false
 local wanting = false
 local want_wsid
 local want_mdl
@@ -323,11 +445,13 @@ function GUIChooseMDL(n)
 		UIChangeModelToID(n)
 		if n~=want_n and want_n then
 			dbg("CHANGE WANT OT",want_n)
-			UIChangeModelToID(want_n)
+			UIChangeModelToID(want_n,true)
 		end
 		dbg("GUIChooseMDL","FINISH",n)
 		want_n = nil
 		choosing = false
+		
+		GUICheckTransmit()
 	end)
 	return true
 end
@@ -383,6 +507,16 @@ function GUIDelHistory(n)
 	return ret
 end
 
+function GUICheckTransmit()
+	local gui  = GUIPanel()
+	if not gui then return end
+	local self = gui.content
+	if not self then return end
+	
+	local cansend = UIGetChosenMDL() and UIGetWSID() and UIGetMDLList()
+	self.btnSendOutfit:SetEnabled2(cansend)
+	
+end
 
 function PANEL:DoRefresh(trychoose_mdl)
 	dbg("doRefresh",trychoose_mdl)
@@ -390,7 +524,7 @@ function PANEL:DoRefresh(trychoose_mdl)
 	
 	self.mdlhist:Clear()
 	
-	self.lbl_chosen:SetText( "" )
+	self.lbl_chosen:SetText("Please choose a workshop addon")
 
 	local wsid = UIGetWSID()
 	
@@ -412,7 +546,10 @@ function PANEL:DoRefresh(trychoose_mdl)
 	
 	local tm = UITriedMounting()
 	local mdllist = UIGetMDLList()
-
+	
+	GUICheckTransmit()
+	
+	
 	-- model list
 	local chosen
 	for k,dat in next,mdllist or {} do
@@ -459,18 +596,49 @@ function PANEL:Init()
 	local pnl = vgui.CreateFromTable(factor,self)
 	self.content = pnl
 	pnl:Dock(FILL)
-	self:SetSize(800,600)
-	self:Center()
+	self:SetSize(700,500)
+	self:CenterHorizontal()
 	
 	self:SetTitle"Outfitter"
-	
+	self:SetMinHeight(290)
+	self:SetMinWidth(312)
 	self:SetDeleteOnClose(false)
     self:ShowCloseButton( true )
     self:SetDraggable( true )
     self:SetSizable( true )
+	
+	local title = self.lblTitle
+	if title then
+		local img = vgui.Create('DImage',title)
+		img:SetImage("icon16/user.png")
+		img:Dock(LEFT)
+		img.PerformLayout = function()
+			img:SetWide(img:GetTall())
+			title:SetTextInset(img:GetTall() + 5,0)
+		end
 
+	
+		local check = self:Add( "DCheckBoxLabel" )
+	 	check:SetConVar(Tag.."_enabled")
+		check:SetText( "enabled")
+		check:SizeToContents()
+		check:SetTooltip[[Toggle this if someone's outfit got blocked or should be showing]]
+		self.btnCheck = check
+	end
 end
 
+function PANEL:PerformLayout(w,h)
+	DFrame.PerformLayout(self,w,h)
+	local check = self.btnCheck
+	local cw,ch = check:GetSize()
+	local b = self.btnMinim or self.btnMaxim
+	if b and b:IsValid() then
+		local bw,bh = b:GetWide(),b:GetTall()
+		local bx,by = b:GetPos()
+		check:SetPos(bx-cw-4,by+bh*.5-ch*.5-4)
+		check:SetVisible(w>256)
+	end
+end
 function PANEL:Hide()
         self:SetVisible(false)
         --hook.Run("OnContextMenuClose")

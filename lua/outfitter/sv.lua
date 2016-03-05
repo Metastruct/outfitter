@@ -46,6 +46,9 @@ function NetData(pl,k,val)
 		
 	end
 	
+	local ret = hook.Run("CanOutfit",pl,mdl,wsid)
+	if ret == false then return false end
+	
 	pl.outfitter_mdl = mdl
 	pl.outfitter_wsid = wsid
 	

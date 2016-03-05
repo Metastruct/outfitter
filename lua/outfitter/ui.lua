@@ -17,7 +17,7 @@ function UIMounting(yes)
 end
 
 function UIFullupdate()
-	notification.AddLegacy( "Requesting fullupdate...", NOTIFY_ERROR, 4 )
+	notification.AddLegacy( "Refreshing playerstate...", NOTIFY_ERROR, 4 )
 	surface.PlaySound'items/cart_explode_trigger.wav'
 end
 
@@ -58,13 +58,13 @@ function SetUIFetching(wsid,is,FR)
 	else
 		local title = fstatus[wsid] fstatus[wsid] = false
 		if not title then return end
-		
+		local _title = title
 		title = title~=true and title or wsid
 		
 		notification.AddProgress( ID, title.." ("..(FR and tostring(FR) or "Finished")..")" )
 		
 		co(function()
-			co.sleep(1)
+			co.sleep(FR and 4 or 1.5)
 			
 			local status = fstatus[wsid] 
 			
@@ -213,6 +213,8 @@ function UIChangeModelToID(n,opengui)
 	
 	if co.make(n,opengui) then return end
 	
+	chosen_mdl = nil
+	
 	if not chosen_wsid then
 		if opengui then GUIOpen() end
 		return UIError"Type only !outfit first to choose workshop addon"
@@ -248,7 +250,9 @@ function UIChangeModelToID(n,opengui)
 	surface.PlaySound( "buttons/button15.wav" )
 	UIMsg"Write '!outfit send' to send this outfit to everyone"
 	
-	if opengui then 
+	chosen_mdl = n
+	
+	if opengui then
 		GUIOpen() 
 	end
 
@@ -287,12 +291,13 @@ function UIChoseWorkshop(wsid,opengui)
 	chosen_mdl = nil
 	
 	SetUIFetching(wsid,true)
-	co.sleep(.5)
-	local path,err,err2 = coFetchWS( wsid ) -- also decompresses
-	co.sleep(.2)
-	SetUIFetching(wsid,false)
+		co.sleep(.5)
+			local path,err,err2 = coFetchWS( wsid ) -- also decompresses
+		co.sleep(.2)
+	SetUIFetching(wsid,false,not path and (err and tostring(err) or "FAILED?"))
+	
 	if not path then
-		dbg("UIChoseWorkshop",wsid,"fail",err,err2)
+		dbg("UIChoseWorkshop",wsid,"FetchWS failed:",err,err2)
 		if opengui then GUIOpen() end
 		return UIError("Download failed for workshop "..wsid..": "..tostring(err~=nil and tostring(err) or GetLastMountErr and GetLastMountErr()))
 	end

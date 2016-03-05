@@ -10,10 +10,13 @@ local SAVE =false  --TODO: make save after end of debugging
 
 local Player = FindMetaTable"Player"
 
+
 function Fullupdate()
-	UIFullupdate()
-	LocalPlayer():ConCommand("record removeme",true)
-	RunConsoleCommand'stop'
+	timer.Create(Tag..'fullupdate',.2,1,function()
+		UIFullupdate()
+		LocalPlayer():ConCommand("record removeme",true)
+		RunConsoleCommand'stop'
+	end)
 end
 
 --TODO: Make outfitter mount all after enabling?
@@ -38,6 +41,22 @@ do
 	local outfitter_unsafe = CreateClientConVar("outfitter_unsafe","0",SAVE)
 	function IsUnsafe()
 		return outfitter_unsafe:GetBool()
+	end
+end
+
+--TODO
+do
+	local outfitter_friendsonly = CreateClientConVar("outfitter_friendsonly","0",SAVE)
+	function IsFriendly(pl)
+		if not outfitter_friendsonly:GetBool() then return true end
+		
+		if pl.IsFriend then
+			return LocalPlayer():IsFriend(pl)
+		end
+		
+		local fs = pl:GetFriendStatus()
+		if fs=="friend" then return true end
+		return false
 	end
 end
 
@@ -229,12 +248,12 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 
 	local res = {}
 	local skip_maxsizes = {}
-	local function SYNC(cbs,ret)
+	local function SYNC(cbs,...)
 		for k,cb in next,cbs do
-			cb(ret)
+			cb(...)
 			co.waittick()
 		end
-		return ret
+		return ...
 	end
 
 	local function steamworks_Download( fileid, uncomp )
@@ -272,6 +291,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 		dbge("FetchWS","downloading",wsid,"failed for",reason)
 		lme= reason or "?"
 		lwsid=wsid
+		return false,reason
 	end
 	
 	do
@@ -313,7 +333,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 				local res = res[wsid]
 				local canskip = res=="oversize" and skip_maxsize
 				if not canskip then
-					return false,res[wsid]
+					return false,res
 				end
 			end
 		end
@@ -353,8 +373,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 		end
 		
 		if not fileinfo or not fileinfo.fileid then
-			cantmount(wsid,"fileinfo")
-			return SYNC(dat,false)
+			return SYNC(dat,cantmount(wsid,"fileinfo"))
 		end
 		
 		local maxsz = outfitter_maxsize:GetFloat()
@@ -366,8 +385,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 			dbg("FetchWS","MAXSIZE",skip_maxsize and "OVERRIDE" or "",wsid,string.NiceSize(fileinfo.size or 0))
 			
 			if not skip_maxsize then
-				cantmount(wsid,"oversize")
-				return SYNC(dat,false)
+				return SYNC(dat,cantmount(wsid,"oversize"))
 			end
 		end
 			
@@ -380,8 +398,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 		assert(path~=true)
 		
 		if not path then
-			cantmount(wsid,"download")
-			return SYNC(dat,false)
+			return SYNC(dat,cantmount(wsid,"download"))
 		end
 		
 		local result = path
@@ -457,7 +474,7 @@ function NeedWS(wsid,pl,mdl)
 	
 		co.sleep(.1)
 		
-		local path,err = coFetchWS( wsid ) -- also decompresses
+		local path,err,err2 = coFetchWS( wsid ) -- also decompresses
 		
 		co.sleep(1)
 		
@@ -564,3 +581,21 @@ local function Think()
 	ThinkEnforce_DeathRagdoll()
 end
 hook.Add("Think",Tag,Think)
+
+
+local stp 
+function ToggleThirdperson()
+	stp = stp or GetConVar"simple_thirdperson_enabled"
+	if stp then
+		RunConsoleCommand("simple_thirdperson_enabled",stp:GetBool() and "0" or "1")
+	end
+	
+	local ctp = _G.ctp
+	if ctp and ctp.Disable then
+		if ctp.Enabled then
+			ctp.Disable()
+		else
+			ctp.Enable()		
+		end
+	end
+end

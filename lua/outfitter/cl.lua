@@ -150,6 +150,9 @@ function coDoChangeOutfit(pl,mdl,wsid)
 	end
 	
 	
+	local ret = hook.Run("CanOutfit",pl,mdl,wsid,true)
+	if ret == false then return end
+	
 	SET(pl,mdl,wsid)
 	
 	return true

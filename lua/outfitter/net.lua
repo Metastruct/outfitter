@@ -18,15 +18,16 @@ if CLIENT then
 		--t.outfitter_mdl,t.outfitter_wsid = DecodeOW(val)
 		local pl = findpl(plid)
 		dbg("NetData",pl or plid,k,"<-",val)
-		if pl then OnPlayerVisible(pl) end
+		if pl then OnPlayerVisible(pl,net.IsPlayerVarsBurst()) end
 	end
 		
-	function OnPlayerVisible(pl)
+	function OnPlayerVisible(pl,initial_sendings)
 		
 		-- check for changed outfit data
 		local new = pl:GetNetData(NTag)
 		local old = pl.outfitter_nvar
 		if new~=old then
+			pl.outfitter_nvar_burst = initial_sendings
 			
 			local me = LocalPlayer()
 			
@@ -36,6 +37,7 @@ if CLIENT then
 					dbgn(2,"OnPlayerVisible","IsEnabled",pl)
 					return
 				end
+				
 			end
 			
 			pl.outfitter_nvar = new
@@ -46,6 +48,9 @@ if CLIENT then
 			if new then
 				mdl,wsid = DecodeOW(new)
 			end
+			
+			local ret = hook.Run("CanOutfit",pl,mdl,wsid)
+			if ret == false then return end
 			
 			dbgn(2,"OnPlayerVisible",pl==me and "SKIP" or pl,mdl or "UNSET?",wsid)
 			
@@ -92,9 +97,10 @@ if CLIENT then
 		local encoded = mdl and EncodeOW(mdl and mdl:gsub("%.mdl$",""),wsid)
 		dbg("NetworkOutfit",mdl,wsid,('%q'):format(tostring(encoded)))
 		if not encoded then encoded=nil end
+		local pl = LocalPlayer()
 		
-		LocalPlayer():SetNetData(NTag,encoded)
-		
+		pl:SetNetData(NTag,encoded)
+
 	end
 
 end
