@@ -127,10 +127,19 @@ function coDoChangeOutfit(pl,mdl,wsid)
 	--TODO: check player is not asking for another outfit already 
 	-- Only one can be running at a time for a player
 	
-	if not pl:IsValid() then 
-		dbg("Player vanished!!!",pl)
-		-- Useless: coDoChangeOutfit_FIN(pl,mdl,wsid)
+	local ok,err = co.wait_player(pl)
+	
+	if not ok then 
+		dbg("ChangeOutfit","ABORT",pl,"VANISH",err)
+		-- WARN: Do not add: coDoChangeOutfit_FIN(pl,mdl,wsid)
 		return false,"noplayer"
+	end
+	
+	local want = PlStillWant(pl,mdl)
+	if not want then
+		dbg("DoChangeOutfit","OBSOLETE",pl,mdl,wsid)
+		coDoChangeOutfit_FIN(pl,mdl,wsid)
+		return false,"obsolete"
 	end
 
 	if not HasMDL(mdl) then
@@ -140,12 +149,6 @@ function coDoChangeOutfit(pl,mdl,wsid)
 		return false,"mdl"
 	end
 	
-	local want = PlStillWant(pl,mdl)
-	if not want then
-		dbg("DoChangeOutfit","OBSOLETE",pl,mdl,wsid)
-		coDoChangeOutfit_FIN(pl,mdl,wsid)
-		return false,"obsolete"
-	end
 	
 	SET(pl,mdl,wsid)
 	

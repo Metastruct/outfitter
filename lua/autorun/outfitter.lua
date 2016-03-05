@@ -8,6 +8,9 @@ OUTFITTER REJECTS
 	393931403
 	252519802
 
+BodyGroups testing
+	471628201
+	
 Try to get hands model?
 
 
