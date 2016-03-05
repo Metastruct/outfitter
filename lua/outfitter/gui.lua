@@ -133,81 +133,14 @@ function PANEL:Init()
 	
 	functions:EnableVerticalScrollbar()
 	
-	local check = functions:Add( "DCheckBoxLabel" )
-	 	check:SetConVar(Tag.."_enabled")
-		check:SetText( "Enabled")
-		check:SizeToContents()
-		check:SetTooltip[[Toggle this if someone's outfit got blocked or should be showing]]
-		check:Dock(TOP)
-		check:DockMargin(1,0,1,1)
-		local btn_en = check
-		
-	local check = functions:Add( "DCheckBoxLabel" )
-	 	check:SetConVar(Tag.."_friendsonly")
-		check:SetText( "Load only outfits of friends")
-		check:SetTooltip[[When non friend wears an outfit it gets blocked]]
-		check:SizeToContents()
-		check:Dock(TOP)
-		check:DockMargin(1,4,1,1)
-
-	local slider = functions:Add( "DNumSlider" )
-		slider:SetText( "Maximum download size (in MB)" )
-		slider:SizeToContents()
-		slider:DockPadding(0,16,0,0)
-		slider.Label:Dock(TOP)
-		slider.Label:DockMargin(0,-16,0,0)
-		
-		slider:SetTooltip[[This is how big an outfit you can receive without it being blocked]]
-		slider:Dock(TOP)
-		slider:DockMargin(1,4,1,1)
-		slider:SetMin( 0 )				 
-		slider:SetMax( 256 )			
-		slider:SetDecimals( 0 )			 
-		slider:SetConVar( Tag..'_maxsize' )
-		local sld_dl = slider
-	--TODO
-	--local check = functions:Add( "DCheckBoxLabel" )
-	-- 	check:SetConVar(Tag.."_ask")
-	--	check:SetText( "Ask mode")
-	--	check:SizeToContents()
-	--	check:Dock(TOP)
-	--	check:DockMargin(1,4,1,1)
 	
 	
-	local debug = functions:Add( "DCheckBoxLabel" )
-	 	debug:SetConVar(Tag.."_dbg")
-		debug:SetText( "Debug")
-		debug:SetTooltip[[Print debug stuff to console. Enable this if something is wrong and in the bugreport give the log output.]]
-		debug:SizeToContents()
-		debug:Dock(TOP)
-		debug:DockMargin(1,4,1,1)
-		local d_3 = debug
-	local check = functions:Add( "DCheckBoxLabel" )
-	 	check:SetConVar(Tag.."_unsafe")
-		check:SetText( "Unsafe")
-		check:SizeToContents()
-		check:Dock(TOP)
-		check:SetTooltip[[Remove some outfit checks (for yourself only). This should not be needed ever.]]
-		check:DockMargin(1,4,1,1)
-		local d_1 = check
-	local check = functions:Add( "DCheckBoxLabel" )
-	 	check:SetConVar(Tag.."_failsafe")
-		check:SetText( "Failsafe")
-		check:SizeToContents()
-		check:SetTooltip[[This gets ticked if you were detected to crash right after applying outfit.]]
-		check:Dock(TOP)
-		check:DockMargin(1,4,1,1)
-		local d_2 = check
-	
-	local b = functions:Add('DButton','thirdperson')
-		b:Dock(TOP)
-		b:SetText("Toggle thirdperson")
-		b:SetTooltip[[Enables/disable thirdperson if player has one]]
-
-		b.DoClick=function() ToggleThirdperson() end
-		b:DockMargin(16,1,16,1)
-		b:SetImage'icon16/eye.png'
-	
+	local function Add(itm,b)
+		local c= vgui.Create(itm,functions,b)
+		--settingslist:AddItem(c)
+		c:Dock(BOTTOM)
+		return c
+	end
 	
 	
 	local b = functions:Add('DButton','choose button')
@@ -223,10 +156,18 @@ function PANEL:Init()
 			
 			self:GetParent():Hide()
 		end
-		b:DockMargin(0,24,1,8)
+		b:DockMargin(0,4,1,8)
 		b:SetImage'icon16/folder_user.png'
-	
-	
+		b.PaintOver = function(b,w,h)
+			if not next(self.mdllist:GetLines()) then
+				b:NoClipping(false)
+				surface.SetDrawColor(255,66,22,255*.5 + 255*.3 * math.sin(RealTime()*4))
+
+				surface.DrawOutlinedRect(-1,-1,w+1,h+1)
+				surface.DrawOutlinedRect(0,0,w,h)
+				b:NoClipping(true)
+			end
+		end
 	
 	local l = functions:Add( "DLabel",'chosen' )
 		self.lbl_chosen = l
@@ -255,6 +196,17 @@ function PANEL:Init()
 		end
 		--TODO : OnRowRightClick
 	
+		mdllist.PaintOver = function(b,w,h)
+			if next(mdllist:GetLines()) and not mdllist:GetSelectedLine() then
+				mdllist:NoClipping(false)
+				surface.SetDrawColor(255,66,22,255*.5 + 255*.3 * math.sin(RealTime()*4))
+
+				surface.DrawOutlinedRect(-1,-1,w+1,h+1)
+				surface.DrawOutlinedRect(0,0,w,h)
+				mdllist:NoClipping(true)
+			end
+		end
+		
 	local rightpanel = self:Add"EditablePanel"
 	rightpanel:Dock(RIGHT)
 	
@@ -272,8 +224,6 @@ function PANEL:Init()
 		mdlhist:AddColumn( "Title" )
 		mdlhist:AddColumn( "Model" )
 		self.mdlhist = mdlhist
-		
-		mdlhist:DockMargin(0,5,0,0)
 	
 		
 		mdlhist:Dock(FILL)
@@ -287,14 +237,94 @@ function PANEL:Init()
 		
 	local b = rightpanel:Add('DButton','choose button')
 		self.btn_clearhist = b
-
+		
 		b:Dock(BOTTOM)
+		
 		b:SetText("Clear history")
 		b.DoClick= function()
 			GUIClearHistory()
 		end
 		b:DockMargin(0,5,0,0)
 		b:SetImage'icon16/bin.png'
+	
+	
+	
+	local check = Add( "DCheckBoxLabel" )
+	 	check:SetConVar(Tag.."_enabled")
+		check:SetText( "Enabled")
+		check:SizeToContents()
+		check:SetTooltip[[Toggle this if someone's outfit got blocked or should be showing]]
+		check:DockMargin(1,0,1,1)
+		local btn_en = check
+		
+	local check = Add( "DCheckBoxLabel" )
+	 	check:SetConVar(Tag.."_friendsonly")
+		check:SetText( "Load only outfits of friends")
+		check:SetTooltip[[When non friend wears an outfit it gets blocked]]
+		check:SizeToContents()
+
+		check:DockMargin(1,4,1,1)
+
+	local slider = Add( "DNumSlider" )
+		slider:SetText( "Maximum download size (in MB)" )
+		slider:SizeToContents()
+		slider:DockPadding(0,16,0,0)
+		slider.Label:Dock(TOP)
+		slider.Label:DockMargin(0,-16,0,0)
+		
+		slider:SetTooltip[[This is how big an outfit you can receive without it being blocked]]
+
+		slider:DockMargin(1,4,1,1)
+		slider:SetMin( 0 )				 
+		slider:SetMax( 256 )			
+		slider:SetDecimals( 0 )			 
+		slider:SetConVar( Tag..'_maxsize' )
+		local sld_dl = slider
+	--TODO
+	--local check = functions:Add( "DCheckBoxLabel" )
+	-- 	check:SetConVar(Tag.."_ask")
+	--	check:SetText( "Ask mode")
+	--	check:SizeToContents()
+	--	check:Dock(TOP)
+	--	check:DockMargin(1,4,1,1)
+	
+		
+	local debug = Add( "DCheckBoxLabel" )
+	 	debug:SetConVar(Tag.."_dbg")
+		debug:SetText( "Debug")
+		debug:SetTooltip[[Print debug stuff to console. Enable this if something is wrong and in the bugreport give the log output.]]
+		debug:SizeToContents()
+
+		debug:DockMargin(1,4,1,1)
+		local d_3 = debug
+	local check = Add( "DCheckBoxLabel" )
+	 	check:SetConVar(Tag.."_unsafe")
+		check:SetText( "Unsafe")
+		check:SizeToContents()
+
+		check:SetTooltip[[Remove some outfit checks (for yourself only). This should not be needed ever.]]
+		check:DockMargin(1,4,1,1)
+		local d_1 = check
+	local check = Add( "DCheckBoxLabel" )
+	 	check:SetConVar(Tag.."_failsafe")
+		check:SetText( "Failsafe")
+		check:SizeToContents()
+		check:SetTooltip[[This gets ticked if you were detected to crash right after applying outfit.]]
+
+		check:DockMargin(1,4,1,1)
+		local d_2 = check
+	
+	local b = Add('DButton','thirdperson')
+		b:SetText("Thirdperson toggle")
+		b:SetTooltip[[Enables/disable thirdperson (if one is installed)]]
+
+		b.DoClick=function() ToggleThirdperson() end
+		b:DockMargin(16,24,16,1)
+		b:SetImage'icon16/eye.png'
+	
+	
+	
+	
 	
 	local b = functions:Add('DButton','Clear button')
 		self.btn_clear = b

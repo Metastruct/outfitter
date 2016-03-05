@@ -44,9 +44,19 @@ do
 	end
 end
 
---TODO
 do
-	local outfitter_friendsonly = CreateClientConVar("outfitter_friendsonly","0",SAVE)
+	
+	-- TODO: OnPlayerVisible calling
+	
+	local outfitter_friendsonly = CreateClientConVar("outfitter_friendsonly","0",true)
+
+	cvars.AddChangeCallback("outfitter_friendsonly",function(cvar,old,new)
+		if new=='1' then
+			EnableEverything()
+		end
+	end)
+
+
 	function IsFriendly(pl)
 		if not outfitter_friendsonly:GetBool() then return true end
 		

@@ -40,7 +40,6 @@ if CLIENT then
 				
 			end
 			
-			pl.outfitter_nvar = new
 			
 			--if old == true then return end
 			
@@ -51,6 +50,14 @@ if CLIENT then
 			
 			local ret = hook.Run("CanOutfit",pl,mdl,wsid)
 			if ret == false then return end
+			if ret ~= true then
+				if not IsFriendly(pl) then
+					dbg("OnPlayerVisible","unfriendly",pl)
+					return
+				end
+			end
+			
+			pl.outfitter_nvar = new
 			
 			dbgn(2,"OnPlayerVisible",pl==me and "SKIP" or pl,mdl or "UNSET?",wsid)
 			
