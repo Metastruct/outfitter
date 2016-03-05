@@ -59,6 +59,7 @@ function DecodeOW(str)
 	return o,w
 end
 
+
 -- parse model from file
 function CanPlayerModel(f,sz)
 	local mdl,err,err2 = mdlinspect.Open(f)
@@ -96,23 +97,8 @@ function CanPlayerModel(f,sz)
 		--dbg("bonecontroller_count differs?!",mdl.bonecontroller_count,mdl.bone_count)
 	end
 	
-	local attachments = mdl:Attachments()
-	if not attachments or not next(attachments) then
-		return false,"noattachments"
-	end
-	--PrintTable("ASD",mdl:BoneNames())
 	local found
-	for k,v in next,attachments do
-		local name = v[1]
-		--print(name)
-		if name=="eyes" or name=="anim_attachment_head" or name=="mouth" or name=="anim_attachment_RH" or name=="anim_attachment_LH" then found=true break end
-	end
-	if not found then
-		--PrintTable(mdl:Attachments())
-		return false,"attachments" 
-	end
-	
-	local found 
+	local found_anm
 	for k,v in next,imdls do
 		v=v[2]
 		if v and v:find("_arms_",1,true) then
@@ -122,7 +108,9 @@ function CanPlayerModel(f,sz)
 		if v and not v:find"%.mdl$" then
 			return false,"badinclude",v
 		end
-		
+		if v=="models/m_anm.mdl" then
+			found_anm = true
+		end
 		--if v 
 		--	and v:find"%.mdl$" 
 		--	and ( 
@@ -135,6 +123,34 @@ function CanPlayerModel(f,sz)
 		--	break
 		--end
 	end
+	
+	local attachments = mdl:Attachments()
+	if not attachments or not next(attachments) then
+		if not found_anm then
+			--PrintTable(mdl:Attachments())
+			return false,"noattachments" 
+		else
+			dbg("CanPlayerModel",mdl.name,"no attachments but included")
+		end
+	else
+		--PrintTable("ASD",mdl:BoneNames())
+		local found
+		for k,v in next,attachments do
+			local name = v[1]
+			--print(name)
+			if name=="eyes" or name=="anim_attachment_head" or name=="mouth" or name=="anim_attachment_RH" or name=="anim_attachment_LH" then found=true break end
+		end
+		if not found then
+			if not found_anm then
+				--PrintTable(mdl:Attachments())
+				return false,"attachments" 
+			else
+				dbg("CanPlayerModel",mdl.name,"no attachments but included")
+			end
+		end
+		
+	end
+
 	--if not found then 
 	--	return false,"includemdls" 
 	--end
