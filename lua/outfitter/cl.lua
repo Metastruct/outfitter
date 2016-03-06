@@ -111,6 +111,13 @@ function ChangeOutfitThread(pl)
 		
 		if i>1 then
 			co.sleep(1)
+			
+			local ok,err = co.wait_player(pl) -- so check for player validity
+			if not ok then 
+				dbg("ChangeOutfitThread","ABORT",pl,"VANISH",err)
+				break
+			end
+			
 		end
 		
 		local hash  = pl:OutfitHash()
