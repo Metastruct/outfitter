@@ -37,6 +37,14 @@ do
 end
 
 do
+	local outfitter_sounds = CreateClientConVar("outfitter_sounds","1",true)
+	function CanPlaySounds()
+		return outfitter_sounds:GetBool()
+	end
+end
+
+
+do
 
 	local outfitter_nohighperf = CreateClientConVar("outfitter_nohighperf","0",false)
 	local highperf=0

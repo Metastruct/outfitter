@@ -3,22 +3,38 @@ local NTag = 'OF'
 
 module(Tag,package.seeall)
 
+local GENERIC = "ui/buttonclick.wav"
+
+
+function SOUND(s,force)
+	if not force and not CanPlaySounds() then return end
+	surface.PlaySound(s)
+end
+
 local mounting
 function UIMounting(yes)
-	mounting = is
 	if is then
+		if mounting then return end
 		notification.AddProgress( Tag, 
-			"Mounting outfitter outfit!" )
-		surface.PlaySound( "buttons/button15.wav" )
+			"(LAG WARNING) Mounting outfitter outfit!" )
+		SOUND( GENERIC )
 	else
-		notification.Kill( Tag )
-		surface.PlaySound"garrysmod/content_downloaded.wav"
+		if not mounting then return end
+		timer.Simple(1,function()
+			
+			if mounting then return end
+			
+			notification.Kill( Tag )
+		end)
+		notification.AddProgress( Tag, "Outfit mounted!" )		
+		SOUND "garrysmod/content_downloaded.wav"
 	end
+	mounting = is
 end
 
 function UIFullupdate()
 	notification.AddLegacy( "Refreshing playerstate...", NOTIFY_ERROR, 4 )
-	surface.PlaySound'items/cart_explode_trigger.wav'
+	SOUND'items/cart_explode_trigger.wav'
 end
 
 function UIOnEnforce(pl)
@@ -36,7 +52,7 @@ function SetUIFetching(wsid,is,FR)
 		title = true
 		fstatus[wsid] = title
 		notification.AddProgress( ID, "Downloading "..wsid )
-		surface.PlaySound( "buttons/button15.wav" )
+		SOUND( 'ui/hint.wav' )
 
 		co(function()
 			local fileinfo = co_steamworks_FileInfo(wsid)
@@ -136,7 +152,7 @@ function UIError(...)
 	local now = RealTime()
 	if ns<now then 
 		ns=now + 1
-		surface.PlaySound("common/warning.wav")
+		SOUND("common/warning.wav")
 		return 
 	end
 
@@ -159,7 +175,7 @@ function UIMsg(...)
 	local now = RealTime()
 	if ns<now then 
 		ns=now + 1
-		surface.PlaySound("weapons/grenade/tick1.wav")
+		SOUND("weapons/grenade/tick1.wav")
 		return 
 	end
 	chat.AddText(unpack(t))
@@ -200,9 +216,9 @@ function UIBroadcastMyOutfit(mdl)
 	
 	local mdl,wsid = BroadcastMyOutfit(mdl,chosen_wsid)
 	if mdl then
-		surface.PlaySound"ui/item_robot_arm_pickup.wav"
+		SOUND"ui/item_robot_arm_pickup.wav"
 	else
-		surface.PlaySound"ui/item_robot_arm_drop.wav"
+		SOUND"ui/item_robot_arm_drop.wav"
 	end
 	return mdl,wsid
 end
@@ -247,7 +263,7 @@ function UIChangeModelToID(n,opengui)
 	OnChangeOutfit(LocalPlayer(),mdl.Name,chosen_wsid)
 	
 	notification.AddLegacy( "Outfit changed!", NOTIFY_UNDO, 2 ) 
-	surface.PlaySound( "buttons/button15.wav" )
+	SOUND( GENERIC )
 	UIMsg"Write '!outfit send' to send this outfit to everyone"
 	
 	chosen_mdl = n

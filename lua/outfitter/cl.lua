@@ -10,6 +10,9 @@ local function RESET(pl)
 	pl:EnforceModel(false)
 	pl.outfitter_mdl = nil
 	pl.outfitter_wsid = nil
+	
+	hook.Run("OutfitApply",pl)
+	
 end
 local function SET(pl,mdl,wsid)
 	
@@ -22,6 +25,9 @@ local function SET(pl,mdl,wsid)
 		dbge("SET FAIL?",ret,mdl,wsid)
 	end
 	UIOnEnforce(pl)
+	
+	hook.Run("OutfitApply",pl,mdl,wsid)
+	
 	return ret
 end
 
