@@ -32,35 +32,38 @@ if CLIENT then
 			local me = LocalPlayer()
 			
 			if pl~=me then
-				if not IsEnabled() then
+				if new and not IsEnabled() then
 					pl.outfitter_nvar = nil
 					dbgn(2,"OnPlayerVisible","IsEnabled",pl)
 					return
 				end
-				
 			end
 			
-			if IsHighPerf() then
+			if new and IsHighPerf() then
 				dbgn(2,"OnPlayerVisible","high perf blocking")
 				return 
 			end
+			
 			--if old == true then return end
 			
 			local mdl,wsid
 			if new then
 				mdl,wsid = DecodeOW(new)
-			end
 			
-			local ret = hook.Run("CanOutfit",pl,mdl,wsid)
-			if ret == false then return end
-			if ret ~= true then
-				if not IsFriendly(pl) then
-					dbg("OnPlayerVisible","unfriendly",pl)
-					return
+				local ret = hook.Run("CanOutfit",pl,mdl,wsid)
+				if ret == false then return end
+				if ret ~= true then
+					if not IsFriendly(pl) then
+						dbg("OnPlayerVisible","unfriendly",pl)
+						return
+					end
 				end
+				
 			end
 			
 			pl.outfitter_nvar = new
+			
+			hook.Run("CouldOutfit",pl,mdl,wsid)
 			
 			dbgn(2,"OnPlayerVisible",pl==me and "SKIP" or pl,mdl or "UNSET?",wsid)
 			

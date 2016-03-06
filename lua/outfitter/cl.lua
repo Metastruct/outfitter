@@ -75,11 +75,10 @@ end
 
 function coDoChangeOutfit_FIN(pl,mdl,wsid)
 	
-	local mdl2 = pl.latest_want
-	local want_changed = (mdl ~= mdl2)
+	local still_want,mdl2 = PlStillWant(pl,mdl)
 	pl.latest_want = false
 	
-	if want_changed then
+	if not still_want then
 		local wsid2 = pl.latest_want_wsid
 		dbg("ChangeOutfit","WANT CHANGED",mdl,wsid,"->",mdl2,wsid2)
 		return coDoChangeOutfit(pl,mdl2,wsid2)
@@ -88,8 +87,12 @@ function coDoChangeOutfit_FIN(pl,mdl,wsid)
 end
 
 function PlStillWant(pl,mdl)
-	return mdl == pl.latest_want
+	if not mdl then mdl =false end
+	local latest = pl.latest_want
+	if not latest then latest=false end
+	return mdl == latest,latest
 end
+
 -- DoChangeOutfit: NO callback. NOT to be called from coroutine.
 function coDoChangeOutfit(pl,mdl,wsid)
 	
@@ -97,29 +100,37 @@ function coDoChangeOutfit(pl,mdl,wsid)
 
 	dbg("DoChangeOutfit","BEGIN",pl,mdl,wsid,prev_want)
 	
-	pl.latest_want = mdl
-	pl.latest_want_wsid = wsid
+	pl.latest_want = mdl or false
+	pl.latest_want_wsid = wsid or false
 	
 	if prev_want then
 		dbg("DoChangeOutfit","already in progress",pl,mdl,wsid,prev_want)
-		coDoChangeOutfit_FIN(pl,mdl,wsid)
+		coDoChangeOutfit_FIN(pl,mdl,wsid) -- Should be NOP
 		return false,"changing"
 	end
 	
 	if not mdl then
 		RESET(pl)
-		coDoChangeOutfit_FIN(pl,mdl,wsid)
+		coDoChangeOutfit_FIN(pl,mdl,wsid) -- Should be NOP
 		return true
 	end
 	
 	local exists = HasMDL(mdl)
 	
 	if exists then
+		
+		local ret = hook.Run("CanOutfit",pl,mdl,wsid,true)
+		if ret == false then 
+			return false,"canoutfit" 
+		end
+		
 		local ok = SET(pl,mdl,wsid)
 		if not ok then
 			dbg("DoChangeOutfit","setfail")
 		end
-		coDoChangeOutfit_FIN(pl,mdl,wsid)
+		
+		coDoChangeOutfit_FIN(pl,mdl,wsid) -- Should be NOP
+		
 		return true
 	end
 	
@@ -127,7 +138,8 @@ function coDoChangeOutfit(pl,mdl,wsid)
 	local ok, err = NeedWS(wsid,pl,mdl)
 	if not ok then 
 		dbg("DoChangeOutfit","NeedWS failed",err,"continuing...",pl,mdl,wsid) 
-		-- return -- it doesnt hurt to recheck
+		-- coDoChangeOutfit_FIN(pl,mdl,wsid)
+		-- return false,"needws",err -- it doesnt hurt to recheck
 	end
 	
 	
@@ -161,9 +173,13 @@ function coDoChangeOutfit(pl,mdl,wsid)
 	
 	
 	local ret = hook.Run("CanOutfit",pl,mdl,wsid,true)
-	if ret == false then return end
+	if ret == false then 
+		return false,"canoutfit" 
+	end
 	
 	SET(pl,mdl,wsid)
+	
+	coDoChangeOutfit_FIN(pl,mdl,wsid)
 	
 	return true
 	
