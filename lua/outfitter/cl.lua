@@ -58,7 +58,7 @@ function EnableEverything()
 end
 
 
-
+local Player = FindMetaTable"Player"
 
 ------- player outfit changing --------
 
