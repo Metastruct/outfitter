@@ -1,6 +1,10 @@
 --do return end
 --[[
 
+FIX CLEARING NOT WORKING
+	(NeedWS state change afterwards is too big, something fucks up)
+	
+
 OUTFITTER REJECTS
 	191146401 -- noattachments
 	164449803 -- hip

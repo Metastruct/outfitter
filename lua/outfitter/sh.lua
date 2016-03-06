@@ -8,7 +8,7 @@ function HasMDL(mdl)
 	return file.Exists(mdl..'.mdl','GAME')
 end
 
-net.Receive(Tag,function(...) OnReceive(...) end)
+net.Receive(Tag,function(...) if this.OnReceive then OnReceive(...) end end)
 
 local cache = {}
 function FlushCache()
@@ -184,4 +184,47 @@ for _,fn in next,flist do
 	
 end--]]
 
+local t = {"","","",""}
+local function GenID(_1,_2,_3,_4,_5)
+	if not _1 then return end
+	t[1] = _1
+	t[2] = tostring(_2)
+	t[3] = tostring(_3)
+	t[4] = tostring(_4)
+	assert(not _5)
+	return table.concat(t,"|")
+end
 
+local Player = FindMetaTable"Player"
+function Player.OutfitHash(pl)
+	return pl.outfitter_latest
+end
+function Player.OutfitUpdateHash(pl)
+	local hash = GenID(pl:OutfitInfo())
+	pl.outfitter_latest = hash
+	return hash
+end
+function Player.OutfitCheckHash(pl,nhash)
+	local cur = pl:OutfitHash()
+	cur = cur or false
+	nhash = nhash or false
+	return cur==nhash
+end
+
+function Player.OutfitInfo(pl)
+	
+	return 	pl.outfitter_mdl,
+			pl.outfitter_wsid,
+			pl.outfitter_skin,
+			pl.outfitter_bodygroups
+			
+end
+function Player.OutfitSetInfo(pl,mdl,wsid,skin,bodygroups)
+	
+	pl.outfitter_mdl = mdl
+	pl.outfitter_wsid = wsid
+	pl.outfitter_skin = skin
+	pl.outfitter_bodygroups = bodygroups
+	pl:OutfitUpdateHash()
+
+end

@@ -212,9 +212,9 @@ function UICancelAll()
 	RemoveOutfit()
 end
 
-function UIBroadcastMyOutfit(mdl)
+function UIBroadcastMyOutfit()
 	
-	local mdl,wsid = BroadcastMyOutfit(mdl,chosen_wsid)
+	local mdl,wsid = BroadcastMyOutfit()
 	if mdl then
 		SOUND"ui/item_robot_arm_pickup.wav"
 	else
@@ -223,6 +223,7 @@ function UIBroadcastMyOutfit(mdl)
 	return mdl,wsid
 end
 
+local relay_opengui
 function UIChangeModelToID(n,opengui)
 	
 	dbg("UIChangeModelToID",n)
@@ -260,19 +261,29 @@ function UIChangeModelToID(n,opengui)
 	
 	assert(mdl.Name)
 	
+	chosen_mdl = n
+	relay_opengui = opengui
+	
+	-- returns instantly, but should be instant anyway
 	OnChangeOutfit(LocalPlayer(),mdl.Name,chosen_wsid)
 	
-	notification.AddLegacy( "Outfit changed!", NOTIFY_UNDO, 2 ) 
-	SOUND( GENERIC )
-	UIMsg"Write '!outfit send' to send this outfit to everyone"
-	
-	chosen_mdl = n
-	
-	if opengui then
-		GUIOpen() 
-	end
-
 end
+
+hook.Add("OutfitApply",Tag,function(pl,mdl)
+	
+	if pl==LocalPlayer() and mdl then
+		local opengui = relay_opengui
+		relay_opengui=false
+		
+		notification.AddLegacy( "Outfit changed!", NOTIFY_UNDO, 2 ) 
+		SOUND( GENERIC )
+		UIMsg"Write '!outfit send' to send this outfit to everyone"
+		if opengui then
+			GUIOpen()
+		end
+		
+	end
+end)
 
 function MDLToUI(s)
 	if not s then return s end

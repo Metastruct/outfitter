@@ -6,9 +6,9 @@ module(Tag,package.seeall)
 
 util.AddNetworkString(Tag) 
 
-function RateLimitMessage(pl)
-	--TODO: better
-	pl:ChatPrint"[Outfitter] you need to wait more before sending a new outfit"
+function RateLimitMessage(pl,rem)
+	local msg = "[Outfitter] you need to wait before sending a new outfit ("..rem.." seconds remaining)"
+	pl:ChatPrint(msg)
 end
 
 local ent
@@ -62,8 +62,7 @@ function NetData(pl,k,val)
 	local ret = hook.Run("CanOutfit",pl,mdl,wsid)
 	if ret == false then return false end
 	
-	pl.outfitter_mdl = mdl
-	pl.outfitter_wsid = wsid
+	pl:OutfitSetInfo(mdl,wsid)
 	
 	dbg("NetData",pl,"outfit",mdl,wsid)
 	
@@ -76,7 +75,9 @@ function NetData(pl,k,val)
 		return ret
 	end
 	
-	local should,remaining = pl:NetDataShouldLimit(NTag,5)
+	assert(mdl)
+	
+	local should,remaining = pl:NetDataShouldLimit(NTag,util.IsModelLoaded(mdl) and 3 or 10)
 	
 	if should then
 		RateLimitMessage(pl,remaining)
@@ -84,9 +85,7 @@ function NetData(pl,k,val)
 		return -- TODO
 	end
 	
-	if mdl then
-		PrecacheModel(mdl)
-	end
+	PrecacheModel(mdl)
 	
 	return true
 end

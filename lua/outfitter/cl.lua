@@ -14,7 +14,9 @@ local function RESET(pl)
 	hook.Run("OutfitApply",pl)
 	
 end
-local function SET(pl,mdl,wsid)
+local function SET(pl)
+	
+	local mdl,wsid = pl:OutfitInfo()
 	
 	if mdl and not IsEnabled() then return end
 	
@@ -37,9 +39,8 @@ function DisableEverything()
 		if pl.outfitter_nvar then
 			pl.outfitter_nvar = nil
 			
-			-- force instant disable
-			pl.latest_want = nil 
-			OnChangeOutfit(pl,nil,nil)
+			--TODO: Add instant skip to unset
+			pl:SetWantOutfit(false)
 			
 		end
 	end
@@ -56,8 +57,13 @@ function EnableEverything()
 	RefreshPlayers()
 end
 
-function OnChangeOutfit(pl,mdl,wsid)
-	dbg("OnChangeOutfit",pl,mdl=="false" and "unset" or ('%q'):format(tostring(mdl)),wsid==false and "" or ('%q'):format(tostring(wsid)))
+
+
+
+------- player outfit changing --------
+
+function Player.SetWantOutfit(pl,mdl,wsid,skin,bodygroups)
+	dbg("SetWantOutfit",pl,not mdl and "unset" or ('%q'):format(tostring(mdl)),not wsid and "-" or ('%q'):format(tostring(wsid)))
 	
 	assert(pl and pl:IsValid())
 	pl:GetModel()
@@ -66,123 +72,146 @@ function OnChangeOutfit(pl,mdl,wsid)
 	assert(wsid~=0)
 	assert(wsid~=0)
 	
-	mdl = mdl and mdl:gsub("%.mdl$","")
+	mdl = mdl and (mdl:gsub("%.mdl$","")..'.mdl') or false
 	
-	co(coDoChangeOutfit,pl,mdl and mdl..'.mdl',wsid)
-	
-	return 
-end
+	pl:OutfitSetInfo(mdl,wsid,skin,bodygroups)
 
-function coDoChangeOutfit_FIN(pl,mdl,wsid)
+	local thread = pl.outfitter_co_thread
 	
-	local still_want,mdl2 = PlStillWant(pl,mdl)
-	pl.latest_want = false
+	assert(thread~=true)
 	
-	if not still_want then
-		local wsid2 = pl.latest_want_wsid
-		dbg("ChangeOutfit","WANT CHANGED",mdl,wsid,"->",mdl2,wsid2)
-		return coDoChangeOutfit(pl,mdl2,wsid2)
+	local status = thread and coroutine.status(thread)
+	
+	if status and status ~= "dead" then
+		return
 	end
 	
+	local status = pl.outfitter_changing
+	if status then
+		dbge("ChangeOutfitThread","was already changing?",pl)
+	end
+	
+	pl.outfitter_co_thread = true
+	pl.outfitter_co_thread = co(ChangeOutfitThread,pl)
 end
 
-function PlStillWant(pl,mdl)
-	if not mdl then mdl =false end
-	local latest = pl.latest_want
-	if not latest then latest=false end
-	return mdl == latest,latest
+function OnChangeOutfit(pl,...)
+	
+	pl:SetWantOutfit(...)
+	
 end
 
+function ChangeOutfitThread(pl)
+	
+	pl.outfitter_changing = true
+	
+	co.waittick() -- detach
+	
+	for i=1,8192 do
+		
+		if i>1 then
+			co.sleep(1)
+		end
+		
+		local hash  = pl:OutfitHash()
+		local ret,err = ChangeOutfitThreadWorker(pl,hash)
+		
+		if not ret then
+			dbg("ChangeOutfit","RETERR",err or "???")
+		end
+		
+		local newhash = pl:OutfitHash()
+		if pl:OutfitCheckHash(hash) then
+			if i>1 then
+				dbge("ChangeOutfitThread","finished changing after",i,"iterations",pl)
+				
+			end
+			break
+		end
+	end
+	pl.outfitter_changing = false
+	
+end
+
+local function HBAD(pl,hash)
+	local ok = pl:OutfitCheckHash(hash)
+	return not ok
+end
 -- DoChangeOutfit: NO callback. NOT to be called from coroutine.
-function coDoChangeOutfit(pl,mdl,wsid)
-	
-	local prev_want = pl.latest_want
 
-	dbg("DoChangeOutfit","BEGIN",pl,mdl,wsid,prev_want)
+--TODO: change to iterative to fix shit
+function ChangeOutfitThreadWorker(pl,hash)
 	
-	pl.latest_want = mdl or false
-	pl.latest_want_wsid = wsid or false
 	
-	if prev_want then
-		dbg("DoChangeOutfit","already in progress",pl,mdl,wsid,prev_want)
-		coDoChangeOutfit_FIN(pl,mdl,wsid) -- Should be NOP
-		return false,"changing"
-	end
 	
-	if not mdl then
-		RESET(pl)
-		coDoChangeOutfit_FIN(pl,mdl,wsid) -- Should be NOP
-		return true
-	end
+	assert(pl:OutfitCheckHash(hash))
+	assert(not HBAD(pl,hash))
 	
+	local mdl,wsid,skin,bodygroups = pl:OutfitInfo()
+	mdl = mdl or false
+
+	dbg("ChangeOutfit","BEGIN",pl,mdl or "unset",wsid)
+	
+	-- 1. Check whether we just want to reset
+	if not mdl then RESET(pl) return true end
+	
+	-- 2. If model exists then just apply it
 	local exists = HasMDL(mdl)
-	
 	if exists then
 		
-		local ret = hook.Run("CanOutfit",pl,mdl,wsid,true)
+		local ret = hook.Run("CanOutfit",pl,pl:OutfitInfo())
 		if ret == false then 
 			return false,"canoutfit" 
 		end
 		
-		local ok = SET(pl,mdl,wsid)
-		if not ok then
-			dbg("DoChangeOutfit","setfail")
-		end
+		if HBAD(pl,hash) then return false,"outdated" end
 		
-		coDoChangeOutfit_FIN(pl,mdl,wsid) -- Should be NOP
+		local ok,err = SET(pl,mdl,wsid,skin,bodygroups)
+		if not ok then
+			dbge("DoChangeOutfit","setfail but was existing?",err)
+		end
 		
 		return true
 	end
 	
-	
+	------------ TIME PASSES ONLY HERE -------------
 	local ok, err = NeedWS(wsid,pl,mdl)
 	if not ok then 
-		dbg("DoChangeOutfit","NeedWS failed",err,"continuing...",pl,mdl,wsid) 
-		-- coDoChangeOutfit_FIN(pl,mdl,wsid)
-		-- return false,"needws",err -- it doesnt hurt to recheck
+		dbg("DoChangeOutfit","NeedWS failed",err,"continuing...",pl,mdl,wsid)
 	end
 	
-	
-	-- -------------- TIME PASSES HERE ---------------
-	
-	
-	--TODO: check player is not asking for another outfit already 
-	-- Only one can be running at a time for a player
-	
-	local ok,err = co.wait_player(pl)
-	
+	local ok,err = co.wait_player(pl) -- so check for player validity
 	if not ok then 
 		dbg("ChangeOutfit","ABORT",pl,"VANISH",err)
-		-- WARN: Do not add: coDoChangeOutfit_FIN(pl,mdl,wsid)
 		return false,"noplayer"
 	end
+	------------------------------------------------
 	
-	local want = PlStillWant(pl,mdl)
-	if not want then
-		dbg("DoChangeOutfit","OBSOLETE",pl,mdl,wsid)
-		coDoChangeOutfit_FIN(pl,mdl,wsid)
-		return false,"obsolete"
-	end
-
+	-- 3. Time passed, we may need to abort if some new outfit is waiting
+	if HBAD(pl,hash) then return false,"outdated" end
+	
+	-- 4. if model doesnt exist then screw it
 	if not HasMDL(mdl) then
 		dbg("DoChangeOutfit","HASMDL",pl,mdl,wsid)
 		RESET(pl)
-		coDoChangeOutfit_FIN(pl,mdl,wsid)
 		return false,"mdl"
 	end
 	
-	
-	local ret = hook.Run("CanOutfit",pl,mdl,wsid,true)
+	-- 5. Check CanOutfit
+	local ret = hook.Run("CanOutfit",pl,pl:OutfitInfo())
 	if ret == false then 
 		return false,"canoutfit" 
 	end
 	
-	SET(pl,mdl,wsid)
+	-- 6. The hook may have changed our outfit
+	if HBAD(pl,hash) then return false,"outdated" end
 	
-	coDoChangeOutfit_FIN(pl,mdl,wsid)
+	-- 7. Actually set the outfit!
+	SET(pl,mdl,wsid,skin,bodygroups)
+	
+	dbg("ChangeOutfit","FINISHED",pl,mdl or "unset",wsid)
 	
 	return true
-	
 end
 
 function RemoveOutfit()
@@ -190,14 +219,14 @@ function RemoveOutfit()
 	OnChangeOutfit(LocalPlayer())
 end
 
-function BroadcastMyOutfit(mdl,wsid)
-		local mdl = mdl or LocalPlayer().outfitter_mdl 
-		local wsid = wsid or LocalPlayer().outfitter_wsid
-		dbg("BroadcastMyOutfit",mdl,wsid)
-		
-		NetworkOutfit(mdl,wsid)
-		
-		return mdl,wsid
-		
+function BroadcastMyOutfit(a)
+	assert(not a)
+	local mdl,wsid,s,bg = LocalPlayer():OutfitInfo()
+	dbg("BroadcastMyOutfit",mdl,wsid,s,bg)
+	
+	NetworkOutfit(mdl,wsid)
+	
+	return mdl,wsid
+	
 end
 
