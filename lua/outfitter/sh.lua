@@ -61,7 +61,7 @@ end
 
 
 -- parse model from file
-function CanPlayerModel(f,sz)
+function MDLIsPlayermodel(f,sz)
 	local mdl,err,err2 = mdlinspect.Open(f)
 	if not mdl then
 		return nil,err,err2
@@ -83,7 +83,7 @@ function CanPlayerModel(f,sz)
 	if sz then
 		local valid,err = mdl:Validate(sz)
 		if not valid then 
-			dbg("CanPlayerModel",f,"validate error",err)
+			dbg("MDLIsPlayermodel",f,"validate error",err)
 			return false,"valid" 
 		end
 	end
@@ -130,7 +130,7 @@ function CanPlayerModel(f,sz)
 			--PrintTable(mdl:Attachments())
 			return false,"noattachments" 
 		else
-			dbg("CanPlayerModel",mdl.name,"no attachments but included")
+			dbg("MDLIsPlayermodel",mdl.name,"no attachments but included")
 		end
 	else
 		--PrintTable("ASD",mdl:BoneNames())
@@ -145,7 +145,7 @@ function CanPlayerModel(f,sz)
 				--PrintTable(mdl:Attachments())
 				return false,"attachments" 
 			else
-				dbg("CanPlayerModel",mdl.name,"no attachments but included")
+				dbg("MDLIsPlayermodel",mdl.name,"no attachments but included")
 			end
 		end
 		
@@ -179,7 +179,7 @@ for _,fn in next,flist do
 
 	local fpath = fp..fn
 	local f = file.Open(fpath,'rb','GAME')
-	print(('%50s'):format(fn),CanPlayerModel(f))
+	print(('%50s'):format(fn),MDLIsPlayermodel(f))
 	f:Close()
 	
 end--]]

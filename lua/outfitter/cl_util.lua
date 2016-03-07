@@ -548,7 +548,7 @@ function NeedWS(wsid,pl,mdl)
 	
 end
 	
-	
+		
 function GMAPlayerModels(fpath)
 	assert(fpath)
 	local f = file.Open(fpath,'rb','MOD')
@@ -565,27 +565,48 @@ function GMAPlayerModels(fpath)
 	if not ok then return nil,err end
 
 	local mdls = {}
+	local mdlfiles = {}
 	for i=1,8192*2 do
 		local entry,err = gma:EnumFiles()
 		if not entry then 
 			if err then dbge("enumfiles",err) end
 			break 
 		end
-		if entry.Name:find'%.mdl$' then
+		local path = entry.Name
+		local ext = path:sub(-4)
+		if ext=='.mdl' then
 			mdls[#mdls+1] = table.Copy(entry)
+		elseif ext=='.vvd' then
+			mdlfiles[path:sub(1,-5):lower()] = true
+		elseif ext=='.vtx' then
+			mdlfiles[path:sub(1,-10):lower()] = true
 		end
 	end
 	
 	local potential={}
 	
 	--TODO: Check CRC?
+	--TODO: Check other files exist for mdl (otherwise might be anim for example)
+	
 	local one_error
 	for k,entry in next,mdls do
-	
+		
+		
 		local seekok = gma:SeekToFileOffset(entry)
 		if not seekok then return nil,"seekfail" end
-		local can,err,err2 = CanPlayerModel(gma:GetFile(),entry.Size)
-		if can==nil then dbge("CanPlayerModel",err,err2) end
+		
+		
+		local can,err,err2
+		
+		local noext = entry.Name:sub(1,-5)
+		can = mdlfiles[noext]
+
+		if not can then
+			can,err,err2 = false,"vvd"
+		else
+			can,err,err2 = MDLIsPlayermodel(gma:GetFile(),entry.Size)
+		end
+		if can==nil then dbge("MDLIsPlayermodel","ERROR",err,err2) end
 		if can then
 			local n = entry.Name
 			if n:find("_arms.",1,true) then can,er =false,"arms" end
