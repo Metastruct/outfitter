@@ -342,7 +342,6 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 			
 			co.work_cacher(
 				function(wsid)
-					print("FILEINFO",wsid)
 					local cb = co.newcb()
 						steamworks.FileInfo(wsid,cb)
 					local fileinfo = co.waitcb(cb)
@@ -352,6 +351,25 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 				end)
 			)
 		co_steamworks_FileInfo = co.worker(worker) 
+	end
+	
+	do
+		local worker,cache = co.work_cacher_filter(
+			function(key,fileinfo)
+				return (not key) or fileinfo
+			end,
+			
+			co.work_cacher(
+				function(wsid)
+					local cb = co.newcb()
+						steamworks.VoteInfo(wsid,cb)
+					local fileinfo = co.waitcb(cb)
+					
+					return fileinfo
+					
+				end)
+			)
+		co_steamworks_VoteInfo = co.worker(worker) 
 	end
 	
 	function coFetchWS(wsid,skip_maxsize)
@@ -577,7 +595,7 @@ function GMAPlayerModels(fpath)
 		if ext=='.mdl' then
 			mdls[#mdls+1] = table.Copy(entry)
 		elseif ext=='.vvd' then
-			mdlfiles[path:sub(1,-5):lower()] = true
+			mdlfiles[path:sub(1,-5):lower() ] = true
 		elseif ext=='.vtx' then
 			mdlfiles[path:sub(1,-10):lower()] = true
 		end
@@ -609,10 +627,10 @@ function GMAPlayerModels(fpath)
 		if can==nil then dbge("MDLIsPlayermodel","ERROR",err,err2) end
 		if can then
 			local n = entry.Name
-			if n:find("_arms.",1,true) then can,er =false,"arms" end
-			if n:find("_hands.",1,true) then can,er =false,"arms" end
-			if n:find("/c_",1,true) then can,er =false,"viewmodel" end
-			if n:find("/w_",1,true) then can,er =false,"worldmodel" end
+			if n:find("_arms.",1,true) 	then can,err =false,"arms" 		 end
+			if n:find("_hands.",1,true) then can,err =false,"arms" 		 end
+			if n:find("/c_",1,true) 	then can,err =false,"viewmodel"  end
+			if n:find("/w_",1,true) 	then can,err =false,"worldmodel" end
 		end
 		if not can then
 			dbg("","Bad",entry.Name,err,err2 or "",IsUnsafe() and "UNSAFE ALLOW" or "")
