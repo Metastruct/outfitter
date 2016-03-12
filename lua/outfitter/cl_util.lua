@@ -490,7 +490,9 @@ function MountWS( path )
 	
 	local TIME = isdbg and SysTime()
 	dbg("MountGMA",path)
+	CRITICAL("mountws",path)
 	local ok, files = game.MountGMA( path )
+	CRITICAL(false)
 	if isdbg then dbg("MountGMA",path,"took",(SysTime()-TIME)) end
 
 	result = ok or false

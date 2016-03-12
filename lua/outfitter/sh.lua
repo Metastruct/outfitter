@@ -228,3 +228,49 @@ function Player.OutfitSetInfo(pl,mdl,wsid,skin,bodygroups)
 	pl:OutfitUpdateHash()
 
 end
+
+--- Crashing code detector thingy
+--TODO: Stack, blacklist of files
+
+local CFPATH = "outfitter_crash.dat"
+local f
+local function getfile()
+	if not f then
+		f = file.Open(CFPATH, 'wb','DATA')
+	end
+	return f
+end
+
+local function closefile()
+	if f then
+		f:Close()
+	end
+
+	f = nil
+end
+
+function CRITICAL(iscritical,dat)
+
+	getfile()
+	if not f then return end
+	
+	f:Seek(0)
+	if iscritical then
+		f:Write(tostring(iscritical)..':'..tostring(dat)..'\0')
+	else
+		f:Write'\0'
+	end
+	
+	f:Flush()
+end
+
+OnInitialize(function()
+	local dat = file.Read(CFPATH,'DATA')
+	if not dat then return end
+	file.Delete(CFPATH,'DATA')
+	local fc = dat:sub(1,1)
+	if fc=="" or fc=='\0' then return end
+	dat = dat:match '^([^%z]+)'
+	if not dat then return end
+	ErrorNoHalt("[Outfitter] CRASH: ".. ('%q'):format(tostring(dat)) ..'\n')
+end)
