@@ -115,16 +115,22 @@ function ChangeOutfitThread(pl)
 			local ok,err = co.wait_player(pl) -- so check for player validity
 			if not ok then 
 				dbg("ChangeOutfitThread","ABORT",pl,"VANISH",err)
-				break
+				return
 			end
 			
 		end
 		
 		local hash  = pl:OutfitHash()
 		local ret,err = ChangeOutfitThreadWorker(pl,hash)
+			
+		local ok,err = co.wait_player(pl) -- Check for player validity
+		if not ok then 
+			dbg("ChangeOutfitThread","ABORT",pl,"VANISH",err)
+			return
+		end
 		
 		if not ret then
-			dbg("ChangeOutfit","RETERR",err or "???")
+			dbg("ChangeOutfit",pl,"RETERR",err or "???")
 		end
 		
 		local newhash = pl:OutfitHash()
