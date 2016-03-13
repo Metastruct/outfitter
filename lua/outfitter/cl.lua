@@ -105,20 +105,16 @@ function ChangeOutfitThread(pl)
 	
 	pl.outfitter_changing = true
 	
-	co.waittick() -- detach
+	co.waittick() -- detach, need to check player validity after this
 	
 	for i=1,8192 do
 		
 		if i>1 then
 			co.sleep(1)
-			
-			local ok,err = co.wait_player(pl) -- so check for player validity
-			if not ok then 
-				dbg("ChangeOutfitThread","ABORT",pl,"VANISH",err)
-				return
-			end
-			
 		end
+		
+		local ok,err = co.wait_player(pl)
+		if not ok then dbg("ChangeOutfitThread","ABORT",pl,"VANISH",err) return end
 		
 		local hash  = pl:OutfitHash()
 		local ret,err = ChangeOutfitThreadWorker(pl,hash)
