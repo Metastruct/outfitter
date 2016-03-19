@@ -43,6 +43,34 @@ do
 	end
 end
 
+do
+	-- -1: force disable distance check
+	-- 0: server preference
+	-- 1: force enable distance check
+	local outfitter_distance_mode = CreateClientConVar("outfitter_distance_mode","0",true)
+	local outfitter_distance = CreateClientConVar("outfitter_distance","2047",SAVE)
+	function ShouldDistance()
+		local mode = outfitter_distance_mode:GetInt()
+		if mode==-1 then
+			return false
+		elseif mode==1 then
+			return true
+		end
+		return ServerSuggestDistance()
+	end
+	
+	function GetDistance()
+		local d = outfitter_distance:GetFloat()
+		if ShouldDistance() then return d>0 and d end
+	end
+	
+	function VisibleFilter(pl1,pl2)
+		local pos1,pos2 = pl1:GetPos(),pl2:GetPos()
+		local dist = GetDistance()
+		if not dist then return false end
+		return pos1:DistToSqr(pos2)>(dist*dist)
+	end
+end
 
 do
 

@@ -13,12 +13,13 @@ if CLIENT then
 	
 	function NetData(plid,k,val)
 		if k~=NTag then return end
-		--local t = player.GetNetVarsTable()[plid]
-		--assert(t)
-		--t.outfitter_mdl,t.outfitter_wsid = DecodeOW(val)
+
 		local pl = findpl(plid)
 		dbg("NetData",pl or plid,k,"<-",val)
-		if pl then OnPlayerVisible(pl,net.IsPlayerVarsBurst()) end
+		if not pl then return end
+
+		OnPlayerVisible(pl,net.IsPlayerVarsBurst()) 
+		
 	end
 		
 	function OnPlayerVisible(pl,initial_sendings)
@@ -26,54 +27,67 @@ if CLIENT then
 		-- check for changed outfit data
 		local new = pl:GetNetData(NTag)
 		local old = pl.outfitter_nvar
-		if new~=old then
-			pl.outfitter_nvar_burst = initial_sendings
+		
+		if new==old then
+			return
+		end
+		
+		pl.outfitter_nvar_burst = initial_sendings
+		
+		local me = LocalPlayer()
+		
+		-- local player is special snowflake
+		if pl~=me then
+			if new and not IsEnabled() then
+				pl.outfitter_nvar = nil
+				dbgn(2,"OnPlayerVisible","IsEnabled",pl)
+				return
+			end
 			
-			local me = LocalPlayer()
+			local shouldfilter = VisibleFilter(me,pl)
+			if shouldfilter then
+				dbgn(2,"OnPlayerVisible","VisibleFiltering",pl)
+				return
+			end
+				
+			if new and IsHighPerf() then
+				dbgn(2,"OnPlayerVisible","high perf blocking")
+				return
+			end
 			
-			if pl~=me then
-				if new and not IsEnabled() then
-					pl.outfitter_nvar = nil
-					dbgn(2,"OnPlayerVisible","IsEnabled",pl)
+		end
+		
+		
+		--if old == true then return end
+		
+		local mdl,wsid
+		if new then
+			mdl,wsid = DecodeOW(new)
+		
+			local ret = hook.Run("CanOutfit",pl,mdl,wsid)
+			if ret == false then return end
+			if ret ~= true then
+				if not IsFriendly(pl) then
+					dbg("OnPlayerVisible","unfriendly",pl)
 					return
 				end
 			end
 			
-			if new and IsHighPerf() then
-				dbgn(2,"OnPlayerVisible","high perf blocking")
-				return 
-			end
-			
-			--if old == true then return end
-			
-			local mdl,wsid
-			if new then
-				mdl,wsid = DecodeOW(new)
-			
-				local ret = hook.Run("CanOutfit",pl,mdl,wsid)
-				if ret == false then return end
-				if ret ~= true then
-					if not IsFriendly(pl) then
-						dbg("OnPlayerVisible","unfriendly",pl)
-						return
-					end
-				end
-				
-			end
-			
-			pl.outfitter_nvar = new
-			
-			hook.Run("CouldOutfit",pl,mdl,wsid)
-			
-			dbgn(2,"OnPlayerVisible",pl==me and "SKIP" or pl,mdl or "UNSET?",wsid)
-			
-			if pl==me then
-				dbg("OnPlayerVisible","SKIP","LocalPlayer")
-				return
-			end
-			
-			OnChangeOutfit(pl,mdl,wsid)
 		end
+		
+		pl.outfitter_nvar = new
+		
+		hook.Run("CouldOutfit",pl,mdl,wsid)
+		
+		dbgn(2,"OnPlayerVisible",pl==me and "SKIP" or pl,mdl or "UNSET?",wsid)
+		
+		if pl==me then
+			dbg("OnPlayerVisible","SKIP","LocalPlayer")
+			return
+		end
+		
+		OnChangeOutfit(pl,mdl,wsid)
+		
 		
 	end
 
