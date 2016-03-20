@@ -89,3 +89,22 @@ function NetData(pl,k,val)
 	
 	return true
 end
+
+function TestOutfitsOnBots()
+	local t = { 
+		{ "models/player/mikier/renamon.mdl",599541401},
+		{ "models/pechenko_121/deadpool/chr_deadpoolclassic.mdl",200700693},
+		{ "models/pechenko_121/deadpool/chr_deadpool2.mdl",200700693},
+		{ "models/pechenko_121/deadpool/chr_deadpoolclassic.mdl",200700693},
+		{ "models/raptor_player/raptor_player_red.mdl",609850164},
+		{ "models/player/scoutplayer/scout.mdl",352668843},
+		{ "models/player/vimeinen.mdl",572932796},
+		{ "models/argonian.mdl",646729594},
+		{ "models/captainbigbutt/vocaloid/apocalypse_miku.mdl",629121990},
+		{ "models/player_chibiterasu.mdl",503568129},
+	}
+	for k,v in next,player.GetBots() do
+		local of = t[k%(#t)]
+		SHNetworkOutfit(unpack(of))
+	end
+end

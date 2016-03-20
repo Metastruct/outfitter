@@ -17,7 +17,7 @@ local _mounting
 hook.Add('DrawOverlay',Tag,function()
 	if not _mounting and not mounting then return end
 
-	if _mounting == true or mounting then _mounting = RealTime() + 1 return end
+	if _mounting == true or mounting then _mounting = RealTime() + .5 return end
 	if _mounting < RealTime() then _mounting = false end
 
 	local sw,sh = ScrW(),ScrH()
@@ -29,9 +29,9 @@ hook.Add('DrawOverlay',Tag,function()
 	local bw,bh =	tw + 24*2,
 					th + 8*2
 	local bx,by = 	sw*.5 - bw*.5,
-					sh*.5 - bh*.5
-	local tx,ty = 	sw*.5 - tw*.5,
-					sh*.5 - th*.5
+					sh*.2 - bh*.9
+	local tx,ty = 	bx + bw*.5 - tw*.5,
+					by + bh*.5 - th*.5
 					
 	surface.DrawRect(bx,by,bw,bh)
 	surface.SetDrawColor(255,120,120,200)
