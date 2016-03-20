@@ -242,3 +242,8 @@ function BroadcastMyOutfit(a)
 	
 end
 
+hook.Add("PlayerSlowThink",Tag,function(pl) 
+	if pl:InPVS() then
+		OnPlayerVisible(pl)
+	end
+end)
