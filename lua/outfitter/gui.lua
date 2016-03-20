@@ -1,6 +1,8 @@
 local Tag='outfitter' 
 local NTag = 'OF'
 
+-- lua_openscript_cl srv/outfitter/lua/outfitter/ui.lua;lua_openscript_cl srv/outfitter/lua/outfitter/gui.lua;outfitter_open
+
 module(Tag,package.seeall)
 
 
@@ -147,7 +149,7 @@ function PANEL:Init()
 		self.btn_choose = b
 
 		b:Dock(TOP)
-		b:SetText("Browse workshop")
+		b:SetText("#open_workshop")
 		b:SetTooltip[[Choose a workshop addon which contains an outfit]]
 
 		b.DoClick= function()
@@ -182,7 +184,7 @@ function PANEL:Init()
 	
 	local mdllist = functions:Add( "DListView",'modelname' )
 		mdllist:SetMultiSelect( false )
-		mdllist:AddColumn( "Model" )
+		mdllist:AddColumn( "#gameui_playermodel" )
 		self.mdllist = mdllist
 		mdllist:SetTooltip[[Click one of the models on this list to choose as your outfit]]
 		mdllist:DockMargin(0,5,0,0)
@@ -213,7 +215,7 @@ function PANEL:Init()
 	local l = rightpanel:Add( "DLabel",'hist' )
 		l:Dock(TOP)
 		l:DockMargin(1,1,1,1)
-		l:SetText"Previously used workshop models"
+		l:SetText"#history"
 		
 		
 		
@@ -221,8 +223,8 @@ function PANEL:Init()
 	local mdlhist = rightpanel:Add( "DListView",'mdlhist' )
 		mdlhist:DockMargin(4,4,4,4)
 		mdlhist:SetMultiSelect( false )
-		mdlhist:AddColumn( "Title" )
-		mdlhist:AddColumn( "Model" )
+		mdlhist:AddColumn( "#name" )
+		mdlhist:AddColumn( "#gameui_playermodel" )
 		self.mdlhist = mdlhist
 	
 		
@@ -240,7 +242,7 @@ function PANEL:Init()
 		
 		b:Dock(BOTTOM)
 		
-		b:SetText("Clear history")
+		b:SetText("#gameui_clearbutton")
 		b.DoClick= function()
 			GUIClearHistory()
 		end
@@ -251,7 +253,7 @@ function PANEL:Init()
 	
 	local check = Add( "DCheckBoxLabel" )
 	 	check:SetConVar(Tag.."_enabled")
-		check:SetText( "Enabled")
+		check:SetText( "#gameui_enabled")
 		check:SizeToContents()
 		check:SetTooltip[[Toggle this if someone's outfit got blocked or should be showing]]
 		check:DockMargin(1,0,1,1)
@@ -264,7 +266,40 @@ function PANEL:Init()
 		check:SizeToContents()
 
 		check:DockMargin(1,4,1,1)
+	local d_5 = check
+	
+	local c = Add( "DComboBox" )
+	c:SetSize( 100, 20 )
+	c:SetTooltip[[Distance mode: start downloading outfits when you get near a player]]
+	c.SetValue = function(c,val)
+		c:ChooseOptionID(val==0 and 2 or val==1 and 3 or 1 )
+	end
+	
+	c:AddChoice( "Distance mode: Automatic", '-1' )
+	c:AddChoice( "Distance mode: disabled", '0' )
+	c:AddChoice( "Distance mode: Enabled", '1' )
+	
+	c:SetConVar(Tag..'_distance_mode')
+	local d_4 = c
+	c:DockMargin(0,0,0,5)
+	
+	
+	local slider = Add( "DNumSlider" )
+		slider:SetText( "Outfit download distance" )
+		slider:SizeToContents()
+		slider:DockPadding(0,16,0,0)
+		slider.Label:Dock(TOP)
+		slider.Label:DockMargin(0,-16,0,0)
+		slider:DockMargin(0,5,0,0)
+		slider:SetTooltip[[How near does a player have to be for an outfit to download]]
 
+		slider:DockMargin(1,4,1,1)
+		slider:SetMin( 0 )				 
+		slider:SetMax( 5000 )			
+		slider:SetDecimals( 0 )			 
+		slider:SetConVar( Tag..'_distance' )
+		local sld_dist = slider
+		
 	local slider = Add( "DNumSlider" )
 		slider:SetText( "Maximum download size (in MB)" )
 		slider:SizeToContents()
@@ -291,7 +326,7 @@ function PANEL:Init()
 		
 	local debug = Add( "DCheckBoxLabel" )
 	 	debug:SetConVar(Tag.."_dbg")
-		debug:SetText( "Debug")
+		debug:SetText( "#debug")
 		debug:SetTooltip[[Print debug stuff to console. Enable this if something is wrong and in the bugreport give the log output.]]
 		debug:SizeToContents()
 
@@ -314,6 +349,13 @@ function PANEL:Init()
 		check:DockMargin(1,4,1,1)
 		local d_2 = check
 	
+	local b = Add('EditablePanel')
+	b:SetTall(2)
+	b.Paint = function(b,w,h)
+		surface.SetDrawColor(33,33,33,100)
+		surface.DrawRect(0,0,w,h)
+	end
+	
 	local b = Add('DButton','thirdperson')
 		b:SetText("Thirdperson toggle")
 		b:SetTooltip[[Enables/disable thirdperson (if one is installed)]]
@@ -325,12 +367,11 @@ function PANEL:Init()
 	
 	
 	
-	
 	local b = functions:Add('DButton','Clear button')
 		self.btn_clear = b
 		b:SetTooltip[[This removes all traces of you wearing an outfit]]
 		b:Dock(BOTTOM)
-		b:SetText("Remove outfit")
+		b:SetText("#discarditem")
 		b:SetTall(b:GetTall()+4)
 		b.DoClick= function()
 			UICancelAll()
@@ -342,7 +383,7 @@ function PANEL:Init()
 	local b = functions:Add('DButton','Send button')
 		self.btn_send= b
 		b:Dock(BOTTOM)
-		b:SetText("Broadcast outfit")
+		b:SetText("#gameui_submit")
 		b:SetTooltip[[This broadcasts the outfit you have chosen to the whole server]]
 		b.DoClick= function()
 			GUIBroadcastMyOutfit()
@@ -354,7 +395,6 @@ function PANEL:Init()
 		b:SetImage'icon16/transmit.png'
 		self.btnSendOutfit = b
 		function b.SetEnabled2(b,v)
-			print("SetEnabled2",v)
 			b:SetDisabled(not v)
 			b._set_enabled = v
 		end
@@ -374,8 +414,11 @@ function PANEL:Init()
 		d_1:SetVisible(h>400)
 		d_2:SetVisible(h>400)
 		d_3:SetVisible(h>400)
+		d_4:SetVisible(h>400)
+		d_5:SetVisible(h>450)
 		self.lbl_chosen:SetVisible(h>300)
-		sld_dl:SetVisible(h>400)
+		sld_dist:SetVisible(h>450)
+		sld_dl:SetVisible(h>450)
 		
 		local parent = self:GetParent()
 		parent = parent and parent:IsValid() and parent.btnCheck
@@ -641,6 +684,7 @@ function PANEL:Init()
     self:ShowCloseButton( true )
     self:SetDraggable( true )
     self:SetSizable( true )
+	self:ShowCloseButton(true)
 	
 	local title = self.lblTitle
 	if title then
@@ -651,15 +695,45 @@ function PANEL:Init()
 			img:SetWide(img:GetTall())
 			title:SetTextInset(img:GetTall() + 5,0)
 		end
-
 	
 		local check = self:Add( "DCheckBoxLabel" )
 	 	check:SetConVar(Tag.."_enabled")
-		check:SetText( "enabled")
+		check:SetText( "#enabled")
 		check:SizeToContents()
 		check:SetTooltip[[Toggle this if someone's outfit got blocked or should be showing]]
 		self.btnCheck = check
 	end
+	local OnMouseReleased = self.OnMouseReleased
+	self.OnMouseReleased = function(...)
+		self.OnMouseReleasedHook(...)
+		return OnMouseReleased(...)
+	end
+	local Think = self.Think
+	self.Think = function(...)
+				
+		Think(...)
+		
+		local x,y=self:CursorPos()
+		if x>0 and x<20 and y>0 and y<20 then 
+			self:SetCursor( "arrow" )
+		end
+	end
+end
+
+function PANEL:OnMouseReleasedHook(mc)
+	if mc==MOUSE_LEFT then return end
+	local x,y = self:CursorPos()
+	if x<0 or x>20 then return end
+	if y<0 or y>20 then return end
+	
+	local menu = DermaMenu()
+	
+	if UIGetChosenMDL() and UIGetMDLList() and LocalPlayer().latest_want~=UIGetMDLList()[UIGetChosenMDL()] then
+		menu:AddOption( "#gameui_submit", function() GUIBroadcastMyOutfit() end ):SetImage'icon16/transmit.png'
+	end
+	
+	menu:AddOption( "Close", function() self:GetParent():Hide() end ):SetImage'icon16/stop.png'
+	menu:Open()
 end
 
 function PANEL:PerformLayout(w,h)

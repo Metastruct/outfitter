@@ -14,19 +14,6 @@ end
 
 net.Receive(Tag,function(...) if this.OnReceive then OnReceive(...) end end)
 
-local cache = {}
-function FlushCache()
-	cache = {}
-end
-
-function FileExistsCached(fpath)
-	local ret = cache[fpath]
-	if ret == nil then
-		ret = HasMDL(fpath)
-		cache[fpath] = ret
-	end
-	return ret
-end
 
 function SanityCheckNData(mdl,wsid)
 	

@@ -44,14 +44,14 @@ do
 end
 
 do
-	-- -1: force disable distance check
-	-- 0: server preference
+	-- -1: server preference
+	-- 0: force disable distance check
 	-- 1: force enable distance check
-	local outfitter_distance_mode = CreateClientConVar("outfitter_distance_mode","0",true)
-	local outfitter_distance = CreateClientConVar("outfitter_distance","2047",SAVE)
+	local outfitter_distance_mode = CreateClientConVar("outfitter_distance_mode","-1",true)
+	local outfitter_distance = CreateClientConVar("outfitter_distance","2047",true)
 	function ShouldDistance()
 		local mode = outfitter_distance_mode:GetInt()
-		if mode==-1 then
+		if mode==0 then
 			return false
 		elseif mode==1 then
 			return true
@@ -75,7 +75,7 @@ end
 do
 
 	local outfitter_nohighperf = CreateClientConVar("outfitter_nohighperf","0",false)
-	local highperf=0
+	local highperf = 0
 	function IsHighPerf()
 		return not outfitter_nohighperf:GetBool() and highperf>0
 	end

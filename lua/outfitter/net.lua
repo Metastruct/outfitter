@@ -37,26 +37,25 @@ if CLIENT then
 		local me = LocalPlayer()
 		
 		-- local player is special snowflake
-		if pl~=me then
-			if new and not IsEnabled() then
+		if pl~=me and new then
+			
+			if not IsEnabled() then
 				pl.outfitter_nvar = nil
 				dbgn(2,"OnPlayerVisible","IsEnabled",pl)
 				return
 			end
 			
-			local shouldfilter = VisibleFilter(me,pl)
-			if shouldfilter then
+			if VisibleFilter(me,pl) then
 				dbgn(2,"OnPlayerVisible","VisibleFiltering",pl)
 				return
 			end
 				
-			if new and IsHighPerf() then
+			if IsHighPerf() then
 				dbgn(2,"OnPlayerVisible","high perf blocking")
 				return
 			end
 			
 		end
-		
 		
 		--if old == true then return end
 		
