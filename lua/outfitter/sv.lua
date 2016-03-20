@@ -104,7 +104,8 @@ function TestOutfitsOnBots()
 		{ "models/player_chibiterasu.mdl",503568129},
 	}
 	for k,v in next,player.GetBots() do
-		local of = t[k%(#t)]
-		SHNetworkOutfit(unpack(of))
+		local of = t[(k-1)%(#t)+1]
+		PrecacheModel(of[1])
+		SHNetworkOutfit(v,unpack(of))
 	end
 end

@@ -362,7 +362,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 		return false,reason
 	end
 	
-	do
+	do -- steamworks fileinfo worker
 		local worker,cache = co.work_cacher_filter(
 			function(key,fileinfo)
 				return (not key) or fileinfo
@@ -379,6 +379,82 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 				end)
 			)
 		co_steamworks_FileInfo = co.worker(worker) 
+	end
+	
+	
+	do -- steam webapi fileinfo worker
+		-- TODO: conversion to FileInfo and combination interface and aggregator?t
+
+		local conv = {
+			[""] = "size",
+			[""] = "banned",
+			[""] = "id",
+			[""] = "previewid",
+			[""] = "disabled",
+			[""] = "installed",
+			[""] = "previewsize",
+			[""] = "owner",
+			[""] = "fileid",
+			[""] = "title",
+			[""] = "ownername",
+			[""] = "tags",
+			
+			[""] = "updated",
+			[""] = "created",
+			[""] = "description",
+		}
+
+		local function intFileInfo(wsid)
+			local url = "http://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1"
+			local dat = { 
+				itemcount = "1",
+				['publishedfileids[0]']=tostring(wsid)
+			}
+			
+			local retok,dat, len, hdr, ok = co.post(url,dat)
+			
+			if not retok then return nil,dat end
+			if ok ~= 200 then return nil,tostring(ok) end
+			
+			local fileinfo = util.JSONToTable(dat)
+			
+			if not fileinfo then return nil,'json' end
+			fileinfo = fileinfo.response
+			
+			if not fileinfo then return nil,'response' end
+			if fileinfo.result and fileinfo.result~=1 then return false,tostring(fileinfo.result) end
+			if fileinfo.resultcount == 0 then return false,'noresults' end
+
+			fileinfo=fileinfo and fileinfo.publishedfiledetails
+			fileinfo=fileinfo and fileinfo[1]
+
+			
+			if not fileinfo then return false,'fileinfo' end
+			if fileinfo.result~=1 then return false,'fileinforesult' end
+
+			do return fileinfo end
+			
+			local cb = co.newcb()
+				steamworks.FileInfo(wsid,cb)
+			local fileinfo = co.waitcb(cb)
+			
+			return fileinfo
+		end	
+		local worker,cache = co.work_cacher_filter(
+			function(key,fileinfo)
+				return (not key) or fileinfo
+			end,
+			
+			co.work_cacher(intFileInfo)
+			)
+		co_steamworks_FileInfo2 = co.worker(worker) 
+
+		--co(function()
+		--	local ret,err = steamworks.coFileInfoX(569576795)
+		--	if not ret then ErrorNoHalt(tostring(err)..'\n') end
+		--	PrintTable(ret)
+		--end) 
+
 	end
 	
 	do
