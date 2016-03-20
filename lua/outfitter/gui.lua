@@ -351,23 +351,26 @@ function PANEL:Init()
 		check:DockMargin(1,4,1,1)
 		local d_2 = check
 	
-	local b = Add('EditablePanel')
-	b:SetTall(2)
-	b.Paint = function(b,w,h)
-		surface.SetDrawColor(33,33,33,100)
-		surface.DrawRect(0,0,w,h)
-	end
-	
 	local b = Add('DButton','thirdperson')
 		b:SetText("Thirdperson toggle")
 		b:SetTooltip[[Enables/disable thirdperson (if one is installed)]]
 
 		b.DoClick=function() ToggleThirdperson() end
-		b:DockMargin(16,24,16,1)
+		b:DockMargin(16,2,16,1)
 		b:SetImage'icon16/eye.png'
 	
 	
 	
+	local b = Add('EditablePanel')
+	b:SetTall(1)
+	b:DockMargin(-4,24,-4,1)
+	b.Paint = function(b,w,h)
+		surface.SetDrawColor(240,240,240,200)
+		surface.DrawRect(0,0,w,h)
+	end
+	local hr_line1 = b
+	
+	--------------------------------------------------
 	
 	local b = functions:Add('DButton','Clear button')
 		self.btn_clear = b
@@ -416,6 +419,7 @@ function PANEL:Init()
 		d_1:SetVisible(h>400)
 		d_2:SetVisible(h>400)
 		d_3:SetVisible(h>400)
+		hr_line1:SetVisible(h>500)
 		d_4:SetVisible(h>400)
 		d_5:SetVisible(h>450)
 		self.lbl_chosen:SetVisible(h>300)
@@ -676,27 +680,37 @@ function PANEL:Init()
 	local pnl = vgui.CreateFromTable(factor,self)
 	self.content = pnl
 	pnl:Dock(FILL)
-	self:SetSize(700,500)
+	--self:SetSize(700,500)
+	self:SetSize(313,293)
 	self:CenterHorizontal()
 	
 	self:SetTitle"Outfitter"
 	self:SetMinHeight(290)
 	self:SetMinWidth(312)
 	self:SetDeleteOnClose(false)
-    self:ShowCloseButton( true )
-    self:SetDraggable( true )
+	self.btnMinim:SetEnabled(true)
+	self.btnMaxim:SetEnabled(true)
+	self.btnMaxim.DoClick=function()
+		self:SetSize(700,550)
+		self:CenterHorizontal()
+	end
+	self.btnMinim.DoClick=function()
+		self:SetSize(313,293)
+		self:CenterHorizontal()
+	end	
+	self:SetDraggable( true )
     self:SetSizable( true )
-	self:ShowCloseButton(true)
 	
 	local title = self.lblTitle
 	if title then
-		local img = vgui.Create('DImage',title)
-		img:SetImage("icon16/user.png")
-		img:Dock(LEFT)
-		img.PerformLayout = function()
-			img:SetWide(img:GetTall())
-			title:SetTextInset(img:GetTall() + 5,0)
-		end
+		self:SetIcon'icon16/user.png'
+		--local img = vgui.Create('DImage',title)
+		--img:SetImage("icon16/user.png")
+		--img:Dock(LEFT)
+		--img.PerformLayout = function()
+		--	img:SetWide(img:GetTall())
+		--	title:SetTextInset(img:GetTall() + 5,0)
+		--end
 	
 		local check = self:Add( "DCheckBoxLabel" )
 	 	check:SetConVar(Tag.."_enabled")
@@ -741,6 +755,7 @@ end
 function PANEL:PerformLayout(w,h)
 	DFrame.PerformLayout(self,w,h)
 	local check = self.btnCheck
+	self.btnMinim:SetEnabled(w>(self:GetMinWidth() + 5) or h>(5 + self:GetMinHeight()))
 	local cw,ch = check:GetSize()
 	local b = self.btnMinim or self.btnMaxim
 	if b and b:IsValid() then
