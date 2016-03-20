@@ -223,48 +223,56 @@ end
 --- Crashing code detector thingy
 --TODO: Stack, blacklist of files
 
-local CFPATH = "outfitter_crash.dat"
-local f
-local function getfile()
-	if not f then
-		f = file.Open(CFPATH, 'wb','DATA')
-	end
-	return f
-end
-
-local function closefile()
-	if f then
-		f:Close()
-	end
-
-	f = nil
-end
-
-function DidCrash(key,val)
-end
-
-function CRITICAL(iscritical,dat)
-
-	getfile()
-	if not f then return end
+function InitCrashSys()
+	local Tag = Tag..'_crash'
+	local CrashingTagk = Tag..'ingk'
+	local CrashingTagv = Tag..'ingv'
 	
-	f:Seek(0)
-	if iscritical then
-		f:Write(tostring(iscritical)..':'..tostring(dat)..'\0')
-	else
-		f:Write'\0'
+	local function SAVE(t)
+		local s= util.TableToJSON(t)
+		util.SetPData("0",Tag,s)
+	end
+
+	local function LOAD()
+		local s= util.GetPData("0",Tag,false)
+		if not s or s=="" then return {} end
+		local t = util.JSONToTable(s)
+		return t
 	end
 	
-	f:Flush()
-end
+	local crashlist = LOAD() or {}
 
-OnInitialize(function()
-	local dat = file.Read(CFPATH,'DATA')
-	if not dat then return end
-	file.Delete(CFPATH,'DATA')
-	local fc = dat:sub(1,1)
-	if fc=="" or fc=='\0' then return end
-	dat = dat:match '^([^%z]+)'
-	if not dat then return end
-	ErrorNoHalt("[Outfitter] CRASH: ".. ('%q'):format(tostring(dat)) ..'\n')
-end)
+	function GetCrashList()
+		return crashlist
+	end
+	
+	local function SaveList()
+		SAVE(crashlist)
+	end
+	
+	function DidCrash(key,val)
+		local t = crashlist[key]
+		return t and t[val]
+	end
+
+	function CRITICAL(a,b)
+		util.SetPData("0",CrashingTagk,a or "")
+		if not a or a=="" then return end
+		util.SetPData("0",CrashingTagv,b)
+	end
+
+	-- check for crashes
+	
+	local key = util.GetPData("0",CrashingTagk,false)
+	if not key or key=="" then return end
+	local val = util.GetPData("0",CrashingTagv,"")
+	
+	local err = ("[Outfitter] CRASH: %s on %q\n"):format( tostring(key),tostring(val) )
+	
+	local t = crashlist[key] if not t then t = {} crashlist[key] = t end
+	t[val] = true
+	SaveList()
+
+	OnInitialize(function() ErrorNoHalt(err) end)
+end
+InitCrashSys()

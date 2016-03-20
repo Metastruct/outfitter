@@ -19,8 +19,11 @@ local function SET(pl)
 	local mdl,wsid = pl:OutfitInfo()
 	
 	if mdl and not IsEnabled() then return end
-	
+	if DidCrash('setmdl',mdl) then dbge("EnforceModel","CRASH",mdl,wsid) end
+	CRITICAL("setmdl",mdl)
 	local ret = pl:EnforceModel(mdl)
+	CRITICAL(false)
+	
 	pl.outfitter_mdl = mdl
 	pl.outfitter_wsid = wsid
 	if not ret then
