@@ -240,6 +240,9 @@ local function closefile()
 	f = nil
 end
 
+function DidCrash(key,val)
+end
+
 function CRITICAL(iscritical,dat)
 
 	getfile()
