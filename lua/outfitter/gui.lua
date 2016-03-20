@@ -268,38 +268,40 @@ function PANEL:Init()
 		check:DockMargin(1,4,1,1)
 	local d_5 = check
 	
-	local c = Add( "DComboBox" )
-	c:SetSize( 100, 20 )
-	c:SetTooltip[[Distance mode: start downloading outfits when you get near a player]]
-	c.SetValue = function(c,val)
-		c:ChooseOptionID(val==0 and 2 or val==1 and 3 or 1 )
-	end
-	
-	c:AddChoice( "Distance mode: Automatic", '-1' )
-	c:AddChoice( "Distance mode: disabled", '0' )
-	c:AddChoice( "Distance mode: Enabled", '1' )
-	
-	c:SetConVar(Tag..'_distance_mode')
-	local d_4 = c
-	c:DockMargin(0,0,0,5)
-	
-	
 	local slider = Add( "DNumSlider" )
 		slider:SetText( "Outfit download distance" )
 		slider:SizeToContents()
 		slider:DockPadding(0,16,0,0)
 		slider.Label:Dock(TOP)
 		slider.Label:DockMargin(0,-16,0,0)
-		slider:DockMargin(0,5,0,0)
 		slider:SetTooltip[[How near does a player have to be for an outfit to download]]
 
-		slider:DockMargin(1,4,1,1)
+		slider:DockMargin(1,12,1,1)
 		slider:SetMin( 0 )				 
 		slider:SetMax( 5000 )			
 		slider:SetDecimals( 0 )			 
 		slider:SetConVar( Tag..'_distance' )
 		local sld_dist = slider
-		
+			
+	local c = Add( "DComboBox" )
+	c:SetSize( 100, 20 )
+	c:SetTooltip[[Distance mode: start downloading outfits when you get near a player]]
+	c.SetValue = function(c,val)
+		c:ChooseOptionID(val==0 and 2 or val==1 and 3 or 1 )
+	end
+	c.OnSelect = function(c,val)
+		RunConsoleCommand("outfitter_distance_mode",tostring(val==1 and -1 or val==2 and 0 or 1))
+	end
+	c:AddChoice( "Distance mode: Automatic", '-1' )
+	c:AddChoice( "Distance mode: disabled", '0' )
+	c:AddChoice( "Distance mode: Enabled", '1' )
+	
+	c:SetConVar(Tag..'_distance_mode')
+	local d_4 = c
+	c:DockMargin(0,12,0,0)
+	
+	
+
 	local slider = Add( "DNumSlider" )
 		slider:SetText( "Maximum download size (in MB)" )
 		slider:SizeToContents()
