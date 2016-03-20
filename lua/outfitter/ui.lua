@@ -254,10 +254,10 @@ end
 
 local relay_opengui
 function UIChangeModelToID(n,opengui)
+
+	if co.make(n,opengui) then return end
 	
 	dbg("UIChangeModelToID",n)
-	
-	if co.make(n,opengui) then return end
 	
 	chosen_mdl = nil
 	
@@ -275,14 +275,9 @@ function UIChangeModelToID(n,opengui)
 		return UIError"Invalid model index"
 	end
 	
-	local alreadymounted = WasAlreadyMounted(chosen_wsid)
-	local ok
-	if alreadymounted~=nil then
-		ok = alreadymounted
-	else
-		assert(mount_path,"mount_path missing for "..tostring(chosen_wsid))
-		ok = coMountWS( mount_path )
-	end
+	assert(mount_path,"mount_path missing for "..tostring(chosen_wsid))
+	local ok = coMountWS( mount_path )
+
 	if not ok then
 		if opengui then GUIOpen() end
 		return UIError"The workshop addon could not be mounted"

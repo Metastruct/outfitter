@@ -299,17 +299,10 @@ end
 local worker,cache = co.work_cacher(_coMountWS)
 coMountWS = co.worker(worker)
 
-	--          l outfitter.FetchWS(111412589,PrintTable)
 
 --TODO: own cache
 function NeedWS(wsid,pl,mdl)
 	if co.make(wsid,pl,mdl) then return end
-	
-	local result = WasAlreadyMounted(path)
-	if result~=nil then 
-		if not result then return nil,"mount" end
-		return result
-	end
 	
 	SetUIFetching(wsid,true)
 	
