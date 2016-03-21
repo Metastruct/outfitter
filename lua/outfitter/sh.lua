@@ -2,7 +2,7 @@ local Tag='outfitter'
 
 module(Tag,package.seeall)
 
-local outfitter_sv_distance = CreateConVar("outfitter_sv_distance", "0", { FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY } )
+local outfitter_sv_distance = CreateConVar("outfitter_sv_distance", "1", { FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY } )
 function ServerSuggestDistance()
 	return outfitter_sv_distance:GetBool()
 end
