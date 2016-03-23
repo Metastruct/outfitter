@@ -714,7 +714,7 @@ function PANEL:Init()
 	
 		local check = self:Add( "DCheckBoxLabel" )
 	 	check:SetConVar(Tag.."_enabled")
-		check:SetText( "#enabled")
+		check:SetText( "#gameui_enabled")
 		check:SizeToContents()
 		check:SetTooltip[[Toggle this if someone's outfit got blocked or should be showing]]
 		self.btnCheck = check
