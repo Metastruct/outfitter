@@ -680,19 +680,39 @@ function PANEL:Init()
 	local pnl = vgui.CreateFromTable(factor,self)
 	self.content = pnl
 	pnl:Dock(FILL)
-	--self:SetSize(700,500)
-	self:SetSize(313,293)
+
 	self:CenterHorizontal()
-	
+	self:SetCookieName"ofp"
 	self:SetTitle"Outfitter"
 	self:SetMinHeight(290)
 	self:SetMinWidth(312)
 	self:SetDeleteOnClose(false)
 	self.btnMinim:SetEnabled(true)
 	self.btnMaxim:SetEnabled(true)
+	local had_max = self:GetCookie( "pmax", "" ) == '1'
+	
+	if had_max then
+		self:SetSize(700,500)
+	else
+		self:SetSize(313,293)
+	end
+	
 	self.btnMaxim.DoClick=function()
 		self:SetSize(700,550)
+		self:SetCookie( "pmax", '1' ) 
+		had_max = true
 		self:CenterHorizontal()
+	end
+	if not had_max then
+		self.btnMaxim.PaintOver = function(b,w,h)
+			if had_max then return end
+			b:NoClipping(false)
+			surface.SetDrawColor(255,66,22,255*.5 + 255*.3 * math.sin(RealTime()*4))
+
+			surface.DrawOutlinedRect(-1,-1,w+1,h+1)
+			surface.DrawOutlinedRect(0,0,w,h)
+			b:NoClipping(true)
+		end
 	end
 	self.btnMinim.DoClick=function()
 		self:SetSize(313,293)
