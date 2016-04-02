@@ -20,7 +20,7 @@ function Fullupdate()
 end
 
 --TODO: Make outfitter mount all after enabling?
-outfitter_enabled = CreateClientConVar("outfitter_enabled","1",SAVE,true)
+outfitter_enabled = CreateClientConVar("outfitter_enabled","1",true,true)
 cvars.AddChangeCallback("outfitter_enabled",function(cvar,old,new)
 	if new=='0' then
 		DisableEverything()
