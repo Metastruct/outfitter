@@ -751,16 +751,22 @@ function PANEL:Init()
 		
 		local x,y=self:CursorPos()
 		if x>0 and x<20 and y>0 and y<20 then 
-			self:SetCursor( "arrow" )
+			self:SetCursor( "hand" )
 		end
 	end
 end
 
 function PANEL:OnMouseReleasedHook(mc)
-	if mc==MOUSE_LEFT then return end
+
 	local x,y = self:CursorPos()
 	if x<0 or x>20 then return end
 	if y<0 or y>20 then return end
+	
+	
+	if mc==MOUSE_LEFT then 
+		GUIAbout()
+		return 
+	end
 	
 	local menu = DermaMenu()
 	
@@ -768,6 +774,9 @@ function PANEL:OnMouseReleasedHook(mc)
 		menu:AddOption( "#gameui_submit", function() GUIBroadcastMyOutfit() end ):SetImage'icon16/transmit.png'
 	end
 	
+	--menu:AddLine()
+	
+	menu:AddOption( "About", function() GUIAbout() self:GetParent():Hide() end ):SetImage'icon16/information.png'
 	menu:AddOption( "Close", function() self:GetParent():Hide() end ):SetImage'icon16/stop.png'
 	menu:Open()
 end
@@ -842,4 +851,381 @@ concommand.Add(Tag..'_open',function()
 	GUIOpen()
 end)
 
+
+
+
+
+
+
+-- Credits --
+
+local Tag='outfitter' 
+
+module(Tag,package.seeall)
+
+
+
+local avatar_size=184
+local avatars = {}
+-- FUCK YOU GARRY
+local function GetCachedAvatar184(sid64)
+	local c = avatars[sid64]
+	if c then
+		c.shouldhide = false
+		if c.hidden then
+			c.hidden =false
+			c:SetVisible(true)
+		end
+		return c
+	end
+
+	local a = vgui.Create'AvatarImage'
+	a:SetPaintedManually(true)
+	a:SetSize(1,1)
+	a:ParentToHUD()
+	a:SetAlpha(0)
+	a:SetPos(ScrW()-1,ScrH()-1)
+	a:SetSteamID(sid64,avatar_size)
+	a.Think=function(self)
+		if self.shouldhide then
+			if not self.hidden then
+				self.hidden = true
+				self:SetVisible(false)
+			end
+		else
+			self.shouldhide = true
+		end
+	end
+	a.shouldhide = false
+	avatars[sid64]=a
+	return a
+end
+
+
+local avatar_size=184
+local avatars = {}
+local function GetCachedAvatar184(sid64)
+	local c = avatars[sid64]
+	if c then
+		c.shouldhide = false
+		if c.hidden then
+			c.hidden =false
+			c:SetVisible(true)
+		end
+		return c
+	end
+
+	local a = vgui.Create'AvatarImage'
+	a:SetPaintedManually(true)
+	a:SetSize(1,1)
+	a:ParentToHUD()
+	a:SetAlpha(0)
+	a:SetPos(ScrW()-1,ScrH()-1)
+	a:SetSteamID(sid64,avatar_size)
+	a.Think=function(self)
+		if self.shouldhide then
+			if not self.hidden then
+				self.hidden = true
+				self:SetVisible(false)
+			end
+		else
+			self.shouldhide = true
+		end
+	end
+	a.shouldhide = false
+	avatars[sid64]=a
+	return a
+end
+function SetAvatarTexture184(sid64)
+	local cached = GetCachedAvatar184(sid64)
+	surface.SetTexture(0)
+	if cached then
+		cached:SetPaintedManually(false)
+		cached:PaintManual()
+		cached:SetPaintedManually(true)
+	end
+end
+
+
+local credits = {
+	{
+		"Python1320",
+		"76561197986413226",
+		[[The guy who wrote all this madness.]],
+	},
+	{
+		"Willox",
+		"76561197998909316",
+		[[Facepunch dude who made this possible.]],
+	},{
+		"Garry",
+		"76561197960279927",
+		[[]],
+	},{
+		"CapsAdmin",
+		"76561197978977007",
+		[[Insipration]],
+	},{
+		"Facepunch forums",
+		"http://facepunch.com",
+		[[For helping with all the LAU selflessly and also for emotional support over the years for all of us. Lots of stuff would not have been possible without!]],
+	},{
+		"Meta Construct",
+		"http://metastruct.uk.to",
+		[[For testing server and being the inspiration and nagging reminder to continue outfitter.]],
+	},
+}
+
+OnInitialize(function()
+	credits[#credits+1] = {
+		LocalPlayer():GetName(),
+		LocalPlayer():SteamID64(),
+		[[For being interested in outfitter!]],
+	}
+end)
+
+local PANEL={}
+function PANEL:Init() local _
+
+	self:SetTitle"Outfitter (About)"
+	local W,H=290,350
+	self:SetMinHeight(100)
+	self:SetMinWidth(200)
+	self:SetSize(W,H)
+	self:SetDeleteOnClose(true)
+	self:Center()
+
+	_=self.btnMinim and self.btnMinim:SetVisible(false)
+	_=self.btnMaxim and self.btnMaxim:SetVisible(false)
 	
+	self:SetDraggable( true )
+    self:SetSizable( true )
+	
+	local title = self.lblTitle
+	if title then
+		self:SetIcon'icon16/information.png'
+		
+	end
+	
+	local pnl = vgui.Create('DScrollPanel',self)
+	self.content = pnl
+	
+	-- HACK
+		pnl.VBar:SetParent(self)
+		pnl.VBar:Dock(RIGHT)
+		pnl.VBar:DockMargin(-pnl.VBar:GetWide()+4,0,0,0)
+	pnl:Dock(FILL)
+	
+	self:GenDesc()
+	for _,entry in next,credits do
+		self:GenAbout(entry)
+	end
+end
+
+function PANEL:GenDesc()
+	
+	local lbl_desc = vgui.Create('DLabel',self)
+	lbl_desc:SetText[[Hello there! Outfitter was made to fill the need of the GMod community and for procrastination. 
+Although mostly working, outfitter still has bugs and you can help with that by reporting them.]]
+	lbl_desc:DockMargin(4,4,4,14)
+	--lbl_desc:SetFont(fdesc) 
+	lbl_desc:SetDark(false) 
+	lbl_desc:SetAutoStretchVertical(true)
+	lbl_desc:SetWrap(true)
+	lbl_desc:Dock(TOP)
+	self:AddItem(lbl_desc)
+	
+		
+	local b = vgui.Create( "DButton", self )
+	b:SetText"Bug reporting"
+	b.DoClick=function()
+		gui.OpenURL"http://google.com"
+	end
+	self:AddItem(b)
+	
+	local b = vgui.Create( "DButton", self )
+	b:SetText"Get outfitter"
+	b.DoClick=function()
+		gui.OpenURL"http://google.com?q=garrysmod+outfitter"
+	end
+	self:AddItem(b)
+	
+	local lbl_desc = vgui.Create('DLabel',self)
+	lbl_desc:SetText[[Finally, the people responsible for this mess include but are not limited to:]]
+	lbl_desc:DockMargin(4,14,4,8)
+	--lbl_desc:SetFont(fdesc) 
+	lbl_desc:SetDark(false) 
+	lbl_desc:SetAutoStretchVertical(true)
+	lbl_desc:SetWrap(true)
+	lbl_desc:Dock(TOP)
+	self:AddItem(lbl_desc)
+end
+
+function PANEL:AddItem(i)
+	i:Dock(TOP)
+	self.content:AddItem(i)
+end
+
+function PANEL:GenAbout(entry)
+	local title,id,desc = unpack(entry)
+	local sid64 = id:match'^%d+$' and id
+	
+	local pnl = vgui.Create('DPanel',self)
+	
+	local ftitle,fdesc = 'huddefault','default'
+	
+	self:AddItem(pnl)
+	pnl:SetTall(140)
+	pnl:DockMargin(0,0,0,4)
+	pnl:DockPadding(1,1,1,4)
+	
+	local avatar = vgui.Create('EditablePanel',pnl)
+	avatar:Dock(LEFT)
+	avatar:SetWidth(48)
+	avatar:DockMargin(2,2,2,2)
+	
+	avatar.Paint=sid64 and function(avatar,w,h)
+		local sz = w<h and w or h
+		SetAvatarTexture184(sid64)
+		local ox = w-sz
+		local oy = 0
+		if h-sz<5 then
+			oy = h*.5-sz*.5
+		end
+		
+		surface.SetDrawColor(255,255,255,255)
+		surface.DrawTexturedRect(ox,oy,sz,sz)
+		--surface.SetDrawColor(33,33,33,111)
+		--surface.DrawOutlinedRect(0,0,w,h)
+		if avatar:IsHovered() then
+			surface.SetDrawColor(111,155,255,77)
+			surface.DrawRect(ox,oy,sz,sz)
+		end
+	end or function(avatar,w,h)
+		local sz = w<h and w or h
+		local ox = w-sz
+		local oy = 0
+		if h-sz<5 then
+			oy = h*.5-sz*.5
+		end
+		surface.SetDrawColor(120,110,100,90)
+		surface.DrawRect(ox,oy,sz,sz)
+		--surface.SetDrawColor(33,33,33,111)
+		--surface.DrawOutlinedRect(0,0,w,h)
+	end
+
+	avatar:SetCursor"hand"
+	avatar:SetMouseInputEnabled(true)
+	avatar.OnMousePressed = function(avatar)
+		local url = id
+		if url:match'^%d+$' then
+			url = 'http://steamcommunity.com/profiles/'..url
+		end
+		gui.OpenURL(url)
+	end
+	
+	--function pnl.Paint(pnl,w,h)
+	--	surface.SetDrawColor(255,255,255,100)
+	--	surface.DrawOutlinedRect(0,0,w,h)
+	--end
+
+	local lbl = vgui.Create('DLabel',pnl)
+	lbl:SetText(title)
+	lbl:SetFont(ftitle) lbl:SetDark(true) lbl:SetAutoStretchVertical(true)
+	lbl:Dock(TOP)
+	local curtxt = title
+	lbl:SetCursor"hand"
+	if sid64 then steamworks.RequestPlayerInfo(sid64) end
+	lbl.Think=sid64 and function()
+		local nowtxt = steamworks.GetPlayerName(sid64)
+		if nowtxt and nowtxt~= "" then
+			curtxt = nowtxt
+			lbl.Think = function() end
+			lbl:SetText(curtxt)
+		end
+	end or function() end
+	
+	lbl:DockMargin(4,0,0,0)
+	lbl:SetMouseInputEnabled(true)
+	lbl.DoClick = function()
+		local url = id
+		if url:match'^%d+$' then
+			url = 'http://steamcommunity.com/profiles/'..url
+		end
+		gui.OpenURL(url)
+	end
+	
+	local lbl_desc = vgui.Create('DLabel',pnl)
+	lbl_desc:SetText(desc)
+	lbl_desc:DockMargin(4+4,0,0,0)
+	lbl_desc:SetFont(fdesc) lbl_desc:SetDark(true) lbl_desc:SetAutoStretchVertical(true)
+	lbl_desc:SetWrap(true)
+	lbl_desc:Dock(TOP)
+	lbl_desc.PaintOver=function(lbl,w,h)
+		surface.SetDrawColor(120,110,100,5)
+		surface.DrawOutlinedRect(0,0,w,h)
+	end
+	
+	function pnl.PerformLayout(pnl)
+		local t = {}
+		local minh = self:GetTall()
+		for k,v in next,pnl:GetChildren() do
+			local dock = v:GetDock()
+			if dock==LEFT or dock==RIGHT then
+				t[v]={dock,v:GetSize()}
+				v:SetTall(1)
+			end
+		end
+		pnl:SizeToChildren(false,true)
+		local msz = 48+1*2+2*2+3.456
+		if pnl:GetTall()<msz then
+			pnl:SetTall(msz)
+		end
+		--for p,dat in next,t do
+		--	p:Dock(dat[1])
+		--	p:SetSize(dat[2],dat[3])
+		--end
+		--
+	end
+end
+
+
+function PANEL:PerformLayout(w,h)
+	DFrame.PerformLayout(self,w,h)
+end
+function PANEL:Hide()
+        self:SetVisible(false)
+end
+
+
+function PANEL:Show()
+	surface.PlaySound"garrysmod/ui_return.wav"
+	self:SetVisible(true)
+	self:MakePopup()
+end
+
+
+local factor = vgui.RegisterTable(PANEL,'DFrame')
+
+if this.m_pAboutDlg and ValidPanel(this.m_pAboutDlg) then
+	m_pAboutDlg:Remove()
+end
+
+m_pAboutDlg = NULL
+function GUIAbout()
+	
+	if not ValidPanel(m_pAboutDlg) then
+		local d = vgui.CreateFromTable(factor,nil,Tag..'_about')
+		m_pAboutDlg = d
+	end
+	
+	
+	m_pAboutDlg:Show()
+	
+	return m_pAboutDlg
+end
+
+	
+concommand.Add(Tag..'_about',function()
+	GUIAbout()
+end)
