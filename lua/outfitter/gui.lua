@@ -976,17 +976,23 @@ local credits = {
 	},
 }
 
-OnInitialize(function()
+local inited
+local function initcredits()
+	if inited then return end
+	inited=true
+	
 	credits[#credits+1] = {
 		LocalPlayer():GetName(),
 		LocalPlayer():SteamID64(),
 		[[For being interested in outfitter!]],
 	}
-end)
+end
 
 local PANEL={}
 function PANEL:Init() local _
-
+	
+	initcredits()
+	
 	self:SetTitle"Outfitter (About)"
 	local W,H=290,350
 	self:SetMinHeight(100)
@@ -1229,3 +1235,21 @@ end
 concommand.Add(Tag..'_about',function()
 	GUIAbout()
 end)
+
+
+-- button --
+
+--TODO: Integrate better?
+
+list.Set("DesktopWindows", Tag, {
+	title		= "Outfitter",
+	icon		= "icon64/playermodel.png",
+	width		= 1,
+	height		= 1,
+	onewindow	= false,
+	init		= function( icon, window )
+		window:GetParent():Close()
+		window:Remove()
+		GUIOpen()
+	end
+})
