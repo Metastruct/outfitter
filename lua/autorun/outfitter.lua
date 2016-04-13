@@ -1,9 +1,8 @@
 --do return end
 --[[
 
-FIX CLEARING NOT WORKING
-	(NeedWS state change afterwards is too big, something fucks up)
-	
+BUGS
+====================
 
 OUTFITTER REJECTS
 	191146401 -- noattachments
@@ -11,44 +10,55 @@ OUTFITTER REJECTS
 	503568129
 	393931403
 	252519802
+	Strict mode?
 
-BodyGroups testing
-	471628201
+Worldmodel vanishing
+	is it pac bug or outfitter?
+
+Prevent workshop addon overriding resources to prevent crashes and trolling
+	database list of: player - wsaddon - model, etc
+
+TODO
+====================
+	BodyGroups testing 	471628201
+	list favorited from workshop (playermodels heuristic?)
+	Add icons to history list
+	PAC part for outfitter
+		Multiple ws addons single outfit?
+			separate workshop mounter thing
+	Hands model from outfits
 	
-Try to get hands model?
-
-
-Interlock functions so they don't execute at the same time?
-	At least prevent more than 2 downloads
-	LZMA decompress in separate step
+	Interlock functions so they don't execute at the same time?
+		At least prevent more than 2 downloads at once
+		LZMA decompress in separate step
 	
-fix not loading after join for some reason
-add loading outfit only when seeing in PVS
-Bodygroups/skin editor
-
-002 CCollisionProperty::m_vecMaxsPreScaled - vec[] differs (1st diff) (net 7.413762 28.663610 71.754700 - pred 16.000000 16.000000 72.000000) delta(8.586238 -12.663610 0.245300)
-003 CCollisionProperty::m_vecMins - vec[] differs (1st diff) (net -16.088356 -28.536236 -4.704368 - pred -16.000000 -16.000000 0.000000) delta(0.088356 12.536236 4.704368)
-004 CCollisionProperty::m_vecMaxs - vec[] differs (1st diff) (net 7.413762 28.663610 71.754700 - pred 16.000000 16.000000 72.000000) delta(8.586238 -12.663610 0.245300)
-
-More sounds / notifications
-	npc/vort/claw_swing1.wav
-
-	npc/scanner/scanner_scan1.wav
-	npc/scanner/scanner_scan2.wav
-
-	common/warning.wav
-	buttons/button2.wav
-	BEP BEP BEP ui/system_message_alert.wav
-
-	ui/buttonclick.wav
-
-	items/suitchargeok1.wav
-
-	items/suitchargeno1.wav
-
-	Great scott
-	vo/trainyard/kl_morewarn01.wav
+	Bodygroups
+	skin
 	
+	Whitelist mode for competitive servers
+	
+	mdl parse further to prevent easy crashing
+	
+	
+	More sounds / notifications
+		npc/vort/claw_swing1.wav
+
+		npc/scanner/scanner_scan1.wav
+		npc/scanner/scanner_scan2.wav
+
+		common/warning.wav
+		buttons/button2.wav
+		BEP BEP BEP ui/system_message_alert.wav
+
+		ui/buttonclick.wav
+
+		items/suitchargeok1.wav
+
+		items/suitchargeno1.wav
+
+		Great scott
+		vo/trainyard/kl_morewarn01.wav
+		
 ]]
 
 AddCSLuaFile("includes/modules/gmaparse.lua")
