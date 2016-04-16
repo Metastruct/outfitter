@@ -18,6 +18,8 @@ Worldmodel vanishing
 Prevent workshop addon overriding resources to prevent crashes and trolling
 	database list of: player - wsaddon - model, etc
 
+Any prop wear from any game instead of a workshop addon
+
 TODO
 ====================
 	BodyGroups testing 	471628201
@@ -34,6 +36,8 @@ TODO
 	
 	Bodygroups
 	skin
+
+	Allow custom skinning from jpg??
 	
 	Whitelist mode for competitive servers
 	
