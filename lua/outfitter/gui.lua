@@ -234,7 +234,7 @@ function PANEL:Init()
 			if not dat then return end
 			self:WantOutfitMDL(unpack(dat))
 		end
-	
+
 	
 		
 	local b = rightpanel:Add('DButton','choose button')
@@ -352,14 +352,12 @@ function PANEL:Init()
 		local d_2 = check
 	
 	local b = Add('DButton','thirdperson')
-		b:SetText("Thirdperson toggle")
+		b:SetText("#tool.camera.name")
 		b:SetTooltip[[Enables/disable thirdperson (if one is installed)]]
 
 		b.DoClick=function() ToggleThirdperson() end
 		b:DockMargin(16,2,16,1)
 		b:SetImage'icon16/eye.png'
-	
-	
 	
 	local b = Add('EditablePanel')
 	b:SetTall(1)
@@ -372,22 +370,13 @@ function PANEL:Init()
 	
 	--------------------------------------------------
 	
-	local b = functions:Add('DButton','Clear button')
-		self.btn_clear = b
-		b:SetTooltip[[This removes all traces of you wearing an outfit]]
-		b:Dock(BOTTOM)
-		b:SetText("#discarditem")
-		b:SetTall(b:GetTall()+4)
-		b.DoClick= function()
-			UICancelAll()
-			self:GetParent():Hide()
-		end
-		b:DockMargin(1,16,1,1)
-		b:SetImage'icon16/user_delete.png'
+	local cont = functions:Add('EditablePanel','container')
+	cont:SetTall(32)
+	cont:Dock(BOTTOM)
 	
-	local b = functions:Add('DButton','Send button')
+	local b = cont:Add('DButton','Send button')
 		self.btn_send= b
-		b:Dock(BOTTOM)
+		b:Dock(LEFT)
 		b:SetText("#gameui_submit")
 		b:SetTooltip[[This broadcasts the outfit you have chosen to the whole server]]
 		b.DoClick= function()
@@ -395,9 +384,11 @@ function PANEL:Init()
 			b._set_enabled  = false
 			self:GetParent():Hide()
 		end
-		b:SetTall(b:GetTall()+24)
-		b:DockMargin(24,5,24,0)
 		b:SetImage'icon16/transmit.png'
+		b.PerformLayout=function(b,w,h)
+			DButton.PerformLayout(b,w,h)
+			b:SetWide(b:GetParent():GetWide()*.5)
+		end
 		self.btnSendOutfit = b
 		function b.SetEnabled2(b,v)
 			b:SetDisabled(not v)
@@ -411,6 +402,19 @@ function PANEL:Init()
 				end
 			end
 		end
+	
+	local b = cont:Add('DButton','Clear button')
+		self.btn_clear = b
+		b:SetTooltip[[This removes all traces of you wearing an outfit]]
+		b:SetText("#gameui_cancel")
+		b:Dock(FILL)
+		b:SizeToContents()
+		b.DoClick= function()
+			UICancelAll()
+			self:DoRefresh(trychoose_mdl)
+			--self:GetParent():Hide()
+		end
+		b:SetImage'icon16/stop.png'
 	
 	functions._PerformLayout = functions.PerformLayout or function() end
 	functions.PerformLayout = function(functions,w,h)
@@ -648,12 +652,28 @@ function PANEL:DoRefresh(trychoose_mdl)
 		
 	end
 	
-	for k,v in next,GUIGetHistory() do
+	for _,v in next,GUIGetHistory() do
 		local wsid,mdl,title = unpack(v)
 
 		
 		local pnl = self.mdlhist:AddLine( title,MDLToUI(mdl) )
-		
+		pnl._OnMousePressed = pnl.OnMousePressed
+		pnl.OnMousePressed = function(pnl,mc)
+			if mc~=MOUSE_LEFT then
+				local m = DermaMenu()
+					m:AddOption("#gameui_delete",function()
+						for n,vv in next,GUIGetHistory() do
+							if vv==v then
+								GUIDelHistory(n)
+								return
+							end
+						end
+					end):SetIcon'icon16/bin.png'
+				m:Open()
+				return
+			end
+			return pnl._OnMousePressed(pnl,mc)
+		end
 	end
 
 	if chosen then
@@ -795,10 +815,15 @@ function PANEL:PerformLayout(w,h)
 	end
 end
 function PANEL:Hide()
-        self:SetVisible(false)
-        --hook.Run("OnContextMenuClose")
+	self:SetVisible(false)
+	--hook.Run("OnContextMenuClose")
+	self:OnClose()
 end
 
+function PANEL:OnClose()
+	self.want_thirdperson = InThirdperson()
+	ToggleThirdperson(false)
+end
 
 function PANEL:Show(_,trychoose_mdl)
 	--if not self:IsVisible() then
@@ -807,6 +832,9 @@ function PANEL:Show(_,trychoose_mdl)
 	self:SetVisible(true)
 	self:MakePopup()
 	self:DoRefresh(trychoose_mdl)
+	if self.want_thirdperson then
+		ToggleThirdperson(true)
+	end 
 end
 function PANEL:DoRefresh(trychoose_mdl)
 	if not self:IsVisible() then return end
@@ -850,10 +878,6 @@ end
 concommand.Add(Tag..'_open',function()
 	GUIOpen()
 end)
-
-
-
-
 
 
 

@@ -405,19 +405,36 @@ end
 hook.Add("Think",Tag,Think)
 
 
-local stp 
-function ToggleThirdperson()
-	stp = stp or GetConVar"simple_thirdperson_enabled"
-	if stp then
-		RunConsoleCommand("simple_thirdperson_enabled",stp:GetBool() and "0" or "1")
-	end
+local viewing
+local view={}
+function CalcView(pl,pos,ang,fov)
+	local speedup = 60
+	local t = RealTime()*speedup
+	t=(ang.y + t)%360
+	local slowdown= math.sin(t/360*math.pi*2 +math.pi + math.pi*.1)*speedup*.45
 	
-	local ctp = _G.ctp
-	if ctp and ctp.Disable then
-		if ctp.Enabled then
-			ctp.Disable()
-		else
-			ctp.Enable()		
-		end
+	local ang = Angle(20, t - slowdown,0)
+	view.origin = pos - ang:Forward()*150
+	view.fov = fov
+	view.angles = ang
+	return view
+end
+function ShouldDrawLocalPlayer()
+	return viewing
+end
+function InThirdperson()
+	return viewing
+end
+
+function ToggleThirdperson(want)
+	if want==false or (viewing and want==nil) then
+		hook.Remove("CalcView",Tag)
+		hook.Remove("ShouldDrawLocalPlayer",Tag)
+		viewing = false
+	elseif not viewing and want~=false then
+		viewing = true
+		hook.Add("CalcView",Tag,CalcView)
+		hook.Add("ShouldDrawLocalPlayer",Tag,ShouldDrawLocalPlayer)
 	end
+
 end
