@@ -940,7 +940,7 @@ end
 concommand.Add(Tag..'_open',function()
 	GUIOpen()
 end)
-RunConsoleCommand(Tag..'_open')
+--RunConsoleCommand(Tag..'_open')
 
 
 -- Credits --
