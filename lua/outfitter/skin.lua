@@ -12,16 +12,17 @@ SKIN.GwenTexture	= Material( "gwenskin/GModDefault.png" )
 
 function SKIN:PaintFrame( panel, w, h )
 	
-	--if ( panel.m_bPaintShadow ) then
+	if ( panel.m_bPaintShadow ) then
 	
 		DisableClipping( true )
 		
-		surface.SetDrawColor(60,55,55,50)
-		surface.DrawRect(w,0,4,h+4)
-		surface.DrawRect(0,h,w,4)
+		surface.SetDrawColor(36,35,33,150)
+		surface.DrawRect(w,4,4,h)
+		surface.DrawRect(4,h,w-4,4)
+		
 		DisableClipping( false )
 	
-	--end
+	end 
 	
 	if ( panel:HasHierarchicalFocus() ) then
 	
@@ -36,7 +37,7 @@ function SKIN:PaintFrame( panel, w, h )
 	end
 	
 	surface.SetDrawColor(150,147,147,200)
-	surface.DrawRect(1,24,w-2,h-2-24)
+	surface.DrawRect(1,24,w-2,h-1-24)
 	surface.SetDrawColor(130,130,130,200)
 	surface.DrawOutlinedRect(0,0,w,h)
 
