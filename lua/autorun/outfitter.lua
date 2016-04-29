@@ -144,6 +144,7 @@ inc 'cl_util'	'cl'
 inc 'cows'		'cl'
 inc 'cl'		'cl'
 inc 'ui'		'cl'
+inc 'skin'		'cl'
 inc 'gui'		'cl'
 inc 'net'		'sh'
 
