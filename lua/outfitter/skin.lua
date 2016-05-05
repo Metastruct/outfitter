@@ -142,9 +142,9 @@ function SKIN:PaintButton( panel, w, h )
 	end
 	
 	if ( panel:GetDisabled() ) then
-		surface.SetDrawColor(122,122,122,200)
+		surface.SetDrawColor(111,111,111,222)
 		surface.DrawRect(1,1,w-2,h-2)
-		surface.SetDrawColor(130,130,130,200)
+		surface.SetDrawColor(79,78,77,222)
 		surface.DrawOutlinedRect(0,0,w,h)
 		return
 	end

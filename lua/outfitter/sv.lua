@@ -7,7 +7,7 @@ module(Tag,package.seeall)
 util.AddNetworkString(Tag) 
 
 function RateLimitMessage(pl,rem)
-	local msg = "[Outfitter] you need to wait before sending a new outfit ("..rem.." seconds remaining)"
+	local msg = "[Outfitter] you need to wait before sending a new outfit ("..rem.." s remaining)"
 	pl:ChatPrint(msg)
 end
 
@@ -77,7 +77,7 @@ function NetData(pl,k,val)
 	
 	assert(mdl)
 	
-	local should,remaining = pl:NetDataShouldLimit(NTag,util.IsModelLoaded(mdl) and 3 or 10)
+	local should,remaining = pl:NetDataShouldLimit(NTag,util.IsModelLoaded(mdl) and 3 or 14)
 	
 	if should then
 		RateLimitMessage(pl,remaining)
@@ -89,6 +89,8 @@ function NetData(pl,k,val)
 	
 	return true
 end
+
+CreateConVar("_outfitter_version","0.4",FCVAR_NOTIFY)
 
 function TestOutfitsOnBots()
 	local t = { 
