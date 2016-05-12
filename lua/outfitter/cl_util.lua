@@ -144,7 +144,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 	local function Enforce(rag)
 		local mdl = rag.enforce_model
 		if mdl then
-			rag:InvalidateBoneCache()
+			--rag:InvalidateBoneCache()
 			rag:SetModel(mdl)
 			rag:InvalidateBoneCache()
 		end
@@ -288,7 +288,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 		StartEnforcing(pl)
 	end
 	
-	--TODO: non tpose :(
+	--TODO: REVISIT (Single frame spazzing on local player wear)
 	local recursing
 	local localpl
 	hook.Add("PrePlayerDraw",Tag,function(p)
@@ -299,13 +299,12 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 		
 		if recursing then return end
 		recursing=true
-		
-			p:InvalidateBoneCache()
+					
 			Enforce(p)
-			p:DrawModel()
+			--p:DrawModel()
 		
 		recursing=false
-		return true
+		--return true
 	end)
 
 	
