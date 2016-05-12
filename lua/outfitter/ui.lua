@@ -148,7 +148,7 @@ local function Command(com,v1)
 			--UIError"Invalid command"
 		end
 		
-	elseif com==Tag then
+	elseif com==Tag or com=='outfiter' then
 		local n = v1 and tonumber(v1)
 		if n then
 			UIChoseWorkshop(n)
