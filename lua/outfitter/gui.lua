@@ -857,8 +857,8 @@ function PANEL:OnMouseReleasedHook(mc)
 	
 	--menu:AddLine()
 	
-	menu:AddOption( "About", function() GUIAbout() self:GetParent():Hide() end ):SetImage'icon16/information.png'
-	menu:AddOption( "Close", function() self:GetParent():Hide() end ):SetImage'icon16/stop.png'
+	menu:AddOption( "About", function() GUIAbout() end ):SetImage'icon16/information.png'
+	menu:AddOption( "Close", function() self:Hide() end ):SetImage'icon16/stop.png'
 	menu:Open()
 end
 
