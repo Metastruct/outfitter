@@ -144,9 +144,12 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 	local function Enforce(rag)
 		local mdl = rag.enforce_model
 		if mdl then
-			--rag:InvalidateBoneCache()
+			--TODO: not having this causes crashes?
+			rag:InvalidateBoneCache()
+			
 			rag:SetModel(mdl)
 			rag:InvalidateBoneCache()
+			
 		end
 	end
 
