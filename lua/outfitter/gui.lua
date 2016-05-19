@@ -8,7 +8,7 @@ local _vgui = vgui
 
 local recurse recurse = function(pnl)
 	pnl:SetSkin('Outfitter')
-	print(pnl)
+	--print(pnl)
 	for k,v in next,pnl:GetChildren() do
 		recurse(v)
 	end
@@ -73,7 +73,7 @@ setmetatable(vgui,{__index=_vgui})
 		local id = url:match'://steamcommunity.com/sharedfiles/filedetails/.*[%?%&]id=(%d+)'
 		self.chooseb:SetEnabled(id and true or false)
 		self.chosen_id = tonumber(id)
-		print(id)
+		--print(id)
 	end
 	
 	function PANEL:InjectScripts(browser)
@@ -257,7 +257,7 @@ function PANEL:Init()
 			
 			local p = vgui.CreateFromTable(about_factor,infopanel)
 			self.aboutpnl = p
-			print"create about"
+			--print"create about"
 			infopanel.aboutpnl = p
 			p:Dock(FILL)
 		end 
