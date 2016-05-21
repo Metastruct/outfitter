@@ -217,10 +217,10 @@ function coFetchWS(wsid,skip_maxsize)
 				dbge(wsid,"BANNED!?")
 			end
 			if disabled then
-				dbge(wsid,"Disabled?")
+				dbgn(3,"FileInfo",wsid,"Disabled?")
 			end
 			if installed then
-				dbge(wsid,"installed?")
+				dbgn(3,"FileInfo",wsid,"installed?")
 			end
 		end
 	end
@@ -252,6 +252,14 @@ function coFetchWS(wsid,skip_maxsize)
 	
 	if not path then
 		return SYNC(dat,cantmount(wsid,"download"))
+	end
+
+	if not file.Exists(path,'MOD') then
+		return SYNC(dat,cantmount(wsid,"file"))
+	end
+	
+	if file.Size(path,'MOD') ~= fileinfo.size then
+		return SYNC(dat,cantmount(wsid,"size"))
 	end
 	
 	local result = path
