@@ -11,15 +11,21 @@ local function RESET(pl)
 	pl.outfitter_mdl = nil
 	pl.outfitter_wsid = nil
 	
-	hook.Run("OutfitApply",pl)
+	hook.Run("OutfitApply",pl,"","")
 	
 end
 local function SET(pl)
 	
 	local mdl,wsid = pl:OutfitInfo()
 	
-	if mdl and not IsEnabled() then return end
-	if DidCrash('setmdl',mdl) then dbge("EnforceModel","CRASH",mdl,wsid) end
+	if mdl and not IsEnabled() then return false,"disabled" end
+	if hook.Run("PreOutfitApply",pl,mdl,wsid)==false then return false,"hook" end
+	
+	if DidCrash('setmdl',mdl) then 
+		dbge("EnforceModel","CRASH",mdl,wsid) 
+		return false,"crash"
+	end
+	
 	CRITICAL("setmdl",mdl)
 	local ret = pl:EnforceModel(mdl)
 	CRITICAL(false)
@@ -113,7 +119,7 @@ function ChangeOutfitThread(pl)
 	for i=1,8192 do
 		
 		if i>1 then
-			co.sleep(1)
+			co.sleep(.5)
 		end
 		
 		local ok,err = co.wait_player(pl)
@@ -135,8 +141,7 @@ function ChangeOutfitThread(pl)
 		local newhash = pl:OutfitHash()
 		if pl:OutfitCheckHash(hash) then
 			if i>1 then
-				dbge("ChangeOutfitThread","finished changing after",i,"iterations",pl)
-				
+				dbgn(3,"ChangeOutfitThread","finished changing after",i,"iterations",pl)
 			end
 			break
 		end
@@ -179,8 +184,8 @@ function ChangeOutfitThreadWorker(pl,hash)
 		if HBAD(pl,hash) then return false,"outdated" end
 		
 		local ok,err = SET(pl,mdl,wsid,skin,bodygroups)
-		if not ok then
-			dbge("DoChangeOutfit","setfail but was existing?",err)
+		if not ok and IsEnabled() then
+			dbge("DoChangeOutfit","Setting model failed, but file.Existed",err,mdl)
 		end
 		
 		return true
