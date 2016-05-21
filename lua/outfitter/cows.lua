@@ -257,11 +257,7 @@ function coFetchWS(wsid,skip_maxsize)
 	if not file.Exists(path,'MOD') then
 		return SYNC(dat,cantmount(wsid,"file"))
 	end
-	
-	if file.Size(path,'MOD') ~= fileinfo.size then
-		return SYNC(dat,cantmount(wsid,"size"))
-	end
-	
+		
 	local result = path
 	fetching[wsid] = true
 	res[wsid] = result
