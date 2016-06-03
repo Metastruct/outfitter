@@ -323,6 +323,12 @@ function NeedWS(wsid,pl,mdl)
 		return nil,err or "fetchws"
 	end
 	
+	local ok,err = GMABlacklist(path)
+	if not ok then
+		dbge("NeedWS","GMABlacklist",wsid,"->",err)
+		return
+	end
+	
 	local mdls,err = GMAPlayerModels(path)
 	
 	if not mdls then

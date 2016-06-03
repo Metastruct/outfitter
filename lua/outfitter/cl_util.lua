@@ -311,6 +311,49 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 	end)
 
 	
+function GMABlacklist(fpath,wsid)
+	assert(fpath)
+	local f = file.Open(fpath,'rb','MOD')
+	dbg("GMABlacklist",fpath,f and "" or "INVALIDFILE")
+	
+	if not f then
+		return nil,"file"
+	end
+	
+	local gma,err = gmaparse.Parser(f)
+	if not gma then return nil,err end
+
+	local ok ,err = gma:ParseHeader()
+	if not ok then return nil,err end
+
+	local paths = {}
+	for i=1,8192*2 do
+		local entry,err = gma:EnumFiles()
+		if not entry then 
+			if err then dbge("GMABlacklist","enumfiles",wsid,err) end
+			break
+		end
+		local path = entry.Name
+		paths[#paths+1] = path:lower()
+	end
+	
+	for i=1,#paths do
+		local path = paths[i]
+		
+		--Check 1: modules
+		if path :find("includes",4,true) and path:gsub("\\","/"):gsub("/./","/"):gsub("/./","/"):gsub("/+","/"):find("lua/includes/",1,true) then
+			return nil,"includes"
+		end
+		
+		--Check 2
+		-- Model overrides / script overrides / config overrides / etc
+		
+	end
+	
+	return true
+	
+end
+
 
 function GMAPlayerModels(fpath)
 	assert(fpath)
