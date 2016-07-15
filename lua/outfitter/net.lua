@@ -76,7 +76,7 @@ function OnPlayerVisible(pl,initial_sendings)
 		if ret == false then return end
 		if ret ~= true then
 			if not IsFriendly(pl) then
-				dbg("OnPlayerVisible","unfriendly",pl)
+				dbgn(3,"OnPlayerVisible","unfriendly",pl)
 				return
 			end
 		end
