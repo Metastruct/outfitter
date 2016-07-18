@@ -22,7 +22,7 @@ function SKIN:PaintFrame( panel, w, h )
 		
 		DisableClipping( false )
 	
-	end 
+	end
 	
 	if ( panel:HasHierarchicalFocus() ) then
 	
@@ -69,12 +69,12 @@ function SKIN:PaintTab( panel, w, h )
 		surface.SetDrawColor(190,180,180,200)
 		surface.DrawRect(1,1,w-2,h-2)
 		surface.SetDrawColor(130,130,130,200)
-		surface.DrawOutlinedRect(0,0,w,h)	
+		surface.DrawOutlinedRect(0,0,w,h)
 	else
 		surface.SetDrawColor(190,180,180,200)
 		surface.DrawRect(1,1,w-2,h-2)
 		surface.SetDrawColor(130,130,130,200)
-		surface.DrawOutlinedRect(0,0,w,h)	
+		surface.DrawOutlinedRect(0,0,w,h)
 	end
 end
 

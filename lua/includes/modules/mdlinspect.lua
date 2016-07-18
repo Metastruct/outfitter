@@ -1,4 +1,4 @@
-local Tag='mdlinspect' 
+local Tag='mdlinspect'
 
 module(Tag,package.seeall)
 
@@ -15,9 +15,9 @@ end
 -- Format: https:--developer.valvesoftware.com/wiki/MDL#File_format
 local vstruct
 local needvstruct needvstruct = function()
-	vstruct = vstruct or _G.vstruct 
+	vstruct = vstruct or _G.vstruct
 	if not vstruct then
-		local ok,ret = pcall(require,'vstruct') 
+		local ok,ret = pcall(require,'vstruct')
 		if ok then vstruct=ret or _G.vstruct end
 	end
 	
@@ -32,7 +32,7 @@ local _M = {__index = MDL,__tostring=function(self) return "MDL Parser" end}
 function Open(f)
 	if isstring(f) then
 		f = file.Open(f,'rb','GAME')
-	end	
+	end
 	
 	if not f then error"invalid file" end
 	
@@ -50,7 +50,7 @@ function Open(f)
 	end
 	
 	local T = {
-		file = f, 
+		file = f,
 		version = version,
 		initial_offset=initial_offset
 	}
@@ -147,7 +147,7 @@ function MDL:Validate(filesize)
 end
 
 function MDL:ParseHeader()
-	if self.parsed_header~=nil then 
+	if self.parsed_header~=nil then
 		return self.parsed_header
 	end
 	self.parsed_header = false
@@ -165,7 +165,7 @@ function MDL:ParseHeader()
 	res.dataLength = dataLength
 	
 	-- TODO: skip Vectors, read elsewhere
-	f:Seek( f:Tell()+4 * 3 *6 ) 
+	f:Seek( f:Tell()+4 * 3 *6 )
 	
 	res.flags=from_int(f:Read(4),true)
 	
@@ -212,7 +212,7 @@ function MDL:ParseHeader()
 	res.bodypart_count = from_int(f:Read(4),true)
 	res.bodypart_offset = from_int(f:Read(4),true)
  
-	-- Local attachment points		
+	-- Local attachment points
 	-- mstudioattachment_t
 	res.attachment_count = from_int(f:Read(4),true)
 	res.attachment_offset = from_int(f:Read(4),true)
@@ -242,7 +242,7 @@ function MDL:ParseHeader()
 	-- Information about any "mouth" on the model for speech animation
 	-- More than one sounds pretty creepy.
 	-- mstudiomouth_t
-	res.mouths_count = from_int(f:Read(4),true) 
+	res.mouths_count = from_int(f:Read(4),true)
 	res.mouths_index = from_int(f:Read(4),true)
  
 	-- mstudioposeparamdesc_t
@@ -262,7 +262,7 @@ function MDL:ParseHeader()
 	-- Key-value data is a series of strings. If you can't find
 	-- what you're interested in, check the associated PHY file as well.
 	res.keyvalue_index = from_int(f:Read(4),true)
-	res.keyvalue_count = from_int(f:Read(4),true)	
+	res.keyvalue_count = from_int(f:Read(4),true)
  
 	-- More inverse-kinematics
 	-- mstudioiklock_t
@@ -294,14 +294,14 @@ function MDL:ParseHeader()
 	res.vertex_base = from_int(f:Read(4),true)	-- Placeholder for void*
 	res.offset_base = from_int(f:Read(4),true)	-- Placeholder for void*
  
-	-- Used with $constantdirectionallight from the QC 
+	-- Used with $constantdirectionallight from the QC
 	-- Model should have flag #13 set if enabled
 	res.directionaldotproduct = f:Read(1)
  
 	res.rootLod = f:Read(1)	-- Preferred rather than clamped
  
 	-- 0 means any allowed, N means Lod 0 -> (N-1)
-	res.numAllowedRootLods = f:Read(1);	
+	res.numAllowedRootLods = f:Read(1);
  
 	f:Read(1)--		unused; -- ??
 	res.unused = from_int(f:Read(4),true) -- ??
@@ -312,7 +312,7 @@ function MDL:ParseHeader()
  
 	--[[*
 	 * Offset for additional header information.
-	 * May be zero if not present, or also 408 if it immediately 
+	 * May be zero if not present, or also 408 if it immediately
 	 * follows this studiohdr_t
 	 --]]
 	-- studiohdr2_t
@@ -325,7 +325,7 @@ end
 local offsetreaderinfo_1 = {}
 local offsetreaderinfo_2 = {}
 function MDL:IncludedModels()
-	local f = self.file 
+	local f = self.file
 	local t = self.included_models
 	if t then return t end
 	
@@ -368,7 +368,7 @@ function MDL:IncludedModels()
 end
 
 
-local mstudioattachment_t_size = 
+local mstudioattachment_t_size =
 	4 			-- int					sznameindex;
 	+4 			-- unsigned int			flags;
 	+4			-- int					localbone;
@@ -381,7 +381,7 @@ function MDL:offsetAttachment( i )
 end
 
 function MDL:Attachments()
-	local f = self.file 
+	local f = self.file
 	local t = self.attachment_nameslist
 	if t then return t end
 	
@@ -411,8 +411,8 @@ end
 
 
 
-local bone_section_size = 
-	  4 -- int  
+local bone_section_size =
+	  4 -- int
 	+ 4  -- int parent
 	+ 4*6 --int					bonecontroller[6];	// bone controller index, -1 == none
 
@@ -441,7 +441,7 @@ end
 
 
 function MDL:BoneNames()
-	local f = self.file 
+	local f = self.file
 	local t = self.bone_nameslist
 	if t then return t end
 	
@@ -473,9 +473,9 @@ function MDL:SeekTo(offset)
 	local f = self.file
 	local off = self.initial_offset + offset
 	
-	if off>f:Size() then 
-		--print("offset too big",off-f:Size()) 
-		return false 
+	if off>f:Size() then
+		--print("offset too big",off-f:Size())
+		return false
 	end
 	
 	f:Seek(off)

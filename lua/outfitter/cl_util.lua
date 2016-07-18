@@ -1,4 +1,4 @@
-local Tag='outfitter' 
+local Tag='outfitter'
 local NTag = 'OF'
 
 require'mdlinspect'
@@ -296,7 +296,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 	local localpl
 	hook.Add("PrePlayerDraw",Tag,function(p)
 		localpl = localpl or LocalPlayer()
-		if p~=localpl then 
+		if p~=localpl then
 			return
 		end
 		
@@ -329,7 +329,7 @@ function GMABlacklist(fpath,wsid)
 	local paths = {}
 	for i=1,8192*2 do
 		local entry,err = gma:EnumFiles()
-		if not entry then 
+		if not entry then
 			if err then dbge("GMABlacklist","enumfiles",wsid,err) end
 			break
 		end
@@ -374,9 +374,9 @@ function GMAPlayerModels(fpath)
 	local mdlfiles = {}
 	for i=1,8192*2 do
 		local entry,err = gma:EnumFiles()
-		if not entry then 
+		if not entry then
 			if err then dbge("enumfiles",err) end
-			break 
+			break
 		end
 		local path = entry.Name
 		local ext = path:sub(-4)

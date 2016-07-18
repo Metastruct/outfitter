@@ -1,4 +1,4 @@
-local Tag='outfitter' 
+local Tag='outfitter'
 local NTag = 'OF'
 
 module(Tag,package.seeall)
@@ -27,7 +27,7 @@ function NetData(plid,k,val)
 	dbg("NetData",pl or plid,k,"<-",val)
 	if not pl then return end
 
-	OnPlayerVisible(pl,net.IsPlayerVarsBurst()) 
+	OnPlayerVisible(pl,net.IsPlayerVarsBurst())
 	
 end
 	
@@ -100,14 +100,14 @@ function OnPlayerVisible(pl,initial_sendings)
 end
 
 
-hook.Add("NetworkEntityCreated",Tag,function(ent) 
+hook.Add("NetworkEntityCreated",Tag,function(ent)
 	if ent:IsPlayer() then
 		OnPlayerVisible(ent)
 	elseif ent:GetClass() == "class C_HL2MPRagdoll" then
 		local owner = ent:GetRagdollOwner()
 		if owner:IsValid() then
 			OnDeathRagdollCreated(ent,owner)
-			return 
+			return
 		end
 	end
 end)

@@ -1,4 +1,4 @@
-local Tag='outfitter' 
+local Tag='outfitter'
 local NTag = 'OF'
 
 -- lua_openscript_cl srv/outfitter/lua/outfitter/ui.lua;lua_openscript_cl srv/outfitter/lua/outfitter/gui.lua;outfitter_open
@@ -28,7 +28,7 @@ local vgui = {
 		local _ = ret and ret:IsValid() and recurse(ret)
 		timer.Simple(0,function()
 			local _ = ret and ret:IsValid() and recurse(ret)
-		end) 
+		end)
 		return ret
 	end,
 	
@@ -89,7 +89,7 @@ setmetatable(vgui,{__index=_vgui})
 					gmod.wssubscribe();
 				};
 			
-				var sub = document.getElementById("SubscribeItemOptionAdd"); 
+				var sub = document.getElementById("SubscribeItemOptionAdd");
 				if (sub) {
 					sub.innerText = "Select";
 				};
@@ -242,7 +242,7 @@ function PANEL:Init()
 		
 	local sheet = self:Add( "DPropertySheet" )
 		self.sheet = sheet
-		sheet:Dock( FILL )     
+		sheet:Dock( FILL )
 		
 	local mdlhistpanel = self:Add( "EditablePanel" )
 		self.mdlhistpanel=mdlhistpanel
@@ -260,7 +260,7 @@ function PANEL:Init()
 			--print"create about"
 			infopanel.aboutpnl = p
 			p:Dock(FILL)
-		end 
+		end
 		infopanel:Dock(FILL)
 		sheet:AddSheet( "#information", infopanel, "icon16/information.png" )
 		
@@ -335,9 +335,9 @@ function PANEL:Init()
 		slider:SetTooltip[[How near does a player have to be for an outfit to download]]
 
 		slider:DockMargin(1,12,1,1)
-		slider:SetMin( 0 )				 
-		slider:SetMax( 5000 )			
-		slider:SetDecimals( 0 )			 
+		slider:SetMin( 0 )
+		slider:SetMax( 5000 )
+		slider:SetDecimals( 0 )
 		slider:SetConVar( Tag..'_distance' )
 		local sld_dist = slider
 			
@@ -370,9 +370,9 @@ function PANEL:Init()
 		slider:SetTooltip[[This is how big an outfit you can receive without it being blocked]]
 
 		slider:DockMargin(1,4,1,1)
-		slider:SetMin( 0 )				 
-		slider:SetMax( 256 )			
-		slider:SetDecimals( 0 )			 
+		slider:SetMin( 0 )
+		slider:SetMax( 256 )
+		slider:SetDecimals( 0 )
 		slider:SetConVar( Tag..'_maxsize' )
 		local sld_dl = slider
 	--TODO
@@ -618,7 +618,7 @@ function GUIAddHistory(wsid,title,mdl)
 	if not title or not mdl or not wsid then return end
 	if not hist then
 		GUIGetHistory()
-	end	
+	end
 	for k,v in next,hist do
 		local wsid2,mdl2 = v[1],v[2]
 		if wsid2==wsid and mdl2==mdl then return end
@@ -676,10 +676,10 @@ function PANEL:DoRefresh(trychoose_mdl)
 			if not self:IsValid() then return end
 			if not self.lbl_chosen:IsValid() then return end
 			
-			if wsid~=UIGetWSID() then 
+			if wsid~=UIGetWSID() then
 				return
 			end
-			if not info or not info.title then 
+			if not info or not info.title then
 				self.lbl_chosen:SetText("-")
 			else
 				local str = ("%s (%s)"):format(info.title,string.NiceSize(info.size or 0))
@@ -705,7 +705,7 @@ function PANEL:DoRefresh(trychoose_mdl)
 		local pnl = self.mdllist:AddLine( dat.Name and MDLToUI(dat.Name) or "???" )
 		
 		if chosen and chosen==true then
-			chosen = pnl 
+			chosen = pnl
 		end
 		
 	end
@@ -777,7 +777,7 @@ function PANEL:Init()
 	
 	self.btnMaxim.DoClick=function()
 		self:SetSize(640,400)
-		self:SetCookie( "pmax", '1' ) 
+		self:SetCookie( "pmax", '1' )
 		had_max = true
 		self:CenterHorizontal()
 	end
@@ -798,7 +798,7 @@ function PANEL:Init()
 	self.btnMinim.DoClick=function()
 		self:SetSize(313,293)
 		self:CenterHorizontal()
-	end	
+	end
 	self:SetDraggable( true )
     self:SetSizable( true )
 	
@@ -831,7 +831,7 @@ function PANEL:Init()
 		Think(...)
 		
 		local x,y=self:CursorPos()
-		if x>0 and x<20 and y>0 and y<20 then 
+		if x>0 and x<20 and y>0 and y<20 then
 			self:SetCursor( "hand" )
 		end
 	end
@@ -844,9 +844,9 @@ function PANEL:OnMouseReleasedHook(mc)
 	if y<0 or y>20 then return end
 	
 	
-	if mc==MOUSE_LEFT then 
+	if mc==MOUSE_LEFT then
 		GUIAbout()
-		return 
+		return
 	end
 	
 	local menu = DermaMenu()
@@ -895,7 +895,7 @@ function PANEL:Show(_,trychoose_mdl)
 	self:DoRefresh(trychoose_mdl)
 	if self.want_thirdperson then
 		ToggleThirdperson(true)
-	end 
+	end
 end
 function PANEL:DoRefresh(trychoose_mdl)
 	if not self:IsVisible() then return end
@@ -945,7 +945,7 @@ end)
 
 -- Credits --
 
-local Tag='outfitter' 
+local Tag='outfitter'
 
 module(Tag,package.seeall)
 
@@ -1128,8 +1128,8 @@ function PANEL:GenDesc()
 	local txt = ("Workshop cache: %d addons!"):format(amt)
 	lbl_desc:SetText(txt)
 	lbl_desc:DockMargin(4,4,4,4)
-	--lbl_desc:SetFont(fdesc) 
-	lbl_desc:SetDark(true) 
+	--lbl_desc:SetFont(fdesc)
+	lbl_desc:SetDark(true)
 	lbl_desc:SetAutoStretchVertical(true)
 	lbl_desc:SetWrap(true)
 	lbl_desc:Dock(TOP)
@@ -1137,11 +1137,11 @@ function PANEL:GenDesc()
 	
 	
 	local lbl_desc = vgui.Create('DLabel',self)
-	lbl_desc:SetText[[Hello there! Outfitter was made to fill the need of the GMod community and for procrastination. 
+	lbl_desc:SetText[[Hello there! Outfitter was made to fill the need of the GMod community and for procrastination.
 Although mostly working, outfitter still has bugs and you can help with that by reporting them.]]
 	lbl_desc:DockMargin(4,4,4,14)
-	--lbl_desc:SetFont(fdesc) 
-	lbl_desc:SetDark(false) 
+	--lbl_desc:SetFont(fdesc)
+	lbl_desc:SetDark(false)
 	lbl_desc:SetAutoStretchVertical(true)
 	lbl_desc:SetWrap(true)
 	lbl_desc:Dock(TOP)
@@ -1167,8 +1167,8 @@ Although mostly working, outfitter still has bugs and you can help with that by 
 	local lbl_desc = vgui.Create('DLabel',self)
 	lbl_desc:SetText[[Finally, the people responsible for this mess include but are not limited to:]]
 	lbl_desc:DockMargin(4,14,4,8)
-	--lbl_desc:SetFont(fdesc) 
-	lbl_desc:SetDark(false) 
+	--lbl_desc:SetFont(fdesc)
+	lbl_desc:SetDark(false)
 	lbl_desc:SetAutoStretchVertical(true)
 	lbl_desc:SetWrap(true)
 	lbl_desc:Dock(TOP)

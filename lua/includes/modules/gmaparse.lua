@@ -1,4 +1,4 @@
-local Tag='gmaparse' 
+local Tag='gmaparse'
 
 module(Tag,package.seeall)
 
@@ -9,7 +9,7 @@ local _M = {__index = GMA,__tostring=function(self) return "GMAD Parser" end}
 function Parser(f)
 	if isstring(f) then
 		f = file.Open(f,'rb','GAME')
-	end	
+	end
 	
 	
 	local hdr = f:Read(4)
@@ -55,7 +55,7 @@ function GMA:GetError()
 end
 
 function GMA:ParseHeader()
-	if self.parsed_header~=nil then 
+	if self.parsed_header~=nil then
 		return self.parsed_header
 	end
 	self.parsed_header = false
@@ -75,7 +75,7 @@ function GMA:ParseHeader()
 			local s = f:ReadString(128)
 			if not s or s=="" then break end
 			strcontent[#strcontent+1]=s
-		end	
+		end
 	end
 	res.strcontent = strcontent
 	
@@ -128,7 +128,7 @@ function GMA:EnumFiles(reset)
 	
 	assert(f:Read(4)=='\0\0\0\0')
 	
-	if entry.Size>1024*1024*256 then 
+	if entry.Size>1024*1024*256 then
 		return self:_ParseFail'bigsize'
 	end
 	entry.CRC		= from_u_int(f:Read(4) or "\0",true) -- unsigned int

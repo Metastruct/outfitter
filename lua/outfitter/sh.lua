@@ -1,4 +1,4 @@
-local Tag='outfitter' 
+local Tag='outfitter'
 
 module(Tag,package.seeall)
 
@@ -29,12 +29,12 @@ end
 
 
 function findpl(uid)
-	for _,pl in next,player.GetAll() do 
+	for _,pl in next,player.GetAll() do
 		if pl:UserID()==uid then
 			return pl
 		end
 	end
-end	
+end
 
 
 --TODO: hex encoding at least
@@ -63,8 +63,8 @@ function MDLIsPlayermodel(f,sz)
 	end
 	
 	local ok ,err = mdl:ParseHeader()
-	if not ok then 
-		return false,err or "hdr" 
+	if not ok then
+		return false,err or "hdr"
 	end
 
 	if not mdl.bone_count or mdl.bone_count<=2 then
@@ -73,9 +73,9 @@ function MDLIsPlayermodel(f,sz)
 	
 	if sz then
 		local valid,err = mdl:Validate(sz)
-		if not valid then 
+		if not valid then
 			dbg("MDLIsPlayermodel",f,"validate error",err)
-			return false,"valid" 
+			return false,"valid"
 		end
 	end
 	
@@ -102,13 +102,13 @@ function MDLIsPlayermodel(f,sz)
 		if v=="models/m_anm.mdl" then
 			found_anm = true
 		end
-		--if v 
-		--	and v:find"%.mdl$" 
-		--	and ( 
-		--		v:find("anim",1,true) 
-		--		or v:find('/m_',1,true) 
-		--		or v:find('/f_',1,true) 
-		--		or v:find('/cs_',1,true) ) 
+		--if v
+		--	and v:find"%.mdl$"
+		--	and (
+		--		v:find("anim",1,true)
+		--		or v:find('/m_',1,true)
+		--		or v:find('/f_',1,true)
+		--		or v:find('/cs_',1,true) )
 		--then
 		--	found = true
 		--	break
@@ -119,7 +119,7 @@ function MDLIsPlayermodel(f,sz)
 	if not attachments or not next(attachments) then
 		if not found_anm then
 			--PrintTable(mdl:Attachments())
-			return false,"noattachments" 
+			return false,"noattachments"
 		else
 			dbg("MDLIsPlayermodel",mdl.name,"no attachments but included")
 		end
@@ -134,7 +134,7 @@ function MDLIsPlayermodel(f,sz)
 		if not found then
 			if not found_anm then
 				--PrintTable(mdl:Attachments())
-				return false,"attachments" 
+				return false,"attachments"
 			else
 				dbg("MDLIsPlayermodel",mdl.name,"no attachments but included")
 			end
@@ -142,18 +142,18 @@ function MDLIsPlayermodel(f,sz)
 		
 	end
 
-	--if not found then 
-	--	return false,"includemdls" 
+	--if not found then
+	--	return false,"includemdls"
 	--end
 	
 	--TODO: Bones are named all over the place
 	
 	--local bname = mdl:BoneNames() [1]
-	--if not bname or (	not bname:lower():find("pelvis",1,true) 
-	--					and bname~="Root"  
-	--					and bname~="pelvis"  
-	--					and bname~="hip"  
-	--					and bname~="root") 
+	--if not bname or (	not bname:lower():find("pelvis",1,true)
+	--					and bname~="Root"
+	--					and bname~="pelvis"
+	--					and bname~="hip"
+	--					and bname~="root")
 	--then
 	--	return false,"bones",bname
 	--end

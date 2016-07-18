@@ -1,4 +1,4 @@
-local Tag='outfitter' 
+local Tag='outfitter'
 local NTag = 'OF'
 
 module(Tag,package.seeall)
@@ -51,7 +51,7 @@ function UIMounting(yes)
 	if yes then
 		_mounting = true
 		if mounting then return end
-		notification.AddProgress( Tag, 
+		notification.AddProgress( Tag,
 			"(LAG WARNING) Mounting outfitter outfit!" )
 		SOUND( GENERIC )
 	else
@@ -62,7 +62,7 @@ function UIMounting(yes)
 			
 			notification.Kill( Tag )
 		end)
-		notification.AddProgress( Tag, "Outfit mounted!" )		
+		notification.AddProgress( Tag, "Outfit mounted!" )
 		SOUND "garrysmod/content_downloaded.wav"
 	end
 	mounting = yes
@@ -118,7 +118,7 @@ function SetUIFetching(wsid,is,FR)
 		co(function()
 			co.sleep(FR and 4 or 1.5)
 			
-			local status = fstatus[wsid] 
+			local status = fstatus[wsid]
 			
 			if status then return end
 			
@@ -157,7 +157,7 @@ local function Command(com,v1)
 		else
 			GUIOpen()
 		end
-	end	
+	end
 end
 
 
@@ -179,10 +179,10 @@ local ns = 0
 function UIError(...)
 	local t= {Color(200,50,10),'[Outfitter Err] ',CWHITE,...}
 	local now = RealTime()
-	if ns<now then 
+	if ns<now then
 		ns=now + 1
 		SOUND("common/warning.wav")
-		return 
+		return
 	end
 
 	local t={}
@@ -191,7 +191,7 @@ function UIError(...)
 		v=tostring(v) or "no value"
 		t[i]=v
 	end
-	local str = table.concat(t,' ')	
+	local str = table.concat(t,' ')
 	
 	notification.AddLegacy( str, NOTIFY_ERROR, 4 )
 	MsgC(Color(255,100,0),unpack(t))
@@ -202,15 +202,15 @@ local ns = 0
 function UIMsg(...)
 	local t= {Color(50,200,10),'[Outfitter] ',CWHITE,...}
 	local now = RealTime()
-	if ns<now then 
+	if ns<now then
 		ns=now + 1
 		SOUND("weapons/grenade/tick1.wav")
-		return 
+		return
 	end
 	chat.AddText(unpack(t))
 end
 
-local mdllist 
+local mdllist
 local chosen_wsid
 local tried_mounting
 local mount_path
@@ -299,7 +299,7 @@ hook.Add("OutfitApply",Tag,function(pl,mdl)
 		local opengui = relay_opengui
 		relay_opengui=false
 		
-		notification.AddLegacy( "Outfit changed!", NOTIFY_UNDO, 2 ) 
+		notification.AddLegacy( "Outfit changed!", NOTIFY_UNDO, 2 )
 		SOUND( GENERIC )
 		UIMsg"Write '!outfit send' to send this outfit to everyone"
 		if opengui then

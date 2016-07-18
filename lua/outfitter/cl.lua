@@ -1,4 +1,4 @@
-local Tag='outfitter' 
+local Tag='outfitter'
 local NTag = 'OF'
 
 module(Tag,package.seeall)
@@ -21,8 +21,8 @@ local function SET(pl)
 	if mdl and not IsEnabled() then return false,"disabled" end
 	if hook.Run("PreOutfitApply",pl,mdl,wsid)==false then return false,"hook" end
 	
-	if DidCrash('setmdl',mdl) then 
-		dbge("EnforceModel","CRASH",mdl,wsid) 
+	if DidCrash('setmdl',mdl) then
+		dbge("EnforceModel","CRASH",mdl,wsid)
 		return false,"crash"
 	end
 	
@@ -129,7 +129,7 @@ function ChangeOutfitThread(pl)
 		local ret,err = ChangeOutfitThreadWorker(pl,hash)
 			
 		local ok,err = co.wait_player(pl) -- Check for player validity
-		if not ok then 
+		if not ok then
 			dbg("ChangeOutfitThread","ABORT",pl,"VANISH",err)
 			return
 		end
@@ -177,8 +177,8 @@ function ChangeOutfitThreadWorker(pl,hash)
 	if exists then
 		
 		local ret = hook.Run("CanOutfit",pl,pl:OutfitInfo())
-		if ret == false then 
-			return false,"canoutfit" 
+		if ret == false then
+			return false,"canoutfit"
 		end
 		
 		if HBAD(pl,hash) then return false,"outdated" end
@@ -193,12 +193,12 @@ function ChangeOutfitThreadWorker(pl,hash)
 	
 	------------ TIME PASSES ONLY HERE -------------
 	local ok, err = NeedWS(wsid,pl,mdl)
-	if not ok then 
+	if not ok then
 		dbg("DoChangeOutfit","NeedWS failed",err,"continuing...",pl,mdl,wsid)
 	end
 	
 	local ok,err = co.wait_player(pl) -- so check for player validity
-	if not ok then 
+	if not ok then
 		dbg("ChangeOutfit","ABORT",pl,"VANISH",err)
 		return false,"noplayer"
 	end
@@ -216,8 +216,8 @@ function ChangeOutfitThreadWorker(pl,hash)
 	
 	-- 5. Check CanOutfit
 	local ret = hook.Run("CanOutfit",pl,pl:OutfitInfo())
-	if ret == false then 
-		return false,"canoutfit" 
+	if ret == false then
+		return false,"canoutfit"
 	end
 	
 	-- 6. The hook may have changed our outfit
@@ -247,7 +247,7 @@ function BroadcastMyOutfit(a)
 	
 end
 
-hook.Add("PlayerSlowThink",Tag,function(pl) 
+hook.Add("PlayerSlowThink",Tag,function(pl)
 	if pl:InPVS() then
 		OnPlayerVisible(pl)
 	end

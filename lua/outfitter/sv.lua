@@ -1,10 +1,10 @@
-local Tag='outfitter' 
+local Tag='outfitter'
 local NTag = 'OF'
 
 
 module(Tag,package.seeall)
 
-util.AddNetworkString(Tag) 
+util.AddNetworkString(Tag)
 
 function RateLimitMessage(pl,rem)
 	local msg = "[Outfitter] you need to wait before sending a new outfit ("..rem.." s remaining)"
@@ -44,15 +44,15 @@ function NetData(pl,k,val)
 	
 	if not isstring(val) and val~=nil then
 		dbg(pl,"val",type(val))
-		return false 
+		return false
 	end
 	
-	local mdl,wsid 
+	local mdl,wsid
 	if val then
 		
-		if #val>2048*2 or #val==0 then 
+		if #val>2048*2 or #val==0 then
 			dbg("NetData","badval",#val,pl)
-			return false 
+			return false
 		end
 		
 		mdl,wsid = DecodeOW(val)
@@ -70,7 +70,7 @@ function NetData(pl,k,val)
 		
 	local ret = SanityCheckNData(mdl,wsid)
 	
-	if ret~=nil then 
+	if ret~=nil then
 		dbg("NetData",pl,"sanity check fail",tostring(val):sub(1,256))
 		return ret
 	end
@@ -93,7 +93,7 @@ end
 CreateConVar("_outfitter_version","0.4",FCVAR_NOTIFY)
 
 function TestOutfitsOnBots()
-	local t = { 
+	local t = {
 		{ "models/player/mikier/renamon.mdl",599541401},
 		{ "models/pechenko_121/deadpool/chr_deadpoolclassic.mdl",200700693},
 		{ "models/pechenko_121/deadpool/chr_deadpool2.mdl",200700693},

@@ -1,6 +1,6 @@
 -- coroutine workshop --
 
-local Tag='outfitter' 
+local Tag='outfitter'
 module(Tag,package.seeall)
 
 local fetching = {}
@@ -24,7 +24,7 @@ local function steamworks_Download( fileid, uncomp )
 		if instant==nil then
 			path = a
 			instant = true
-			return 
+			return
 		end
 		cb(a,b)
 	end
@@ -69,7 +69,7 @@ do -- steamworks fileinfo worker
 				
 			end)
 		)
-	co_steamworks_FileInfo = co.worker(worker) 
+	co_steamworks_FileInfo = co.worker(worker)
 end
 
 
@@ -97,7 +97,7 @@ do -- steam webapi fileinfo worker
 
 	local function intFileInfo(wsid)
 		local url = "http://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1"
-		local dat = { 
+		local dat = {
 			itemcount = "1",
 			['publishedfileids[0]']=tostring(wsid)
 		}
@@ -130,7 +130,7 @@ do -- steam webapi fileinfo worker
 		local fileinfo = co.waitcb(cb)
 		
 		return fileinfo
-	end	
+	end
 	local worker,cache = co.work_cacher_filter(
 		function(key,fileinfo)
 			return (not key) or fileinfo
@@ -138,13 +138,13 @@ do -- steam webapi fileinfo worker
 		
 		co.work_cacher(intFileInfo)
 		)
-	co_steamworks_FileInfo2 = co.worker(worker) 
+	co_steamworks_FileInfo2 = co.worker(worker)
 
 	--co(function()
 	--	local ret,err = steamworks.coFileInfoX(569576795)
 	--	if not ret then ErrorNoHalt(tostring(err)..'\n') end
 	--	PrintTable(ret)
-	--end) 
+	--end)
 
 end
 
@@ -164,7 +164,7 @@ do
 				
 			end)
 		)
-	co_steamworks_VoteInfo = co.worker(worker) 
+	co_steamworks_VoteInfo = co.worker(worker)
 end
 
 function coFetchWS(wsid,skip_maxsize)
@@ -176,7 +176,7 @@ function coFetchWS(wsid,skip_maxsize)
 	local dat = fetching[wsid]
 	
 	if dat then
-		if dat==true then 
+		if dat==true then
 			return res[wsid] or true
 		elseif istable(dat) then
 			local cb = co.newcb()

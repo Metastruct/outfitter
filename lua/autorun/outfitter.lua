@@ -72,7 +72,7 @@ AddCSLuaFile("includes/modules/co.lua")
 require"co"
 
 
-local Tag='outfitter' 
+local Tag='outfitter'
 
 --TODO:
  -- bodygroups
@@ -129,10 +129,10 @@ local function inc(str)
 			AddCSLuaFile(path)
 		end
 		
-		if m == 'sh' 
+		if m == 'sh'
 			or (S and m=='sv')
-			or (C and m=='cl') 
-		then	
+			or (C and m=='cl')
+		then
 			include(path)
 		end
 	end
