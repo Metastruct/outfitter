@@ -408,7 +408,14 @@ function PANEL:Init()
 
 		check:DockMargin(1,4,1,1)
 		local d_2 = check
-	
+		
+	local check = AddS( "DButton" )
+	 	check:SetText( "Clear models blacklist") 
+		check:DockMargin(1,4,1,1)
+		check.DoClick=function()
+			RunConsoleCommand"oufitter_blacklist_clear"
+		end
+		
 	local b = Add('DButton','thirdperson')
 		b:SetText("#tool.camera.name")
 		b:SetTooltip[[Enables/disable thirdperson (if one is installed)]]

@@ -232,7 +232,7 @@ function InitCrashSys()
 		local s= util.TableToJSON(t)
 		util.SetPData("0",Tag,s)
 	end
-
+	
 	local function LOAD()
 		local s= util.GetPData("0",Tag,false)
 		if not s or s=="" then return {} end
@@ -249,6 +249,15 @@ function InitCrashSys()
 	local function SaveList()
 		SAVE(crashlist)
 	end
+	
+	concommand.Add("oufitter_blacklist_clear",function()
+		table.Empty(crashlist)
+		SAVE()
+	end)
+	
+	concommand.Add("oufitter_blacklist_dump",function()
+		PrintTable(crashlist)
+	end)
 	
 	function DidCrash(key,val)
 		local t = crashlist[key]

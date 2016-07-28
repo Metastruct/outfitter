@@ -452,14 +452,14 @@ hook.Add("Think",Tag,Think)
 
 local viewing
 local view={}
-function CalcView(pl,pos,ang,fov)
+function CalcView(pl,pos,oang,fov)
 	local speedup = 60
 	local t = RealTime()*speedup
-	t=(ang.y + t)%360
-	local slowdown= math.sin(t/360*math.pi*2 +math.pi + math.pi*.1)*speedup*.45
+	t=( t )%360
+	local slowdown= math.sin(t/360*math.pi*2 +math.pi + math.pi*.1)*speedup*.80
 	
-	local ang = Angle(20, t - slowdown,0)
-	view.origin = pos - ang:Forward()*150
+	local ang = Angle(15, ((t - slowdown) + LocalPlayer():GetAngles().y)%360,0)
+	view.origin = pos - ang:Forward()*111
 	view.fov = fov
 	view.angles = ang
 	return view
@@ -483,3 +483,4 @@ function ToggleThirdperson(want)
 	end
 
 end
+concommand.Add("outfitter_camera_toggle",function(a,b,c) if c[1] then ToggleThirdperson(tonumber(c[1])) else ToggleThirdperson() end end) 
