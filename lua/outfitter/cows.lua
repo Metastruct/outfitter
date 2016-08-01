@@ -274,7 +274,11 @@ end
 function MountWS( path )
 	
 	--TODO: Check blacklist
-	
+	--[[ TODO: 	think I found a fix
+				if something mounts fine once
+				it gets whitelisted
+		]]
+
 	local crashed = DidCrash("mountws",path)
 	if crashed then return nil,"crashed" end
 
@@ -304,6 +308,45 @@ local worker,cache = co.work_cacher(_coMountWS)
 coMountWS = co.worker(worker)
 
 
+function coDecompress(path)
+	if not path then return nil,'invalid parameter' end
+	dbgn(2,"coDecompress",path)
+	local safepath = path:gsub("%.cache$",".dat")
+	if not file.Exists(safepath,'DATA') then
+
+		file.CreateDir("cache",'DATA')
+		file.CreateDir("cache/workshop",'DATA')
+		
+		for i=1,2048 do
+			print(math.ceil(i^2))
+			if collectgarbage('step',math.ceil(i^2)) then dbgn(2,'coDecompress','finished collecting 1') break end
+			co.waittick()
+		end
+		
+		local data = file.Read(path,'GAME')				co.sleep(.3)
+		if not data then dbge("coDecompress","File Read",wsid,path) return nil,'read' end
+		
+		local decomp = util.Decompress(data) data = nil	co.sleep(.3)
+		local sz = #decomp
+		if not decomp then dbge("coDecompress","LZMA Decompress",wsid,path) return nil,'decompress' end
+		
+		file.Write(safepath,decomp)	decomp = nil 		co.sleep(.3)
+		
+		for i=1,2048 do
+			print(math.ceil(i^2))
+			if collectgarbage('step',math.ceil(i^2)) then dbgn(2,'coDecompress','finished collecting 2') break end
+			co.waittick()
+		end
+		
+		
+		if file.Size('data/'..safepath,'GAME')~=sz then dbge("coDecompress","LZMA Decompress SZ",wsid,"->",file.Size('data/'..safepath,'GAME') or "FILE NO EXIST?",sz,path,safepath) return nil,'decompress' end
+		
+		co.sleep(.2)
+	end
+	
+	return 'data/'..safepath
+end
+
 --TODO: own cache
 function NeedWS(wsid,pl,mdl)
 	if co.make(wsid,pl,mdl) then return end
@@ -319,11 +362,23 @@ function NeedWS(wsid,pl,mdl)
 	SetUIFetching(wsid,false,not path and (err and tostring(err) or "FAILED?"))
 	
 	if not path then
-		dbg("NeedWS",wsid,"fail",err)
+		dbge("NeedWS",wsid,"fail",err)
 		return nil,err or "fetchws"
 	end
 	
 	local ok,err = GMABlacklist(path)
+	if not ok and err=='notgma' and TestLZMA(path) then
+		local newpath,err = coDecompress(path)
+		if not newpath then
+			dbge("NeedWS",wsid,"fail",err)
+		end
+		path = newpath
+		
+		-- retry --
+		ok,err = GMABlacklist(path)
+		-----------
+	end
+	
 	if not ok then
 		dbge("NeedWS","GMABlacklist",wsid,"->",err)
 		return

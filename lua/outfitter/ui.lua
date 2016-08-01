@@ -355,8 +355,24 @@ function UIChoseWorkshop(wsid,opengui)
 	co.sleep(.2)
 	
 	local mdls,err,err2 = GMAPlayerModels( path )
+	if not mdls and err=='notgma' then
+		dbgn(2," TestLZMA(",path,") ==", ("%q"):format(file.Read(path,'GAME'):sub(1,14)),TestLZMA(path) )
+	end
+	if not mdls and err=='notgma' and TestLZMA(path) then
+		local newpath,err = coDecompress(path)
+		if not newpath then
+			return UIError("Download failed for workshop "..wsid..": "..tostring(err~=nil and tostring(err) or GetLastMountErr and GetLastMountErr())) 
+		end
+		path = newpath
+		
+		-- retry --
+		mdls,err,err2 = GMAPlayerModels( path )
+		-----------
+	end
+	
+	
 	if not mdls then
-		dbge("UIChoseWorkshop",wsid,"GMAPlayerModels failed:",err,err2)
+		dbge("UIChoseWorkshop",wsid,"GMAPlayerModels failed for:",err,err2)
 		notification.AddLegacy( '[Outfitter] '..tostring(err=="nomdls" and "no valid models found" or err), NOTIFY_ERROR, 2 )
 		if opengui then GUIOpen() end
 		

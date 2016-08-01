@@ -310,7 +310,30 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 		--return true
 	end)
 
+function TestLZMA(fpath)
+	local f = file.Open(fpath,'rb','MOD')
+
+	if not f then
+		return nil,"file"
+	end
 	
+	local dat = f:Read(14)
+	f:Close()
+	
+	if not dat or #dat<14 then return false,'size' end
+	
+	local decompressed_size,dict_size,props = util.DecompressInfo(dat)
+	if not decompressed_size then return decompressed_size,dict end
+	if decompressed_size > 1024*1024*512 then
+		return nil,'oversize'
+	end
+	
+	--TODO: Check 2^n and 2^n + 2^(n-1)
+	-- https://svn.python.org/projects/external/xz-5.0.3/doc/lzma-file-format.txt
+	
+	return true
+	
+end
 function GMABlacklist(fpath,wsid)
 	assert(fpath)
 	local f = file.Open(fpath,'rb','MOD')
