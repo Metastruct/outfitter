@@ -324,11 +324,11 @@ function coDecompress(path)
 		end
 		
 		local data = file.Read(path,'GAME')				co.sleep(.3)
-		if not data then dbge("coDecompress","File Read",wsid,path) return nil,'read' end
+		if not data then dbge("coDecompress","File Read",path) return nil,'read' end
 		
-		local decomp = util.Decompress(data) data = nil	co.sleep(.3)
+		local decomp,err = util.Decompress(data) data = nil	co.sleep(.3)
+		if not decomp then dbge("coDecompress","LZMA Decompress",path,err or "failed :(") return nil,'decompress' end
 		local sz = #decomp
-		if not decomp then dbge("coDecompress","LZMA Decompress",wsid,path) return nil,'decompress' end
 		
 		file.Write(safepath,decomp)	decomp = nil 		co.sleep(.3)
 		
@@ -339,7 +339,12 @@ function coDecompress(path)
 		end
 		
 		
-		if file.Size('data/'..safepath,'GAME')~=sz then dbge("coDecompress","LZMA Decompress SZ",wsid,"->",file.Size('data/'..safepath,'GAME') or "FILE NO EXIST?",sz,path,safepath) return nil,'decompress' end
+		if file.Size('data/'..safepath,'GAME')~=sz then 
+			dbge("coDecompress","LZMA Decompress SZ",
+				file.Size('data/'..safepath,'GAME') or "FILE NO EXIST?",
+				sz,path,safepath) 
+			return nil,'decompress' 
+		end
 		
 		co.sleep(.2)
 	end
