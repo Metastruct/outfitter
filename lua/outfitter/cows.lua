@@ -376,6 +376,7 @@ function NeedWS(wsid,pl,mdl)
 		local newpath,err = coDecompress(path)
 		if not newpath then
 			dbge("NeedWS",wsid,"fail",err)
+			return nil,err or "decompress"
 		end
 		path = newpath
 		
