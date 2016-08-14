@@ -318,7 +318,7 @@ function coDecompress(path)
 		file.CreateDir("cache/workshop",'DATA')
 		
 		for i=1,2048 do
-			print(math.ceil(i^2))
+			--print(math.ceil(i^2))
 			if collectgarbage('step',math.ceil(i^2)) then dbgn(2,'coDecompress','finished collecting 1') break end
 			co.waittick()
 		end
@@ -333,7 +333,7 @@ function coDecompress(path)
 		file.Write(safepath,decomp)	decomp = nil 		co.sleep(.3)
 		
 		for i=1,2048 do
-			print(math.ceil(i^2))
+			--print(math.ceil(i^2))
 			if collectgarbage('step',math.ceil(i^2)) then dbgn(2,'coDecompress','finished collecting 2') break end
 			co.waittick()
 		end

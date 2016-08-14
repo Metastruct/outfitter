@@ -363,7 +363,7 @@ function GMABlacklist(fpath,wsid)
 		
 		paths[#paths+1] = path:lower()
 		if path:Trim():sub(-4):lower()=='.vtf' then
-			print(path,entry.Offset)
+			--print(path,entry.Offset)
 			assert(not check_vtfs[entry.Offset] )
 			check_vtfs[entry.Offset] = path
 		end
