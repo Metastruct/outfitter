@@ -361,6 +361,7 @@ function UIChoseWorkshop(wsid,opengui)
 	if not mdls and err=='notgma' and TestLZMA(path) then
 		local newpath,err = coDecompress(path)
 		if not newpath then
+			if opengui then GUIOpen() end
 			return UIError("Download failed for workshop "..wsid..": "..tostring(err~=nil and tostring(err) or GetLastMountErr and GetLastMountErr())) 
 		end
 		path = newpath
@@ -375,13 +376,12 @@ function UIChoseWorkshop(wsid,opengui)
 		dbge("UIChoseWorkshop",wsid,"GMAPlayerModels failed for:",err,err2)
 		notification.AddLegacy( '[Outfitter] '..tostring(err=="nomdls" and "no valid models found" or err), NOTIFY_ERROR, 2 )
 		if opengui then GUIOpen() end
-		
-	
 		return UIError("Parsing workshop addon "..wsid.." failed: "..tostring(err=="nomdls" and "no valid models found" or err))
 	end
 	
 	local ok,err = GMABlacklist(path)
 	if not ok then
+		if opengui then GUIOpen() end
 		return UIError("OUTFIT BLOCKED: "..tostring(err=="oversize vtf" and "Contains too big textures" or err))
 	end
 	
