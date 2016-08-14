@@ -348,8 +348,10 @@ function GMABlacklist(fpath,wsid)
 
 	local ok ,err = gma:ParseHeader()
 	if not ok then return nil,err end
+	
 
 	local paths = {}
+	local check_vtfs = {}
 	for i=1,8192*2 do
 		local entry,err = gma:EnumFiles()
 		if not entry then
@@ -357,7 +359,32 @@ function GMABlacklist(fpath,wsid)
 			break
 		end
 		local path = entry.Name
+		assert(path)
+		
 		paths[#paths+1] = path:lower()
+		if path:Trim():sub(-4):lower()=='.vtf' then
+			print(path,entry.Offset)
+			assert(not check_vtfs[entry.Offset] )
+			check_vtfs[entry.Offset] = path
+		end
+	end
+	
+	local endheader = f:Tell()
+	
+	if not next(check_vtfs) then dbgn(3,"CheckVTF","none found??") end
+	
+	for offset,path in next, check_vtfs do
+		dbgn(2,"CheckVTF",path)
+		
+		if not gma:SeekToFileOffset(offset) then return nil,'seekfail' end
+		
+		local dat, err = file.ParseVTF(f)
+		if not dat then 
+			dbge("GMABlacklist","ParseVTF",path,wsid,"could not parse",err)
+		elseif dat.width>=2048 or dat.height>=2048 then
+			dbge("GMABlacklist","ParseVTF",wsid,"oversize")
+			return nil,'oversize vtf'
+		end
 	end
 	
 	for i=1,#paths do
@@ -370,6 +397,7 @@ function GMABlacklist(fpath,wsid)
 		
 		--Check 2
 		-- Model overrides / script overrides / config overrides / etc
+
 		
 	end
 	
@@ -465,7 +493,8 @@ function GMAPlayerModels(fpath)
 	end
 end
 
-
+--GMABlacklist('cache/workshop/295356465623404912.cache')
+ 
 local function Think()
 	ThinkEnforce()
 	ThinkEnforce_DeathRagdoll()

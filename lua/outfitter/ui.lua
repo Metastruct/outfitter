@@ -380,6 +380,11 @@ function UIChoseWorkshop(wsid,opengui)
 		return UIError("Parsing workshop addon "..wsid.." failed: "..tostring(err=="nomdls" and "no valid models found" or err))
 	end
 	
+	local ok,err = GMABlacklist(path)
+	if not ok then
+		return UIError("OUTFIT BLOCKED: "..tostring(err=="oversize vtf" and "Contains too big textures" or err))
+	end
+	
 	if not mdls[1] then
 		dbge("UIChoseWorkshop","GMAPlayerModels",wsid,"no models!?")
 		if opengui then GUIOpen() end
