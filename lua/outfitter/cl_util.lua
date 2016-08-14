@@ -381,7 +381,7 @@ function GMABlacklist(fpath,wsid)
 		local dat, err = file.ParseVTF(f)
 		if not dat then 
 			dbge("GMABlacklist","ParseVTF",path,wsid,"could not parse",err)
-		elseif dat.width>=2048 or dat.height>=2048 then
+		elseif dat.width>4096 or dat.height>4096 then
 			dbge("GMABlacklist","ParseVTF",wsid,"oversize")
 			return nil,'oversize vtf'
 		end
