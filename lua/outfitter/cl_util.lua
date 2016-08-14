@@ -422,6 +422,7 @@ function GMAPlayerModels(fpath)
 	if not ok then return nil,err end
 
 	local mdls = {}
+	local vvds = {}
 	local mdlfiles = {}
 	for i=1,8192*2 do
 		local entry,err = gma:EnumFiles()
@@ -435,6 +436,7 @@ function GMAPlayerModels(fpath)
 			mdls[#mdls+1] = table.Copy(entry)
 		elseif ext=='.vvd' then
 			mdlfiles[path:sub(1,-5):lower() ] = true
+			vvds[path] = entry.Offset
 		elseif ext=='.vtx' then
 			mdlfiles[path:sub(1,-10):lower()] = true
 		end
@@ -463,13 +465,35 @@ function GMAPlayerModels(fpath)
 		else
 			can,err,err2 = MDLIsPlayermodel(gma:GetFile(),entry.Size)
 		end
-		if can==nil then dbge("MDLIsPlayermodel","ERROR",err,err2) end
+		if can==nil then dbge("MDLIsPlayermodel",noext,err,err2) end
 		if can then
 			local n = entry.Name
-			if n:find("_arms.",1,true) 	then can,err =false,"arms" 		 end
-			if n:find("_hands.",1,true) then can,err =false,"arms" 		 end
-			if n:find("/c_",1,true) 	then can,err =false,"viewmodel"  end
-			if n:find("/w_",1,true) 	then can,err =false,"worldmodel" end
+			
+			-- validate that it's even potentially playermodel
+			if n:find("_arms.",1,true) 		then can,err =false,"arms" 		 
+			elseif n:find("_hands.",1,true) then can,err =false,"arms" 		 
+			elseif n:find("/c_",1,true) 	then can,err =false,"viewmodel"  
+			elseif n:find("/w_",1,true) 	then can,err =false,"worldmodel"
+			else -- all ok so far
+				-- validate VVD vertex count 
+				local vvd_offset = vvds[noext..'.vvd'] or vvds[noext..'.VVD']
+				if vvd_offset then
+					
+					local seekok = gma:SeekToFileOffset(vvd_offset) -- !!!!!!!!!!! SEEEKING !!!!!!!!!!! --
+					if not seekok then return nil,"seekfail" end
+					local ok ,in_err = ValidateVVDVerts(f)
+					if ok then print(">",n,in_err) end
+					if ok == nil then
+						dbge("GMAPlayerModels","ValidateVVDVerts",noext,in_err)
+					end
+					if ok==false then
+						can,err = false,in_err
+					end
+				else
+					dbge("GMAPlayerModels","vvd not found",noext..'.vvd')
+				end
+			end
+				
 		end
 		if not can then
 			dbg("","Bad",entry.Name,err,err2 or "",IsUnsafe() and "UNSAFE ALLOW" or "")
@@ -501,6 +525,11 @@ local function Think()
 end
 hook.Add("Think",Tag,Think)
 
+
+
+
+
+-------------------
 
 local viewing
 local view={}
@@ -536,3 +565,45 @@ function ToggleThirdperson(want)
 
 end
 concommand.Add("outfitter_camera_toggle",function(a,b,c) if c[1] then ToggleThirdperson(tonumber(c[1])) else ToggleThirdperson() end end) 
+
+------------
+
+
+
+
+local MAX_NUM_LODS = 8
+function ParseVVD(f)
+	local dat = {}
+	dat.id					= f:Read(4)
+	if dat.id~='IDSV' then return nil,'not vvd' end
+	dat.version				= f:ReadLong()
+	if (dat.version or 9999)>10 then return nil,'invalid vvd' end
+	dat.checksum			= f:ReadLong()
+	dat.numLODs				= f:ReadLong()
+	if (dat.numLODs or 9999)>MAX_NUM_LODS then return nil,'invalid vvd' end
+
+	local t = {}
+	for i=1,MAX_NUM_LODS do
+		t[i] = f:ReadLong()
+	end
+
+	dat.numLODVertexes = t
+	dat.numFixups			= f:ReadLong()
+	dat.fixupTableStart		= f:ReadLong()
+	dat.vertexDataStart		= f:ReadLong()
+	dat.tangentDataStart	= f:ReadLong()
+	return dat
+end
+
+function ValidateVVDVerts(f)
+	local dat,err = ParseVVD(f)
+	
+	if not dat then return nil,err end
+	
+	local num = dat.numLODVertexes[1]
+	if num> 44031 --[[magic]] then return false,'too many verts' end
+	return true,num
+end
+
+
+
