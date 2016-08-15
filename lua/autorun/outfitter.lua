@@ -20,6 +20,10 @@ Prevent workshop addon overriding resources to prevent crashes and trolling
 
 Any prop wear from any game instead of a workshop addon
 
+OnDeathRagdollCreated Enforce call lags to hell, but without it ragdoll won't get applied force
+ent:SnatchModelInstance()
+"hl2mp_ragdoll"
+
 TODO
 ====================
 	BodyGroups testing 	471628201
