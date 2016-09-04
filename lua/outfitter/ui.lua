@@ -177,6 +177,7 @@ CWHITE = Color(255,255,255,255)
 CBLACK = Color(0,0,0,0)
 local ns = 0
 function UIError(...)
+	dbgn(2,...)
 	local t= {Color(200,50,10),'[Outfitter Err] ',CWHITE,...}
 	local now = RealTime()
 	if ns<now then
@@ -194,7 +195,6 @@ function UIError(...)
 	local str = table.concat(t,' ')
 	
 	notification.AddLegacy( str, NOTIFY_ERROR, 4 )
-	MsgC(Color(255,100,0),unpack(t))
 	chat.AddText(unpack(t))
 end
 
@@ -276,11 +276,11 @@ function UIChangeModelToID(n,opengui)
 	end
 	
 	assert(mount_path,"mount_path missing for "..tostring(chosen_wsid))
-	local ok = coMountWS( mount_path )
+	local ok,err = coMountWS( mount_path )
 
 	if not ok then
 		if opengui then GUIOpen() end
-		return UIError"The workshop addon could not be mounted"
+		return UIError"The workshop addon could not be mounted: "..tostring(err)
 	end
 	
 	assert(mdl.Name)

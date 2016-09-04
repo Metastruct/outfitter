@@ -251,8 +251,10 @@ function InitCrashSys()
 	end
 	
 	concommand.Add("oufitter_blacklist_clear",function()
+		local n = table.Count(crashlist)
 		table.Empty(crashlist)
 		SAVE()
+		chat.AddText("Cleared blacklist (had "..n..")")
 	end)
 	
 	concommand.Add("oufitter_blacklist_dump",function()
