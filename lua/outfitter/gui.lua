@@ -1266,17 +1266,14 @@ function PANEL:GenAbout(entry)
 	lbl:SetDrawBorder(false)
 	lbl:SetDrawBackground(false)
 	lbl:SetContentAlignment( 1 )
-	local curtxt = title
 	lbl:SetCursor"hand"
-	if sid64 then steamworks.RequestPlayerInfo(sid64) end
-	lbl.Think=sid64 and function()
-		local nowtxt = steamworks.GetPlayerName(sid64)
-		if nowtxt and nowtxt~= "" then
-			curtxt = nowtxt
-			lbl.Think = function() end
-			lbl:SetText(curtxt)
-		end
-	end or function() end
+	if sid64 then 
+		co(function()
+			local nick,err = co.steamnick(sid64)
+			if not nick or not lbl:IsValid() then return end
+			lbl:SetText(tostring(nick))
+		end)
+	end
 	
 	lbl:DockMargin(4,0,0,0)
 	lbl:SetMouseInputEnabled(true)
