@@ -3,6 +3,26 @@
 local Tag='outfitter'
 module(Tag,package.seeall)
 
+
+
+-- External decompression helper
+local outfitter_decompress_ext = CreateClientConVar("outfitter_decompress_ext",'0',true)
+local has_decompress_helper
+if outfitter_decompress_ext:GetInt()>0 then
+	http.Fetch("http://localhost:27099",function(data,len,hdr,code)
+		has_decompress_helper = code==200
+		if has_decompress_helper then
+			dbg('We have external helper!')
+		end
+	end,function() end)
+end
+function HasDecompressHelper()
+	return outfitter_decompress_ext:GetInt()>0 and (has_decompress_helper or outfitter_decompress_ext:GetInt()==2)
+end
+---------------------------------
+
+
+
 local fetching = {}
 
 local res = {}
@@ -244,8 +264,10 @@ function coFetchWS(wsid,skip_maxsize)
 		
 	co.wait(.3)
 	
+	local decomp = not HasDecompressHelper()
+	
 	local TIME = isdbg and SysTime()
-	local path = steamworks_Download( fileinfo.fileid, true )
+	local path = steamworks_Download( fileinfo.fileid, decomp )
 	if isdbg then dbg("Download",wsid,"to",path or "<ERROR>","took",SysTime()-TIME) end
 	
 	assert(path~=true)
@@ -257,7 +279,19 @@ function coFetchWS(wsid,skip_maxsize)
 	if not file.Exists(path,'MOD') then
 		return SYNC(dat,cantmount(wsid,"file"))
 	end
-		
+	
+	if not decomp then
+		local err
+		path,err = coDecompress(path)
+		if not path then
+			return SYNC(dat,cantmount(wsid,'decompress'))
+		end
+
+		if not file.Exists(path,'MOD') then
+			return SYNC(dat,cantmount(wsid,"file"))
+		end
+	end
+
 	local result = path
 	fetching[wsid] = true
 	res[wsid] = result
@@ -279,11 +313,14 @@ function MountWS( path )
 				it gets whitelisted
 		]]
 
-	local crashed = DidCrash("mountws",path)
-	if crashed then return nil,"crashed" end
 
+	local crashed = DidCrash("mountws",path)
+	
+	dbg("MountWS",path,crashed and "CRASHED, BAILING OUT")
+	
+	if crashed then return nil,"crashed" end
+	
 	local TIME = SysTime()
-	dbg("MountGMA",path)
 	CRITICAL("mountws",path)
 	local ok, files = game.MountGMA( path )
 	CRITICAL(false)
@@ -303,14 +340,49 @@ local function _coMountWS(path)
 		
 	return res,files,took
 end
-		
-local worker,cache = co.work_cacher(_coMountWS)
+local worker,cache = co.work_cacher_filter(
+	function(key,ok)
+		return (not key) or ok
+	end,
+	co.work_cacher(_coMountWS) 
+)
 coMountWS = co.worker(worker)
 
+
+
+
+function _coDecompressExt(path)
+	if not path then return nil,'invalid parameter' end
+	dbgn(2,"coDecompressExt",path)
+	
+	local ok,data,len,hdr,code = co.post('http://localhost:27099/decompress',{
+		file = path
+	})
+	
+	if not ok then
+		has_decompress_helper = false
+		return coDecompress(path)
+	end
+	
+	
+	if code ~= 200 then
+		dbge(data)
+		return nil,'idk'
+	end
+	
+	local resultpath = path..'.decompressed'
+	local ex = file.Exists(resultpath,'GAME')
+	if not ex then dbge("coDecompress","File not found",path,'->',resultpath) return nil,'missing decompress' end
+	return resultpath
+end
 
 function coDecompress(path)
 	if not path then return nil,'invalid parameter' end
 	dbgn(2,"coDecompress",path)
+	if HasDecompressHelper() then
+		return _coDecompressExt(path)
+	end
+	
 	local safepath = path:gsub("%.cache$",".dat")
 	if not file.Exists(safepath,'DATA') then
 
