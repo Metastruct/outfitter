@@ -1370,9 +1370,12 @@ end)
 
 --TODO: Integrate better?
 
+local icon = "icon64/outfitter.png"
+icon = file.Exists("materials/"..icon,'GAME') and icon or "icon64/playermodel.png"
+
 list.Set("DesktopWindows", Tag, {
 	title		= "Outfitter",
-	icon		= "icon64/playermodel.png",
+	icon		= icon,
 	width		= 1,
 	height		= 1,
 	onewindow	= false,

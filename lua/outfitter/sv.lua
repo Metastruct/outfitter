@@ -90,7 +90,9 @@ function NetData(pl,k,val)
 	return true
 end
 
-CreateConVar("_outfitter_version","0.4",FCVAR_NOTIFY)
+CreateConVar("_outfitter_version","0.5",FCVAR_NOTIFY)
+resource.AddSingleFile "materials/icon64/outfitter.png"
+
 
 function TestOutfitsOnBots()
 	local t = {
