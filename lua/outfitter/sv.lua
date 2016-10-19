@@ -40,7 +40,7 @@ end
 
 function NetData(pl,k,val)
 	if k~=NTag then return end
-	dbg("NetData","receiving outfit from",pl)
+	dbgn(2,"NetData","receiving outfit from",pl)
 	
 	if not isstring(val) and val~=nil then
 		dbg(pl,"val",type(val))
