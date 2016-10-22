@@ -280,7 +280,7 @@ function UIChangeModelToID(n,opengui)
 
 	if not ok then
 		if opengui then GUIOpen() end
-		return UIError"The workshop addon could not be mounted: "..tostring(err)
+		return UIError("The workshop addon could not be mounted: "..tostring(err))
 	end
 	
 	assert(mdl.Name)
