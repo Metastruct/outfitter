@@ -408,8 +408,44 @@ function MDL:Attachments()
 	return t
 end
 
+local mstudiobodyparts_t_size =
+	4 -- int	sznameindex;
+	+ 4 -- int	nummodels;
+	+ 4 -- int	base;
+	+ 4 -- int	modelindex; 
+	
+function MDL:offsetBodyPart( i )
+	assert(i>=0 and i<=self.bodypart_count)
+	return self.bodypart_offset + mstudiobodyparts_t_size * i
+end
 
+function MDL:BodyParts()
+	local f = self.file
+	local t = self.bodyparts
+	if t then return t end
+	
+	t = {}
+	
+	for i=0,self.bodypart_count-1 do -- mstudiobodyparts_t --
+		
+			local thispos = self:offsetBodyPart(i)
+			assert(self:SeekTo(thispos))
+			
+			local sznameindex = from_int(f:Read(4),true)
+			
+			local nummodels = from_u_int(f:Read(4),true)
+			
+			assert(self:SeekTo(thispos + sznameindex))
+			local name = f:ReadString()
+			
+			t[#t+1] = {name=name,nummodels=nummodels}
+			
+	end
 
+	self.bodyparts = t
+	
+	return t
+end
 
 local bone_section_size =
 	  4 -- int
@@ -486,6 +522,37 @@ end
 function MDL:Tell()
 	return self.file:Tell()-self.initial_offset
 end
+
+--[[ -- BodyPart test
+local fp ="models/player/"
+local flist = file.Find(fp..'*.mdl','GAME')
+ flist = {'soldier.mdl','dukeplayermodel/dukeplayermodel.mdl'}
+
+for _,fn in next,flist do
+print("\n\n==== "..fn.." ====")
+--local fn = 'matress.mdl'
+
+local fpath = fp..fn
+local f = file.Open(fpath,'rb','GAME')
+
+local mdl,err = Open(f)
+if not mdl then print("Parser init fail",err) return end
+
+local ok ,err = mdl:ParseHeader()
+if not ok then print("header parse failed",err) return end
+
+print("VERSION",mdl.version,"","","VALIDATE:",mdl:Validate(),mdl.initial_offset)
+print("NAME",("%q"):format(mdl.name))
+print("BodyPartCount",mdl.bodypart_count)
+
+for k,data in next,mdl:BodyParts() do
+	print("",data.name)
+	print("",data.nummodels)
+end
+
+end
+
+--]]
 
 --[[ -- test
 local fp ="models/player/"
