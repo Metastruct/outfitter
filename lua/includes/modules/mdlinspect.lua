@@ -435,11 +435,12 @@ function MDL:BodyParts()
 			local sznameindex = from_int(f:Read(4),true)
 			
 			local nummodels = from_u_int(f:Read(4),true)
+			local base = from_u_int(f:Read(4),true)
 			
 			assert(self:SeekTo(thispos + sznameindex))
 			local name = f:ReadString()
 			
-			t[#t+1] = {name=name,nummodels=nummodels}
+			t[#t+1] = {name=name,base=base,nummodels=nummodels}
 			
 	end
 
