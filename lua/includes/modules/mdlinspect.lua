@@ -426,6 +426,7 @@ function MDL:BodyParts()
 	
 	t = {}
 	
+	self:ParseHeader()
 	for i=0,self.bodypart_count-1 do -- mstudiobodyparts_t --
 		
 			local thispos = self:offsetBodyPart(i)
@@ -578,11 +579,12 @@ print("NAME",("%q"):format(mdl.name))
 --print("incmd",mdl.includemodel_count,mdl.includemodel_index)
 --print("",mdl.includemodel_count)
 --print("",mdl.includemodel_index)
+if mdl.skinrfamily_count>1 then print("SKINCOUNT",mdl.skinrfamily_count) end
 
 if mdl.flags~=0 then PrintTable("flags",mdl:ListFlags()) end
 
 for k,v in next,mdl:IncludedModels() do
-	print("",('%q'):format(v[2]),file.Exists(v[2],'GAME'))
+--	print("",('%q'):format(v[2]),file.Exists(v[2],'GAME'))
 end
 
 print("bones",mdl.bone_count,mdl.bone_offset,mdl:BoneNames() [1],mdl:BoneNames() [2])
