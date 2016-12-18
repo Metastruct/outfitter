@@ -380,6 +380,19 @@ function MDL:offsetAttachment( i )
 	return self.attachment_offset + mstudioattachment_t_size * i
 end
 
+
+function MDL:SurfaceName()
+	local f = self.file
+	local name = self.surfaceprop_name
+	if name then return name end
+	
+	assert(self:SeekTo(self.surfaceprop_index))
+	name = f:ReadString()
+	assert(name)
+	self.surfaceprop_name = name
+	return name
+end
+	
 function MDL:Attachments()
 	local f = self.file
 	local t = self.attachment_nameslist
@@ -526,14 +539,13 @@ function MDL:Tell()
 end
 
 --[[ -- BodyPart test
-local fp ="models/player/"
+local fp ="models/"
 local flist = file.Find(fp..'*.mdl','GAME')
- flist = {'soldier.mdl','dukeplayermodel/dukeplayermodel.mdl'}
+ flist = {'props_borealis/bluebarrel001.mdl','player/soldier.mdl','player/dukeplayermodel/dukeplayermodel.mdl'}
 
 for _,fn in next,flist do
 print("\n\n==== "..fn.." ====")
 --local fn = 'matress.mdl'
-
 local fpath = fp..fn
 local f = file.Open(fpath,'rb','GAME')
 
@@ -542,6 +554,9 @@ if not mdl then print("Parser init fail",err) return end
 
 local ok ,err = mdl:ParseHeader()
 if not ok then print("header parse failed",err) return end
+
+
+print("SURFNAME",mdl:SurfaceName())
 
 print("VERSION",mdl.version,"","","VALIDATE:",mdl:Validate(),mdl.initial_offset)
 print("NAME",("%q"):format(mdl.name))
