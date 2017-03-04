@@ -326,6 +326,15 @@ function PANEL:Init()
 		check:DockMargin(1,4,1,1)
 	local d_5 = check
 	
+	local check = AddS( "DCheckBoxLabel" )
+	 	check:SetConVar(Tag.."_hands")
+		check:SetText( "Use hands")
+		check:SetTooltip[[Should we guess hands for the playermodels]]
+		check:SizeToContents() 
+
+		check:DockMargin(1,4,1,1)
+	local d_6 = check
+	
 	local slider = AddS( "DNumSlider" )
 		slider:SetText( "Outfit download distance" )
 		slider:SizeToContents()

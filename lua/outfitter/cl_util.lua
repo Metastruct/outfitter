@@ -44,6 +44,13 @@ do
 end
 
 do
+	local outfitter_hands = CreateClientConVar("outfitter_hands","1",true)
+	function ShouldHands()
+		return outfitter_hands:GetBool()
+	end
+end
+
+do
 	-- -1: server preference
 	-- 0: force disable distance check
 	-- 1: force enable distance check
@@ -406,14 +413,83 @@ function GMABlacklist(fpath,wsid)
 end
 
 
+function GMAParseModels(gma)
+	local mdls,vvds,mdlfiles,phys = {},{},{},{}
+	for i=1,32000 do
+		local entry,err = gma:EnumFiles()
+		if not entry then
+			if err then 
+				dbge("GMAParseModels",err) 
+				return nil,err
+			end
+			break
+		end
+		local path = entry.Name
+		local ext = path:sub(-4):lower()
+		local path_extless = path:sub(1,-5):lower()
+		
+		if ext=='.mdl' then
+			mdls[#mdls+1] = table.Copy(entry)
+		elseif ext=='.vvd' then
+			mdlfiles[path_extless] = true
+			vvds[path:lower()] = entry.Offset
+		elseif ext=='.vtx' then
+			--mdlfiles[path:gsub("%.[^%.]+%.vtx$",""):lower()] = true
+			mdlfiles[path_extless] = true
+		elseif ext=='.phy' then
+			phys[path_extless] = true
+		end
+	end
+	return mdls,vvds,mdlfiles,phys
+end
+
+-- purge {false,false,good,false}
+function RemoveListVals(t,val)
+	for i=#t,1,-1 do
+		if t[i]==val then
+			table.remove(t,i)
+		end
+	end
+end
+
+function CategorizeBadModelPath(n)
+	if n:find("/c_arms",1,true) 				then return "arms" end
+	if n:find("/c_hands",1,true) 				then return "arms" end
+	if n:find("arms.",1,true) 				then return "arms" end
+	if n:find("hands.",1,true) 				then return "arms" end
+	if n:find("/c_",1,true) 				then return "viewmodel" end
+	if n:find("/w_",1,true) 				then return "worldmodel" end
+	--if n:find("_animations.mdl",1,true) 	then return "animation" end
+	if n:find("_animation",1,true) 	then return "animation" end
+	if n:find("_anims_",1,true) 			then return "animation" end
+	if n:find("/weapons/.",1,true) 			then return "prop" end
+	if n:find("/prop_",1,true) 			then return "prop" end
+	if n:find("/props_",1,true) 			then return "prop" end
+end
+
+function CheckVVD(gma,vvds,path_extless)
+	-- validate VVD vertex count 
+	local vvd_offset = vvds[path_extless..'.vvd'] or vvds[path_extless..'.VVD']
+	if vvd_offset then
+		if not gma:SeekToFileOffset(vvd_offset) then return nil,"seekfail" end
+		local ok ,in_err = ValidateVVDVerts(gma:GetFile())
+		if not ok then
+			dbge("CheckVVD","ValidateVVDVerts",path_extless,in_err)
+			return nil,in_err
+		end
+		return true
+	else
+		dbge("CheckVVD","vvd not found",path_extless..'.vvd')
+	end
+end
+
+
 function GMAPlayerModels(fpath)
 	assert(fpath)
 	local f = file.Open(fpath,'rb','MOD')
-	dbg("GMAPlayerModels",fpath,f and "" or "INVALIDFILE")
+	dbgn(2,"GMAPlayerModels pre",fpath,f and "" or "INVALIDFILE")
 	
-	if not f then
-		return nil,"file"
-	end
+	if not f then return nil,"file" end
 	
 	local gma,err = gmaparse.Parser(f)
 	if not gma then return nil,err end
@@ -421,104 +497,118 @@ function GMAPlayerModels(fpath)
 	local ok ,err = gma:ParseHeader()
 	if not ok then return nil,err end
 
-	local mdls = {}
-	local vvds = {}
-	local mdlfiles = {}
-	for i=1,8192*2 do
-		local entry,err = gma:EnumFiles()
-		if not entry then
-			if err then dbge("enumfiles",err) end
-			break
-		end
-		local path = entry.Name
-		local ext = path:sub(-4)
-		if ext=='.mdl' then
-			mdls[#mdls+1] = table.Copy(entry)
-		elseif ext=='.vvd' then
-			mdlfiles[path:sub(1,-5):lower() ] = true
-			vvds[path] = entry.Offset
-		elseif ext=='.vtx' then
-			mdlfiles[path:sub(1,-10):lower()] = true
-		end
-	end
-	
-	local potential={}
+	local modellist,vvds,mdlfiles,phys = GMAParseModels(gma)
+	if modellist==nil then return nil,vvds end
+
+
+	local playermodels = {}
+	local hands = {}
+	local potential = {}
+	local discards = {}
+	local extra = {
+		playermodels = playermodels,
+		hands = hands,
+		potential = potential,
+		discards = discards
+	}
 	
 	--TODO: Check CRC?
 	--TODO: Check other files exist for mdl (otherwise might be anim for example)
 	
-	local one_error
-	for k,entry in next,mdls do
+	-- go through all model entries found from the gma
+	for k,entry in next,modellist do
+		local path = entry.Name
+		local path_extless = entry.Name:sub(1,-5)
 		
+		local cat = CategorizeBadModelPath(path)
 		
-		local seekok = gma:SeekToFileOffset(entry)
-		if not seekok then return nil,"seekfail" end
+		if not gma:SeekToFileOffset(entry) then return nil,"seekfail" end
 		
+		can = mdlfiles[path_extless]
+		local discard
+		local isplr,err,err2 = MDLIsPlayermodel(gma:GetFile(),entry.Size)
+		local plerr
+		if isplr==nil then 
+			dbge("MDLIsPlayermodel",path_extless,err,err2) 
+			discard=true
+		elseif not isplr then
+			plerr = err
+			entry.error_player = plerr
+		elseif not phys[path_extless] then
+			isplr=false
+			plerr = 'physics'
+			entry.error_player = plerr
+		end
 		
-		local can,err,err2
+		if not gma:SeekToFileOffset(entry) then return nil,"seekfail" end
+		local ishands,err,err2 = MDLIsHands(gma:GetFile(),entry.Size)
+		local handserr
+		if ishands==nil then 
+			dbge("MDLIsHands",path_extless,err,err2) 
+		elseif not isplr then
+			handserr = err
+			entry.error_hands = handserr
+		elseif phys[path_extless] then
+			ishands = false
+			handserr = 'physics'
+			entry.error_hands = handserr
+		end
 		
-		local noext = entry.Name:sub(1,-5)
-		can = mdlfiles[noext]
 
-		if not can then
-			can,err,err2 = false,"vvd"
-		else
-			can,err,err2 = MDLIsPlayermodel(gma:GetFile(),entry.Size)
+		
+		
+		local vvd_ok,err = CheckVVD(gma,vvds,path_extless)
+		entry.vvd_ok = vvd_ok
+		if not vvd_ok then
+			discard = true
+			ishands = false
+			isplr = false
 		end
-		if can==nil then dbge("MDLIsPlayermodel",noext,err,err2) end
-		if can then
-			local n = entry.Name
+		if not ((ishands and not isplr) or (isplr and not ishands) or (not ishands and not isplr)) then
+			ishands = false
+			isplr = false
+			dbge("GMAPlayerModels","Disagreement",fpath,path)
+		end
+		dbgn(2,"CategorizeModel",cat,isplr and "player" or ishands and "hands" or "unkn",path)
+		
+		discard = discard 
+			or plerr == 'nobones'
 			
-			-- validate that it's even potentially playermodel
-			if n:find("_arms.",1,true) 		then can,err =false,"arms" 		 
-			elseif n:find("_hands.",1,true) then can,err =false,"arms" 		 
-			elseif n:find("/c_",1,true) 	then can,err =false,"viewmodel"  
-			elseif n:find("/w_",1,true) 	then can,err =false,"worldmodel"
-			else -- all ok so far
-				-- validate VVD vertex count 
-				local vvd_offset = vvds[noext..'.vvd'] or vvds[noext..'.VVD']
-				if vvd_offset then
-					
-					local seekok = gma:SeekToFileOffset(vvd_offset) -- !!!!!!!!!!! SEEEKING !!!!!!!!!!! --
-					if not seekok then return nil,"seekfail" end
-					local ok ,in_err = ValidateVVDVerts(f)
-					if ok then print(">",n,in_err) end
-					if ok == nil then
-						dbge("GMAPlayerModels","ValidateVVDVerts",noext,in_err)
-					end
-					if ok==false then
-						can,err = false,in_err
-					end
-				else
-					dbge("GMAPlayerModels","vvd not found",noext..'.vvd')
-				end
-			end
-				
-		end
-		if not can then
-			dbg("","Bad",entry.Name,err,err2 or "",IsUnsafe() and "UNSAFE ALLOW" or "")
-			potential[entry]=err or "?"
-			if not IsUnsafe() then
-				mdls[k]=false
-			end
+			or cat == 'arms' 
+			or cat == 'prop' 
+			or cat == 'animation' 
+			or cat == 'viewmodel' 
+			or cat == 'worldmodel'
+		
+		if isplr then
+			playermodels[path]=entry
+		elseif ishands then
+			hands[path]=entry
+		elseif not discard then
+			potential[path]=entry
+		else
+			discards[path]=entry
 		end
 	end
-	-- purge bad
-	for i=#mdls,1,-1 do
-		if mdls[i]==false then
-			table.remove(mdls,i)
+	
+	dbg("GMAPlayerModels",fpath,table.Count(playermodels),table.Count(potential),table.Count(hands))
+	if IsUnsafe() then
+		for k,v in next,potential do
+			playermodels[k]=v
 		end
 	end
-	dbg("GMAPlayerModels post",#mdls)
-	if #mdls>0 then
-		return mdls,nil,potential
-	else
-		return nil,"nomdls",potential
+		
+	
+	local mdl_list = {}
+	for path,entry in next,playermodels do
+		mdl_list[#mdl_list+1] = entry -- entry.Name 
 	end
+	return mdl_list,extra
+	
 end
 
---GMABlacklist('cache/workshop/295356465623404912.cache')
- 
+--outfitter.EnforceHands("models/weapons/c_arms_timeshiftsoldier.mdl")
+
 local function Think()
 	ThinkEnforce()
 	ThinkEnforce_DeathRagdoll()
@@ -607,3 +697,33 @@ end
 
 
 
+do 
+	--TODO: skin, bodygroup, etc??
+
+	local oldmodel
+	local enforce,skin,bodygroup
+	local function PreDrawPlayerHands(ent)
+		local old = ent:GetModel()
+		if old~=enforce then
+			dbgn(3,'EnforceHands',oldmodel,old,enforce)
+			if enforce==nil then
+				dbgn(3,"EnforceHands","oldmodel",oldmodel)
+				ent:SetModel(oldmodel)
+				oldmodel = nil
+				hook.Remove("PreDrawPlayerHands",Tag)
+			else
+				dbgn(3,"EnforceHands","enforce",enforce)
+				ent:SetModel(enforce)
+			end
+			oldmodel = old
+		end
+	end
+
+	function EnforceHands(mdl,_skin,_bodygroup)
+		enforce = mdl
+		if enforce then
+			hook.Add("PreDrawPlayerHands",Tag,PreDrawPlayerHands)
+		end
+		_skin,_bodygroup = skin,bodygroup
+	end
+end

@@ -211,6 +211,7 @@ function UIMsg(...)
 end
 
 local mdllist
+local handslist
 local chosen_wsid
 local tried_mounting
 local mount_path
@@ -239,10 +240,11 @@ function UICancelAll()
 	chosen_mdl = nil
 	
 	RemoveOutfit()
+	EnforceHands()
 end
 
 function UIBroadcastMyOutfit()
-	
+	 
 	local mdl,wsid = BroadcastMyOutfit()
 	if mdl then
 		SOUND"ui/item_robot_arm_pickup.wav"
@@ -290,7 +292,14 @@ function UIChangeModelToID(n,opengui)
 	
 	-- returns instantly, but should be instant anyway
 	OnChangeOutfit(LocalPlayer(),mdl.Name,chosen_wsid)
-	
+	dbg("EnforceHands?",ShouldHands(),n,mdllist[2]==nil,handslist,handslist and handslist[1])
+	if n==1 and nil==mdllist[2] and handslist and table.Count(handslist)==1 and ShouldHands() then
+		local _,entry = next(handslist)
+		EnforceHands(entry.Name)
+	else
+		EnforceHands()
+	end
+		
 end
 
 hook.Add("OutfitApply",Tag,function(pl,mdl)
@@ -354,29 +363,31 @@ function UIChoseWorkshop(wsid,opengui)
 	end
 	co.sleep(.2)
 	
-	local mdls,err,err2 = GMAPlayerModels( path )
-	if not mdls and err=='notgma' then
+	local mdls,extra,err = GMAPlayerModels( path )
+	--PrintTable(mdls)
+	
+	if not mdls and extra=='notgma' then
 		dbgn(2," TestLZMA(",path,") ==", ("%q"):format(file.Read(path,'GAME'):sub(1,14)),TestLZMA(path) )
 	end
-	if not mdls and err=='notgma' and TestLZMA(path) then
-		local newpath,err = coDecompress(path)
+	if not mdls and extra=='notgma' and TestLZMA(path) then
+		local newpath,extra = coDecompress(path)
 		if not newpath then
 			if opengui then GUIOpen() end
-			return UIError("Download failed for workshop "..wsid..": "..tostring(err~=nil and tostring(err) or GetLastMountErr and GetLastMountErr())) 
+			return UIError("Download failed for workshop "..wsid..": "..tostring(extra~=nil and tostring(extra) or GetLastMountErr and GetLastMountErr())) 
 		end
 		path = newpath
 		
 		-- retry --
-		mdls,err,err2 = GMAPlayerModels( path )
+		mdls,extra,err = GMAPlayerModels( path )
 		-----------
 	end
 	
 	
 	if not mdls then
-		dbge("UIChoseWorkshop",wsid,"GMAPlayerModels failed for:",err,err2)
-		notification.AddLegacy( '[Outfitter] '..tostring(err=="nomdls" and "no valid models found" or err), NOTIFY_ERROR, 2 )
+		dbge("UIChoseWorkshop",wsid,"GMAPlayerModels failed for:",extra,err)
+		notification.AddLegacy( '[Outfitter] '..tostring(extra=="nomdls" and "no valid models found" or extra), NOTIFY_ERROR, 2 )
 		if opengui then GUIOpen() end
-		return UIError("Parsing workshop addon "..wsid.." failed: "..tostring(err=="nomdls" and "no valid models found" or err))
+		return UIError("Parsing workshop addon "..wsid.." failed: "..tostring(extra=="nomdls" and "no valid models found" or extra))
 	end
 	
 	local ok,err = GMABlacklist(path)
@@ -404,6 +415,7 @@ function UIChoseWorkshop(wsid,opengui)
 	
 	chosen_wsid = wsid
 	mdllist = mdls
+	handslist = extra.hands
 	mount_path = path
 	
 	if mdls[2] then

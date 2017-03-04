@@ -462,16 +462,16 @@ function NeedWS(wsid,pl,mdl)
 		return
 	end
 	
-	local mdls,err = GMAPlayerModels(path)
+	local mdls,extra = GMAPlayerModels(path)
 	
 	if not mdls then
-		dbge("NeedWS","GMAPlayerModels",wsid,"fail",err)
-		return false,"mdlparse",err
+		dbge("NeedWS","GMAPlayerModels",wsid,"fail",extra)
+		return false,"mdlparse",extra
 	end
 	
 	if not mdls[1] then
-		dbge("NeedWS","GMAPlayerModels",wsid,"no models!?")
-		return	false,"nomdls"
+		dbge("NeedWS","GMAPlayerModels",wsid,"has no models")
+		return false,"nomdls"
 	end
 	
 	local ok,err = coMountWS( path )

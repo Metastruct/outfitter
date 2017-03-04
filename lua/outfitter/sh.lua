@@ -161,6 +161,116 @@ function MDLIsPlayermodel(f,sz)
 	return true
 end
 
+local badbones = {
+	["valvebiped.bip01_r_foot"] = true,
+	["valvebiped.bip01_head1"] = true,
+	["valvebiped.bip01_head"] = true,
+}
+local spines = {
+	["valvebiped.bip01_spine4"] = true,
+	["valvebiped.bip01_spine3"] = true,
+	["valvebiped.bip01_spine2"] = true,
+	["valvebiped.bip01_spine1"] = true,
+}
+local findone = {
+	["valvebiped.bip01_r_clavicle" ] = true,
+	["valvebiped.bip01_r_upperarm" ] = true,
+	["valvebiped.bip01_r_forearm"  ] = true,
+	["valvebiped.bip01_r_hand"     ] = true,
+	["valvebiped.bip01_l_hand"     ] = true,
+}
+
+-- parse model from file
+function MDLIsHands(f,sz)
+	local mdl,err,err2 = mdlinspect.Open(f)
+	if not mdl then
+		return nil,err,err2
+	end
+	
+	if mdl.version<44 or mdl.version>49 then
+		return false,"version"
+	end
+	
+	local ok ,err = mdl:ParseHeader()
+	if not ok then
+		return false,err or "hdr"
+	end
+	
+	if not mdl.bone_count or mdl.bone_count<=2 then
+		return false,"nobones"
+	end
+	
+	if sz then
+		local valid,err = mdl:Validate(sz)
+		if not valid then
+			dbg("MDLIsHands",f,"validate error",err)
+			return false,"valid"
+		end
+	end
+	
+	--print(mdl,mdl.bodypart_count,mdl.skinreference_count)
+	
+	local found = false
+	local imdls = mdl:IncludedModels()
+	
+	--TODO: include stuff or have animations (seqs)
+	local found_anm
+	for k,v in next,imdls do
+		v=v[2]
+		if v=="models/m_anm.mdl" then
+			return false,"player"
+		end
+		--print("----------------",v)
+		if v and not v:find"%.mdl$" then
+			return false,"badinclude",v
+		end
+		
+		if v:find("/c_arms_",1,true) then
+			found_anm = true
+		end
+		
+	end
+	local bonenames = mdl:BoneNames() 
+	
+	
+	local hadspine
+	local gotone
+	for _,name in next,bonenames do
+		name= name:lower()
+		--print(name)
+		local isspine = spines[name]
+		if isspine then 
+			if hadspine then
+				--return false,'bones',name
+			end 
+			hadspine = true
+		end
+		gotone = gotone or findone[name]
+		
+		if badbones[name] then
+			return false,'bones',name
+		end 
+		
+	end
+	if not gotone or not hadspine then
+		return false,'bones'
+	end
+	
+	local attachments = mdl:Attachments()
+	if attachments and next(attachments) then
+		for k,v in next,attachments do
+			local name = v[1]
+			--print(name)
+			if name=="eyes" or name=="anim_attachment_head" or name=="mouth" then 
+				return false,"player"
+			end
+		end
+	end
+	
+	return true
+end
+
+
 --[[
 local fp ="models/player/"
 local flist = file.Find(fp..'*.mdl','GAME')
