@@ -699,7 +699,15 @@ end
 
 do 
 	--TODO: skin, bodygroup, etc??
-
+	local HACKT=Tag.."_handshack"
+	local function hackt()
+		local h = LocalPlayer():GetHands()
+		if not h or not h:IsValid() then return end
+		local m = h:GetModel()
+		if not m then return end
+		h:SetModel(m)
+	end
+	
 	local oldmodel
 	local enforce,skin,bodygroup
 	local function PreDrawPlayerHands(ent)
@@ -708,12 +716,13 @@ do
 			dbgn(3,'EnforceHands',oldmodel,old,enforce)
 			if enforce==nil then
 				dbgn(3,"EnforceHands","oldmodel",oldmodel)
-				ent:SetModel(oldmodel)
+				local _=oldmodel and ent:SetModel(oldmodel)
 				oldmodel = nil
 				hook.Remove("PreDrawPlayerHands",Tag)
+				timer.Destroy(HACKT)
 			else
 				dbgn(3,"EnforceHands","enforce",enforce)
-				ent:SetModel(enforce)
+				local _=enforce and ent:SetModel(enforce)
 			end
 			oldmodel = old
 		end
@@ -722,7 +731,12 @@ do
 	function EnforceHands(mdl,_skin,_bodygroup)
 		enforce = mdl
 		if enforce then
+			if not timer.Exists(HACKT) then
+				timer.Create(HACKT,5,0,hackt)
+			end
 			hook.Add("PreDrawPlayerHands",Tag,PreDrawPlayerHands)
+		else
+			timer.Destroy(HACKT)
 		end
 		_skin,_bodygroup = skin,bodygroup
 	end
