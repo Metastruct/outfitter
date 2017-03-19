@@ -1,4 +1,4 @@
-** Coming straight from the Meta Construct Labs, 8 months in the making **
+**Coming straight from the Meta Construct Labs, 8 months in the making**
 
 Now you can wear workshop playermodels also in multiplayer! (Yes, others will see what you wear too!)
 
