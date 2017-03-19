@@ -64,7 +64,7 @@ Allows wearing many of the playermodels from workshop in multiplayer so that oth
 
 The addon and all contributions to it are licensed to Meta Construct for use as seen fit (including selling [under a more permissive license](https://creativecommons.org/licenses/by-nd/4.0/)) to ensure further development (including relicensing the whole addon and all contributions under a more permissive license such as [AGPL/MIT](https://choosealicense.com/) in the future). Meta Construct may also transfer (not duplicate) its rights.
 
-The addon is licensed under [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License] https://creativecommons.org/licenses/by-nc-nd/4.0/).
+The addon is licensed under [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International Public License]( https://creativecommons.org/licenses/by-nc-nd/4.0/).
 
 
 ### Contributing
