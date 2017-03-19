@@ -31,9 +31,9 @@ Allows wearing many of the playermodels from workshop in multiplayer so that oth
 ### Planned extra features
 
 - [ ] Documentation!
- - [ ] Hooks
- - [ ] High performance mode (allows preventing loading more outfits during gameplay)
- - [ ] How to enforce models on players instead of letting them decide
+    - [ ] Hooks
+    - [ ] High performance mode (allows preventing loading more outfits during gameplay)
+    - [ ] How to enforce models on players instead of letting them decide
 - [ ] Chat commands integration for admin mods
 - [ ] Further protections to make things less crashy and less exploitable (10% done)
 - [ ] Bodygroups support! (30% done)
