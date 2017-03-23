@@ -142,7 +142,7 @@ function IsFailsafe()
 end
 
 --TODO
-outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
+outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",true)
 
 -- Model enforcing
 	

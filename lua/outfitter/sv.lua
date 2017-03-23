@@ -80,8 +80,8 @@ function NetData(pl,k,val)
 	local should,remaining = pl:NetDataShouldLimit(NTag,util.IsModelLoaded(mdl) and 3 or 14)
 	
 	if should then
-		RateLimitMessage(pl,remaining)
-		dbg("NetData",pl,"ratelimiting",string.NiceTime(remaining))
+		RateLimitMessage(pl,math.abs(remaining))
+		dbg("NetData",pl,"ratelimiting",string.NiceTime(math.abs(remaining)))
 		return -- TODO
 	end
 	
@@ -90,7 +90,7 @@ function NetData(pl,k,val)
 	return true
 end
 
-CreateConVar("_outfitter_version","0.5",FCVAR_NOTIFY)
+CreateConVar("_outfitter_version","0.7",FCVAR_NOTIFY)
 resource.AddSingleFile "materials/icon64/outfitter.png"
 
 

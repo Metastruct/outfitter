@@ -75,6 +75,9 @@ AddCSLuaFile("includes/modules/gmaparse.lua")
 AddCSLuaFile("includes/modules/mdlinspect.lua")
 AddCSLuaFile("includes/modules/co.lua")
 
+if not util.OnLocalPlayer then
+	include'hooks.lua'
+end
 require"co"
 
 
@@ -90,7 +93,7 @@ this.Tag =Tag
 this.NTag = 'OF'
 
 local outfitter_dbg_tosv = SERVER and CreateConVar("outfitter_dbg_tosv","0") or CreateClientConVar("outfitter_dbg_tosv","0",false,false)
-local outfitter_dbg = SERVER and CreateConVar("outfitter_dbg","1") or CreateClientConVar("outfitter_dbg","1",false,false)
+local outfitter_dbg = SERVER and CreateConVar("outfitter_dbg","1") or CreateClientConVar("outfitter_dbg","0",true,false)
 _M.outfitter_dbg = outfitter_dbg
 
 function isdbg(n)
@@ -99,10 +102,15 @@ end
 
 function dbg(...)
 	if isdbg() then
+		Msg"[Outfitter] "
 		if outfitter_dbg_tosv:GetBool() then
-			Msg"[Outfitter] "easylua.Print(...)
+			if easylua then
+				easylua.Print(...)
+			else
+				ErrorNoHalt(...)
+			end
 		else
-			Msg"[Outfitter] "print(...)
+			print(...)
 		end
 	end
 end
