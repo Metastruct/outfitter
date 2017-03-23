@@ -4,6 +4,8 @@
 BUGS
 ====================
 
+GOING THROUGH WITHOUT REJECT !outfitter 187243854
+
 OUTFITTER REJECTS
 	191146401 -- noattachments
 	164449803 -- hip
@@ -79,6 +81,7 @@ require"co"
 local Tag='outfitter'
 
 --TODO:
+ -- !outfitter 187243854
  -- bodygroups
 module(Tag,package.seeall)
 
