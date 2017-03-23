@@ -474,7 +474,7 @@ function CheckVVD(gma,vvds,path_extless)
 		if not gma:SeekToFileOffset(vvd_offset) then return nil,"seekfail" end
 		local ok ,in_err = ValidateVVDVerts(gma:GetFile())
 		if not ok then
-			dbge("CheckVVD","ValidateVVDVerts",path_extless,in_err)
+			dbg("CheckVVD","ValidateVVDVerts",path_extless,in_err)
 			return nil,in_err
 		end
 		return true
