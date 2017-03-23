@@ -360,16 +360,18 @@ function InitCrashSys()
 		SAVE(crashlist)
 	end
 	
-	concommand.Add("oufitter_blacklist_clear",function()
-		local n = table.Count(crashlist)
-		table.Empty(crashlist)
-		SAVE()
-		chat.AddText("Cleared blacklist (had "..n..")")
-	end)
-	
-	concommand.Add("oufitter_blacklist_dump",function()
-		PrintTable(crashlist)
-	end)
+	if CLIENT then
+		concommand.Add(Tag.."_blacklist_clear",function()
+			local n = table.Count(crashlist)
+			table.Empty(crashlist)
+			SAVE()
+			chat.AddText("Cleared blacklist (had "..n..")")
+		end)
+		
+		concommand.Add(Tag.."_blacklist_dump",function()
+			PrintTable(crashlist)
+		end)
+	end
 	
 	function DidCrash(key,val)
 		local t = crashlist[key]
@@ -388,7 +390,7 @@ function InitCrashSys()
 	if not key or key=="" then return end
 	local val = util.GetPData("0",CrashingTagv,"")
 	
-	local err = ("[Outfitter] CRASH: %s on %q\n"):format( tostring(key),tostring(val) )
+	local err = ("[%s] CRASH: %s on %q\n"):format( Tag,tostring(key),tostring(val) )
 	
 	local t = crashlist[key] if not t then t = {} crashlist[key] = t end
 	t[val] = true
@@ -396,4 +398,6 @@ function InitCrashSys()
 
 	OnInitialize(function() ErrorNoHalt(err) end)
 end
-InitCrashSys()
+if CLIENT then
+	InitCrashSys()
+end

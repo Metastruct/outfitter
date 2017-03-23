@@ -211,6 +211,8 @@ function coFetchWS(wsid,skip_maxsize)
 		end
 	end
 	
+	local isdbg = isdbg()
+	
 	if isdbg then dbg("FetchWS",wsid) end
 	
 	dat = {}
@@ -226,6 +228,9 @@ function coFetchWS(wsid,skip_maxsize)
 			dbg("","tags",fileinfo.tags)
 			dbg("","size",string.NiceSize(fileinfo.size or 0))
 			dbg("","fileid",fileinfo.fileid)
+			local created = os.time() - (fileinfo.created or 0)
+			
+			dbg("","created ago",string.NiceTime(created))
 			
 			--TODO: Check banned
 			--TODO: Check popularity before mounting
@@ -235,6 +240,9 @@ function coFetchWS(wsid,skip_maxsize)
 			local disabled = fileinfo.disabled
 			if banned then
 				dbge(wsid,"BANNED!?")
+			end
+			if created<60*60*24*7 then
+				dbge(wsid,"ONE WEEK OLD ADDON")
 			end
 			if disabled then
 				dbgn(3,"FileInfo",wsid,"Disabled?")
