@@ -75,7 +75,9 @@ end
 
 function UIOnEnforce(pl)
 	--TODO: exists check. alt: ambient/alarms/warningbell1.wav
-	pl:EmitSound'items/powerup_pickup_agility.wav'
+	if CanPlaySounds() then
+		pl:EmitSound'items/powerup_pickup_agility.wav'
+	end
 end
 
 local fstatus = {}
@@ -133,30 +135,37 @@ end
 local function Command(com,v1)
 	com = com:lower()
 	
-	if com=="outfit" then
+	if com=="outfit" or com=="otufit" or com=="oufit" or com=="fouti" then
 		local n = v1 and tonumber(v1:Trim())
 		v1=v1 and v1:lower():Trim()
 		dbg("outfitcmd",v1,n)
 		if n then
 			UIChangeModelToID(n)
+			
 		elseif v1 == "apply" or v1=='aply' or v1=='a' or v1 == "send" or v1=='snd' or v1=='s'  then
 			UIBroadcastMyOutfit()
 		elseif v1 == "cancel" or v1=='c' or v1=='canecl'  or v1=='d'  or v1=='del'  or v1=='delete' or v1=='remove' then
 			UICancelAll()
+		elseif v1 == "fullupdate" then
+			Fullupdate()
 		else
 			GUIOpen()
 			--UIError"Invalid command"
 		end
+		return true
 		
-	elseif com==Tag or com=='outfiter' then
+	elseif com==Tag or com=='outfiter'  or com=='oufitr' or com=='utfitter' or com=='utfiter' then
 		local n = v1 and tonumber(v1)
 		if n then
 			UIChoseWorkshop(n)
+		elseif v1 == "fullupdate" then
+			Fullupdate()
 		elseif v1 and v1:len()>0 then
 			GUIWantChangeModel(v1)
 		else
 			GUIOpen()
 		end
+		return true
 	end
 end
 
@@ -170,7 +179,7 @@ concommand.Add(Tag,function(_,_,args)
 end)
 
 hook.Add("ChatCommand",Tag,function(com,v1)
-	Command(com,v1)
+	return Command(com,v1)
 end)
 
 CWHITE = Color(255,255,255,255)
