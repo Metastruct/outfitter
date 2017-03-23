@@ -18,7 +18,9 @@ Allows wearing many of the playermodels from workshop in multiplayer so that oth
 ### Notice
 **Although the main functionality is working many additional features are not implemented yet.**
 
-**Currently only works on sandbox based gamemodes**
+**Known working gamemodes**
+- [x] Sandbox
+- [x] Base
 
 ### How to use?
 
