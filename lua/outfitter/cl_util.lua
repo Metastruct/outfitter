@@ -272,9 +272,9 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",SAVE)
 			pl.original_model = pl:GetModel()
 		end
 		
-		StartEnforcing(pl)
-		
 		pl.enforce_model = mdl
+		
+		StartEnforcing(pl)
 		
 		if pl==LocalPlayer() and curmdl ~= mdl then
 			Fullupdate()
@@ -474,7 +474,7 @@ function CheckVVD(gma,vvds,path_extless)
 		if not gma:SeekToFileOffset(vvd_offset) then return nil,"seekfail" end
 		local ok ,in_err = ValidateVVDVerts(gma:GetFile())
 		if not ok then
-			dbge("CheckVVD","ValidateVVDVerts",path_extless,in_err)
+			dbg("CheckVVD","ValidateVVDVerts",path_extless,in_err)
 			return nil,in_err
 		end
 		return true

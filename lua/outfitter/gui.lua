@@ -265,11 +265,25 @@ function PANEL:Init()
 		sheet:AddSheet( "#information", infopanel, "icon16/information.png" )
 		
 		local function AddS(itm,b)
+			
 			local c= vgui.Create(itm,settingspnl,b)
 			--settingslist:AddItem(c)
 			c:Dock(TOP)
 			return c
 		end
+		
+		
+		--local settingspnl2 = settingspnl:Add( "DPanel" )
+		--	self.settingspnl2=settingspnl2
+		--	
+		--	local function AddS2(itm,b)
+		--		
+		--		local c= vgui.Create(itm,settingspnl2,b)
+		--		--settingslist:AddItem(c)
+		--		c:Dock(TOP)
+		--		return c
+		--	end
+			
 		mdlhistpanel:DockPadding( 2,1,2,1 )
 
 		--local lbl = controls:Add( "DLabel" )
@@ -335,6 +349,15 @@ function PANEL:Init()
 		check:DockMargin(1,4,1,1)
 	local d_6 = check
 	
+	local check = AddS( "DCheckBoxLabel" )
+	 	check:SetConVar(Tag.."_sounds")
+		check:SetText( "UI sounds")
+		check:SetTooltip[[Should we play informational sounds]]
+		check:SizeToContents() 
+
+		check:DockMargin(1,4,1,1)
+	local d_7 = check
+	
 	local slider = AddS( "DNumSlider" )
 		slider:SetText( "Outfit download distance" )
 		slider:SizeToContents()
@@ -353,15 +376,21 @@ function PANEL:Init()
 	local c = AddS( "DComboBox" )
 	c:SetSize( 100, 20 )
 	c:SetTooltip[[Distance mode: start downloading outfits when you get near a player]]
-	c.SetValue = function(c,val)
-		c:ChooseOptionID(val==0 and 2 or val==1 and 3 or 1 )
-	end
+	--c.SetValue = function(c,val)
+	--	local setv = val==0 and 2 or val==1 and 3 or 1 
+	--	dbgn(2,"ChooseDistanceModeCtrl",val,'->',setv)
+	--	c:ChooseOptionID(setv)
+	--end
+	local distance_mode
 	c.OnSelect = function(c,val)
-		RunConsoleCommand("outfitter_distance_mode",tostring(val==1 and -1 or val==2 and 0 or 1))
+		distance_mode=distance_mode or GetConVar(Tag..'_distance_mode')
+		local choose = val==1 and -1 or val==2 and 0 or 1
+		dbgn(2,"ChooseDistanceMode", val, '->', choose )
+		distance_mode:SetInt(choose)
 	end
-	c:AddChoice( "Distance mode: Automatic", '-1' )
-	c:AddChoice( "Distance mode: disabled", '0' )
-	c:AddChoice( "Distance mode: Enabled", '1' )
+	c:AddChoice( "Default Mode", '-1' )
+	c:AddChoice( "See All Outfits", '0' )
+	c:AddChoice( "Nearby Outfits Only", '1' )
 	
 	c:SetConVar(Tag..'_distance_mode')
 	local d_4 = c
@@ -392,7 +421,16 @@ function PANEL:Init()
 	--	check:Dock(TOP)
 	--	check:DockMargin(1,4,1,1)
 	
-		
+	
+	local b = AddS('EditablePanel')
+	b:SetTall(2)
+	b:DockMargin(1,24,1,2)
+	b.Paint = function(b,w,h)
+		surface.SetDrawColor(240,240,240,200)
+		surface.DrawRect(0,0,w,h)
+	end
+	local hr_line1 = b
+	
 	local debug = AddS( "DCheckBoxLabel" )
 	 	debug:SetConVar(Tag.."_dbg")
 		debug:SetText( "#debug")
@@ -401,6 +439,7 @@ function PANEL:Init()
  
 		debug:DockMargin(1,14,1,1)
 		local d_3 = debug
+
 	local check = AddS( "DCheckBoxLabel" )
 	 	check:SetConVar(Tag.."_unsafe")
 		check:SetText( "Unsafe")
@@ -419,11 +458,20 @@ function PANEL:Init()
 		local d_2 = check
 		
 	local check = AddS( "DButton" )
-	 	check:SetText( "Clear models blacklist") 
+	 	check:SetText( "FIX: Clear models blacklist") 
 		check:DockMargin(1,4,1,1)
 		check.DoClick=function()
 			RunConsoleCommand"oufitter_blacklist_clear"
 		end
+		check:SetImage'icon16/tag_blue_delete.png'
+		
+	local check = AddS( "DButton" )
+	 	check:SetText( "FIX: Fullupdate") 
+		check:DockMargin(1,4,1,1)
+		check.DoClick=function()
+			Fullupdate()
+		end
+		check:SetImage'icon16/transmit_error.png'
 		
 	local b = Add('DButton','thirdperson')
 		b:SetText("#tool.camera.name")
@@ -488,7 +536,7 @@ function PANEL:Init()
 			self:DoRefresh(trychoose_mdl)
 			--self:GetParent():Hide()
 		end
-		b:SetImage'icon16/stop.png'
+		b:SetImage'icon16/cancel.png'
 	
 	functions._PerformLayout = functions.PerformLayout or function() end
 	functions.PerformLayout = function(functions,w,h)
@@ -874,7 +922,7 @@ function PANEL:OnMouseReleasedHook(mc)
 	--menu:AddLine()
 	
 	menu:AddOption( "About", function() GUIAbout() end ):SetImage'icon16/information.png'
-	menu:AddOption( "Close", function() self:Hide() end ):SetImage'icon16/stop.png'
+	menu:AddOption( "Close", function() self:Hide() end ):SetImage'icon16/door_out.png'
 	menu:Open()
 end
 
@@ -1022,7 +1070,7 @@ local function GetCachedAvatar184(sid64)
 	a:SetSize(1,1)
 	a:ParentToHUD()
 	a:SetAlpha(0)
-	a:SetPos(ScrW()-1,ScrH()-1)
+	a:SetPos(2,2)
 	a:SetSteamID(sid64,avatar_size)
 	a.Think=function(self)
 		if self.shouldhide then
@@ -1060,20 +1108,24 @@ local credits = {
 		"76561197998909316",
 		[[Facepunch dude who made this possible]],
 	},{
-		"Garry",
-		"76561197960279927",
-		[[<Garry :D> You guys are crazy WTF]],
-	},{
 		"CapsAdmin",
 		"76561197978977007",
 		[[Insipration from Player Appearance Customizer (PAC3)]],
 	},{
+		"Aerthas",
+		"76561198053556165",
+		[[Help with initial outfitter prototyping]],
+	},{
 		"Facepunch forums",
-		'http://steamcommunity.com/groups/facepunch',
+		{'76561197960279927','http://steamcommunity.com/groups/facepunch'},
 		[[For helping with all the LAU selflessly and also for emotional support over the years for all of us. Lots of stuff would not have been possible without!]],
 	},{
+		"Garry",
+		"76561197960279927",
+		[[<Garry :D> You guys are crazy WTF]],
+	},{
 		"Meta Construct",
-		"http://metastruct.uk.to",
+		{'76561198047188411',"http://metastruct.uk.to"},
 		[[For testing server and being the inspiration and nagging reminder to continue outfitter]],
 	},
 }
@@ -1199,9 +1251,11 @@ local link
 function PANEL:GenAbout(entry)
 	local title,id,desc = unpack(entry)
 	local sid64 = isstring(id) and id:match'^%d+$' and id
+	local custom
 	if istable(id) then
-		id = id[1]
-		sid64=id[2]
+		sid64=id[1]
+		id = id[2]
+		custom=true
 	end
 	
 	local pnl = vgui.Create('DPanel',self)
@@ -1276,7 +1330,7 @@ function PANEL:GenAbout(entry)
 	lbl:SetDrawBackground(false)
 	lbl:SetContentAlignment( 1 )
 	lbl:SetCursor"hand"
-	if sid64 then 
+	if sid64 and not custom then 
 		co(function()
 			local nick,err = co.steamnick(sid64)
 			if not nick or not lbl:IsValid() then return end
