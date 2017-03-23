@@ -1,5 +1,8 @@
 **Coming straight from the Meta Construct Labs, 8 months in the making**
 
+Dev: [![Build Status](https://travis-ci.org/Metastruct/outfitter.svg?branch=dev)](https://travis-ci.org/Metastruct/outfitter)
+
+
 Now you can wear workshop playermodels also in multiplayer! (Yes, others will see what you wear too!)
 
 ---
