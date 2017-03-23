@@ -538,6 +538,18 @@ function MDL:Tell()
 	return self.file:Tell()-self.initial_offset
 end
 
+function BuildBodyGroupInfo(pbodypart,iValue,body)
+	body = body or 0
+	
+	local iCurrent = (body / pbodypart.base) % pbodypart.nummodels
+	
+	body = (body - (iCurrent * pbodypart.base) + (iValue * pbodypart.base))
+	
+	return body
+	
+end
+
+
 --[[ -- BodyPart test
 local fp ="models/"
 local flist = file.Find(fp..'*.mdl','GAME')
