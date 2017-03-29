@@ -334,7 +334,7 @@ end
 --TODO: Stack, blacklist of files
 
 function InitCrashSys()
-	local Tag = Tag..'_crash'
+	local Tag = Tag..'_blacklist'
 	local CrashingTagk = Tag..'ingk'
 	local CrashingTagv = Tag..'ingv'
 	
@@ -361,14 +361,14 @@ function InitCrashSys()
 	end
 	
 	if CLIENT then
-		concommand.Add(Tag.."_blacklist_clear",function()
+		concommand.Add(Tag.."_clear",function()
 			local n = table.Count(crashlist)
 			table.Empty(crashlist)
 			SAVE()
 			chat.AddText("Cleared blacklist (had "..n..")")
 		end)
 		
-		concommand.Add(Tag.."_blacklist_dump",function()
+		concommand.Add(Tag.."_dump",function()
 			PrintTable(crashlist)
 		end)
 	end
