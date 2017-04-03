@@ -475,7 +475,7 @@ function CheckVVD(gma,vvds,path_extless)
 		local ok ,in_err = ValidateVVDVerts(gma:GetFile())
 		if not ok then
 			dbg("CheckVVD","ValidateVVDVerts",path_extless,in_err)
-			return nil,in_err
+			--return nil,in_err
 		end
 		return true
 	else
@@ -691,7 +691,7 @@ function ValidateVVDVerts(f)
 	if not dat then return nil,err end
 	
 	local num = dat.numLODVertexes[1]
-	if num> 44031 --[[magic]] then return false,'too many verts' end
+	if num > 44031 --[[magic]] then return false, 'too many verts, decals on model might cause crashes, use r_drawmodeldecals 0 to avoid this' end
 	return true,num
 end
 
