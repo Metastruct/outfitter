@@ -461,7 +461,7 @@ function PANEL:Init()
 	 	check:SetText( "FIX: Clear models blacklist") 
 		check:DockMargin(1,4,1,1)
 		check.DoClick=function()
-			RunConsoleCommand"oufitter_blacklist_clear"
+			RunConsoleCommand"outfitter_blacklist_clear"
 		end
 		check:SetImage'icon16/tag_blue_delete.png'
 		
