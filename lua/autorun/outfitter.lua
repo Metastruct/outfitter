@@ -75,9 +75,6 @@ AddCSLuaFile("includes/modules/gmaparse.lua")
 AddCSLuaFile("includes/modules/mdlinspect.lua")
 AddCSLuaFile("includes/modules/co.lua")
 
-if not util.OnLocalPlayer then
-	include'hooks.lua'
-end
 require"co"
 
 
