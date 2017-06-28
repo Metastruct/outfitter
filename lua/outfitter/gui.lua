@@ -1219,7 +1219,7 @@ Although mostly working, outfitter still has bugs and you can help with that by 
 	local b = vgui.Create( "DButton", self )
 	b:SetText"Bug reporting"
 	b.DoClick=function()
-		gui.OpenURL"https://github.com/Python1320/outfitter/issues"
+		gui.OpenURL"https://github.com/Metastruct/outfitter/issues"
 	end
 	b:DockMargin(4,2,4,2)
 	self:AddItem(b)
@@ -1227,7 +1227,7 @@ Although mostly working, outfitter still has bugs and you can help with that by 
 	local b = vgui.Create( "DButton", self )
 	b:SetText"Get outfitter"
 	b.DoClick=function()
-		gui.OpenURL"http://google.com?q=garrysmod+outfitter"
+		gui.OpenURL"http://www.google.com/search?q=garrysmod+outfitter"
 	end
 	b:DockMargin(4,2,4,2)
 	self:AddItem(b)
