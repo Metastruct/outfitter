@@ -92,6 +92,7 @@ function MDLIsPlayermodel(f,sz)
 	local found_anm
 	for k,v in next,imdls do
 		v=v[2]
+		
 		if v and v:find("_arms_",1,true) then
 			return false,"arms"
 		end
@@ -99,7 +100,7 @@ function MDLIsPlayermodel(f,sz)
 		if v and not v:find"%.mdl$" then
 			return false,"badinclude",v
 		end
-		if v=="models/m_anm.mdl" then
+		if v=="models/m_anm.mdl" or v=="models/f_anm.mdl" or v=="models/z_anm.mdl" then
 			found_anm = true
 		end
 		--if v
@@ -158,7 +159,7 @@ function MDLIsPlayermodel(f,sz)
 	--	return false,"bones",bname
 	--end
 	
-	return true
+	return true,found_anm
 end
 
 local badbones = {

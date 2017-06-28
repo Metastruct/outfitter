@@ -7,7 +7,7 @@ module(Tag,package.seeall)
 util.AddNetworkString(Tag)
 
 function RateLimitMessage(pl,rem)
-	local msg = "[Outfitter] you need to wait before sending a new outfit ("..rem.." s remaining)"
+	local msg = "[Outfitter] you need to wait before sending a new outfit ("..math.ceil(rem).." s remaining)"
 	pl:ChatPrint(msg)
 end
 
@@ -81,7 +81,7 @@ function NetData(pl,k,val)
 	
 	if should then
 		RateLimitMessage(pl,math.abs(remaining))
-		dbg("NetData",pl,"ratelimiting",string.NiceTime(math.abs(remaining)))
+		dbg("NetData",pl,"ratelimiting",string.NiceTime(math.ceil(math.abs(remaining))))
 		return -- TODO
 	end
 	

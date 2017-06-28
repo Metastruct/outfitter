@@ -527,6 +527,7 @@ function GMAPlayerModels(fpath)
 		can = mdlfiles[path_extless]
 		local discard
 		local isplr,err,err2 = MDLIsPlayermodel(gma:GetFile(),entry.Size)
+		local hasAnims = err
 		local plerr
 		if isplr==nil then 
 			dbge("MDLIsPlayermodel",path_extless,err,err2) 
@@ -534,7 +535,7 @@ function GMAPlayerModels(fpath)
 		elseif not isplr then
 			plerr = err
 			entry.error_player = plerr
-		elseif not phys[path_extless] then
+		elseif not phys[path_extless] and not hasAnims then
 			isplr=false
 			plerr = 'physics'
 			entry.error_player = plerr
