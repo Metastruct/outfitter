@@ -18,6 +18,15 @@ function SHNetworkOutfit(pl,mdl,wsid)
 
 end
 
+if CLIENT then
+	function CyclePlayerModel(pl)
+		dbgn(2,"CyclePlayerModel()")
+		assert(not pl or pl==LocalPlayer())
+		net.Start(Tag)
+		net.SendToServer()
+	end
+end
+
 if SERVER then return end
 
 function NetData(plid,k,val)
@@ -25,7 +34,10 @@ function NetData(plid,k,val)
 
 	local pl = findpl(plid)
 	dbg("NetData",pl or plid,k,"<-",val)
-	if not pl then return end
+	if not pl then 
+		dbgn(11,"Skip netdata callback for",plid)
+		return
+	end
 
 	OnPlayerVisible(pl,net.IsPlayerVarsBurst())
 	
@@ -44,7 +56,11 @@ function OnPlayerVisible(pl,initial_sendings)
 	pl.outfitter_nvar_burst = initial_sendings
 	
 	local me = LocalPlayer()
-	
+	if pl==me then
+		timer.Simple(1,function()
+			--CyclePlayerModel(pl)
+		end)
+	end
 	-- local player is special snowflake
 	if pl~=me and new then
 		

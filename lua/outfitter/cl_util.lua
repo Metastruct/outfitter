@@ -316,6 +316,22 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",true)
 		recursing=false
 		--return true
 	end)
+	
+	-- Between Think and This is where the player gets reset to original model for some reason, every think
+	local recursing
+	hook.Add("PlayerTick",Tag,function(p)
+		localpl = localpl or LocalPlayer()
+		if p~=localpl then
+			return
+		end
+		
+		if recursing then return end
+		recursing=true
+					
+			Enforce(p)
+		
+		recursing=false
+	end)
 
 function TestLZMA(fpath)
 	local f = file.Open(fpath,'rb','MOD')

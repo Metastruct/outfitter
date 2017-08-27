@@ -5,6 +5,7 @@ local NTag = 'OF'
 module(Tag,package.seeall)
 
 util.AddNetworkString(Tag)
+util.AddNetworkString(NTag)
 
 function RateLimitMessage(pl,rem)
 	local msg = "[Outfitter] you need to wait before sending a new outfit ("..math.ceil(rem).." s remaining)"
@@ -37,6 +38,35 @@ function PrecacheModel(mdl)
 	ent:SetModel(mdl)
 	
 end
+
+
+local m1 = "models/player/kleiner.mdl"
+local m2 = "models/player/combine_soldier.mdl"
+-- Fix movement fuckup, but break everything else (test with cl_predict 0)
+function CyclePlayerModel(pl)
+	assert(pl:IsValid() and pl:IsPlayer())
+	local tid = ("%s_%s"):format(Tag,tostring(pl:EntIndex()))
+	local omdl = pl:GetModel()
+	if not pl:IsValid() then return end
+	local nmdl = omdl:lower()==m1 and m2 or m1
+	pl:SetModel(nmdl)
+	timer.Create(tid,0.1,1,function()
+		if not pl:IsValid() then return end
+		local cmdl = pl:GetModel()
+		if hook.Run("OutfitterCyclePlayerModel",pl,omdl,cmdl,nmdl)==false then return end
+		if cmdl~=nmdl then Msg"OF: ?! " print(omdl,cmdl,nmdl) end -- return end
+		pl:SetModel(omdl)
+	end)
+end
+
+net.Receive(Tag,function(len,pl)
+	
+	--no longer needed
+	--dbg("CyclePlayerModel",pl)
+	--CyclePlayerModel(pl)
+	
+end)
+
 
 function NetData(pl,k,val)
 	if k~=NTag then return end
@@ -86,9 +116,11 @@ function NetData(pl,k,val)
 	end
 	
 	PrecacheModel(mdl)
+	-- CyclePlayerModel(pl) -- it needs to happen after networking
 	
 	return true
 end
+
 
 CreateConVar("_outfitter_version","0.7",FCVAR_NOTIFY)
 resource.AddSingleFile "materials/icon64/outfitter.png"
