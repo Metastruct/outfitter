@@ -492,4 +492,60 @@ function NeedWS(wsid,pl,mdl)
 	return true
 	
 end
- 
+
+
+function GetQueryUGCChildren(workshopid)
+	local ok,ret,len,hdrs,retcode = co.fetch("http://steamcommunity.com/sharedfiles/filedetails/?id="..workshopid)
+	if not ok then return nil,ret end
+	if retcode==404 then return false end
+	if retcode~=200 then return nil,retcode,ret end
+	
+	local _,posa = ret:find('id="RequiredItems">',1,true)
+	if not posa then 
+		if ret:find('publishedfileid',1,true) then
+			return {} -- probably just no require items
+		end
+		if ret:find("store.steampowered.com",1,true) then
+			return false -- 404
+		end
+		return nil,"internal error: steam format changed"
+	end
+	
+	local posb
+	for i=0,6 do
+		local _,new_posb = ret:find('<div class="requiredItem">',posb or posa,true)
+		if not new_posb then break end
+		posb = new_posb
+	end
+	if not posb then return nil,"internal error: format changed" end
+	
+	local t = {}
+	for id in ret:sub(posa,posb):gmatch'id%=(%d+)' do
+		t[#t+1]=id
+	end
+	return t
+end
+
+--[[
+co(function()
+	Msg"no children:"
+	PrintTable(GetQueryUGCChildren '1100368137') 
+	Msg"1 children:"
+	PrintTable(GetQueryUGCChildren '848953556') 
+	Msg"2 children:"
+	PrintTable(GetQueryUGCChildren '918084741') 
+	Msg"no exist:"
+	PrintTable(GetQueryUGCChildren '123')
+end)
+
+no children:{
+}
+1 children:{
+	[1] = "757604550",
+}
+2 children:{
+	[1] = "757604550",
+	[2] = "775573383",
+}
+no exist:false
+]]
