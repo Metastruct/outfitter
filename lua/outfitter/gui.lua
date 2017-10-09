@@ -1,10 +1,13 @@
 local Tag='outfitter'
-local NTag = 'OF'
 
 -- lua_openscript_cl srv/outfitter/lua/outfitter/ui.lua;lua_openscript_cl srv/outfitter/lua/outfitter/gui.lua;outfitter_open
 
 module(Tag,package.seeall)
 local _vgui = vgui
+
+local NOUI=OUTFITTER_NO_UI
+
+local outfitter_gui_focusdim = CreateClientConVar("outfitter_gui_focusdim","0",true)
 
 local recurse recurse = function(pnl)
 	pnl:SetSkin('Outfitter')
@@ -158,15 +161,15 @@ setmetatable(vgui,{__index=_vgui})
 local PANEL = {}
 function PANEL:Init()
 	
-	local functions = self:Add('DPanelList','settings')
+	local functions = self:Add('DPanel','settings')
 	functions:Dock(LEFT)
 	functions:SetWidth(300)
+	functions:SetHeight(300)
 	functions:DockMargin(4,1,24,0)
+	functions:SetPaintBackground(false)
 	
-	functions:EnableVerticalScrollbar()
-	
-	
-	
+	--functions:EnableVerticalScrollbar()
+
 	local function Add(itm,b)
 		local c= vgui.Create(itm,functions,b)
 		--settingslist:AddItem(c)
@@ -247,7 +250,7 @@ function PANEL:Init()
 	local mdlhistpanel = self:Add( "EditablePanel" )
 		self.mdlhistpanel=mdlhistpanel
 		sheet:AddSheet( "#servers_history", mdlhistpanel, "icon16/user.png" )
-	local settingspnl = self:Add( "EditablePanel" )
+	local settingspnl = self:Add( "DScrollPanel" )
 		self.settingspnl=settingspnl
 		sheet:AddSheet( "#spawnmenu.utilities.settings", settingspnl, "icon16/cog.png" )
 	local infopanel = self:Add( "EditablePanel" )
@@ -255,7 +258,7 @@ function PANEL:Init()
 		infopanel.Think=function()
 			infopanel.Think=function() end
 			
-			local p = vgui.CreateFromTable(about_factor,infopanel)
+			local p = vgui.CreateFromTable(about_factory,infopanel)
 			self.aboutpnl = p
 			--print"create about"
 			infopanel.aboutpnl = p
@@ -292,11 +295,13 @@ function PANEL:Init()
 		--lbl:Dock( TOP )
 		
 		
-	local mdlhist = mdlhistpanel:Add( "DListView",'mdlhist' )
+	local scroll = mdlhistpanel:Add( "DScrollPanel",'mdlhistscroll' )
+	scroll:Dock(FILL)
+	local mdlhist = scroll:Add( "DIconLayout",'mdlhist' )
 		mdlhist:DockMargin(4,4,4,4)
-		mdlhist:SetMultiSelect( false )
-		mdlhist:AddColumn( "#name" )
-		mdlhist:AddColumn( "#gameui_playermodel" )
+		--mdlhist:SetMultiSelect( false )
+		--mdlhist:AddColumn( "#name" )
+		--mdlhist:AddColumn( "#gameui_playermodel" )
 		self.mdlhist = mdlhist
 	
 		
@@ -307,7 +312,12 @@ function PANEL:Init()
 			self:WantOutfitMDL(unpack(dat))
 		end
 
-	
+		function mdlhist:Clear()
+			local chld = self:GetChildren()
+			for k, v in pairs( chld ) do
+				v:Remove()
+			end
+		end
 		
 	local b = mdlhistpanel:Add('DButton','choose button')
 		self.btn_clearhist = b
@@ -358,6 +368,13 @@ function PANEL:Init()
 		check:DockMargin(1,4,1,1)
 	local d_7 = check
 	
+	local check = AddS( "DCheckBoxLabel" )
+	 	check:SetConVar(Tag.."_gui_focusdim")
+		check:SetText( "Dim GUI")
+		check:SetTooltip[[When mouse leaves the UI should we dim it?]]
+		check:SizeToContents()
+		check:DockMargin(1,4,1,1)
+		
 	local slider = AddS( "DNumSlider" )
 		slider:SetText( "Outfit download distance" )
 		slider:SizeToContents()
@@ -457,6 +474,15 @@ function PANEL:Init()
 		check:DockMargin(1,4,1,1)
 		local d_2 = check
 		
+	local check = AddS( "DCheckBoxLabel" )
+	 	check:SetConVar(Tag.."_use_autoblacklist")
+		check:SetText( "Autoblacklist")
+		check:SizeToContents()
+		check:SetTooltip[[Blacklists outfits that crashed you automatically]]
+
+		check:DockMargin(1,4,1,1)
+		local d_2 = check
+		
 	local check = AddS( "DButton" )
 	 	check:SetText( "FIX: Clear models blacklist") 
 		check:DockMargin(1,4,1,1)
@@ -538,26 +564,6 @@ function PANEL:Init()
 		end
 		b:SetImage'icon16/cancel.png'
 	
-	functions._PerformLayout = functions.PerformLayout or function() end
-	functions.PerformLayout = function(functions,w,h)
-		functions._PerformLayout(functions,w,h)
-		w,h = functions:GetSize()
-		--d_1:SetVisible(h>400)
-		--d_2:SetVisible(h>400)
-		--d_3:SetVisible(h>400)
-		--hr_line1:SetVisible(h>500)
-		--d_4:SetVisible(h>400)
-		--d_5:SetVisible(h>450)
-		--self.lbl_chosen:SetVisible(h>300)
-		--sld_dist:SetVisible(h>450)
-		--sld_dl:SetVisible(h>450)
-		
-		local parent = self:GetParent()
-		parent = parent and parent:IsValid() and parent.btnCheck
-		
-		--btn_en:SetVisible(not parent or not parent:IsValid() or not parent:IsVisible())
-		--self.btn_choose:DockMargin(0,h>300 and 24 or 4,1,8)
-	end
 	
 	
 	local div = self:Add"DHorizontalDivider"
@@ -778,11 +784,17 @@ function PANEL:DoRefresh(trychoose_mdl)
 		local wsid,mdl,title = unpack(v)
 
 		
-		local pnl = self.mdlhist:AddLine( title,MDLToUI(mdl) )
+		local pnl = self.mdlhist:Add( 'DOWorkshopIcon' )
+		pnl:SetAddon({wsid = wsid,title=MDLToUI(mdl)})
+		self.mdlhist:Layout()
+		pnl:SetTooltip(title .. '\n'..mdl)
 		pnl._OnMousePressed = pnl.OnMousePressed
 		pnl.OnMousePressed = function(pnl,mc)
-			if mc~=MOUSE_LEFT then
+			if mc==MOUSE_RIGHT then
 				local m = DermaMenu()
+					m:AddOption("#open_workshop",function()
+						gui.OpenURL(("steamcommunity.com/workshop/filedetails/?id=%d"):format(wsid))
+					end):SetIcon'icon16/world.png'
 					m:AddOption("#gameui_delete",function()
 						for n,vv in next,GUIGetHistory() do
 							if vv==v then
@@ -793,8 +805,10 @@ function PANEL:DoRefresh(trychoose_mdl)
 					end):SetIcon'icon16/bin.png'
 				m:Open()
 				return
+			elseif mc==MOUSE_LEFT then
+				self:WantOutfitMDL(unpack(v))
 			end
-			return pnl._OnMousePressed(pnl,mc)
+			
 		end
 	end
 
@@ -814,12 +828,22 @@ function PANEL:DoRefresh(trychoose_mdl)
 	
 end
 
-local factor = vgui.RegisterTable(PANEL,'EditablePanel')
+local factory = vgui.RegisterTable(PANEL,'EditablePanel')
+
+
+
+
+
+
+
+
+
+-- main panel
 
 local PANEL={}
 function PANEL:Init()
 
-	local pnl = vgui.CreateFromTable(factor,self)
+	local pnl = vgui.CreateFromTable(factory,self)
 	self.content = pnl
 	pnl:Dock(FILL)
 
@@ -838,7 +862,7 @@ function PANEL:Init()
 	else
 		self:SetSize(313,293)
 	end
-	
+	 
 	self.btnMaxim.DoClick=function()
 		self:SetSize(640,400)
 		self:SetCookie( "pmax", '1' )
@@ -893,6 +917,29 @@ function PANEL:Init()
 	self.Think = function(...)
 				
 		Think(...)
+
+		local hovered = self:IsHovered() or self:IsChildHovered()
+		
+		if hovered and not self.hadhover then
+			self.hadhover = true
+		end 
+		
+		local hasf = not outfitter_gui_focusdim:GetBool() or (hovered or not self.hadhover) or self.Dragging or self.Sizing
+		if hasf~=self.hierfocused then
+			self.hierfocused = hasf
+			if hasf then
+				self.fadeouttime=nil
+				self:SetAlpha(255)
+			else
+				self.fadeouttime = RealTime()
+			end
+		end
+		if self.fadeouttime then
+			local f = (RealTime()-self.fadeouttime)/0.15
+			f=1-f
+			f=f>1 and 1 or f<0 and 0 or f
+			self:SetAlpha(f*200+55)
+		end
 		
 		local x,y=self:CursorPos()
 		if x>0 and x<20 and y>0 and y<20 then
@@ -928,15 +975,22 @@ end
 
 function PANEL:PerformLayout(w,h)
 	DFrame.PerformLayout(self,w,h)
-	local check = self.btnCheck
 	self.btnMinim:SetEnabled(w>(self:GetMinWidth() + 5) or h>(5 + self:GetMinHeight()))
-	local cw,ch = check:GetSize()
+	
+	local check = self.btnCheck
+	local cw,ch = 0,0
+	if check then
+		cw,ch = check:GetSize()
+	end
+	
 	local b = self.btnMinim or self.btnMaxim
 	if b and b:IsValid() then
 		local bw,bh = b:GetWide(),b:GetTall()
 		local bx,by = b:GetPos()
-		check:SetPos(bx-cw-4,by+bh*.5-ch*.5-4)
-		check:SetVisible(w>256)
+		if check then
+			check:SetPos(bx-cw-4,by+bh*.5-ch*.5-4)
+			check:SetVisible(w>256)
+		end
 	end
 end
 function PANEL:Hide()
@@ -968,7 +1022,7 @@ function PANEL:DoRefresh(trychoose_mdl)
 	
 end
 
-local factor = vgui.RegisterTable(PANEL,'DFrame')
+local factory = vgui.RegisterTable(PANEL,'DFrame')
 
 if this.m_vGUIDlg and ValidPanel(this.m_vGUIDlg) then
 	m_vGUIDlg:Remove()
@@ -990,7 +1044,7 @@ m_vGUIDlg = NULL
 function GUIOpen(_,trychoose_mdl)
 	
 	if not ValidPanel(m_vGUIDlg) then
-		local d = vgui.CreateFromTable(factor,nil,Tag..'_GUI')
+		local d = vgui.CreateFromTable(factory,nil,Tag..'_GUI')
 		m_vGUIDlg = d
 	end
 	
@@ -1001,437 +1055,20 @@ function GUIOpen(_,trychoose_mdl)
 end
 
 	
+
+if NOUI then return end
 concommand.Add(Tag..'_open',function()
 	GUIOpen()
 end)
 --RunConsoleCommand(Tag..'_open')
 
 
--- Credits --
-
-local Tag='outfitter'
-
-module(Tag,package.seeall)
-
-
-
-local avatar_size=184
-local avatars = {}
--- FUCK YOU GARRY
-local function GetCachedAvatar184(sid64)
-	local c = avatars[sid64]
-	if c then
-		c.shouldhide = false
-		if c.hidden then
-			c.hidden =false
-			c:SetVisible(true)
-		end
-		return c
-	end
-
-	local a = vgui.Create'AvatarImage'
-	a:SetPaintedManually(true)
-	a:SetSize(1,1)
-	a:ParentToHUD()
-	a:SetAlpha(0)
-	a:SetPos(ScrW()-1,ScrH()-1)
-	a:SetSteamID(sid64,avatar_size)
-	a.Think=function(self)
-		if self.shouldhide then
-			if not self.hidden then
-				self.hidden = true
-				self:SetVisible(false)
-			end
-		else
-			self.shouldhide = true
-		end
-	end
-	a.shouldhide = false
-	avatars[sid64]=a
-	return a
-end
-
-
-local avatar_size=184
-local avatars = {}
-local function GetCachedAvatar184(sid64)
-	local c = avatars[sid64]
-	if c then
-		c.shouldhide = false
-		if c.hidden then
-			c.hidden =false
-			c:SetVisible(true)
-		end
-		return c
-	end
-
-	local a = vgui.Create'AvatarImage'
-	a:SetPaintedManually(true)
-	a:SetSize(1,1)
-	a:ParentToHUD()
-	a:SetAlpha(0)
-	a:SetPos(2,2)
-	a:SetSteamID(sid64,avatar_size)
-	a.Think=function(self)
-		if self.shouldhide then
-			if not self.hidden then
-				self.hidden = true
-				self:SetVisible(false)
-			end
-		else
-			self.shouldhide = true
-		end
-	end
-	a.shouldhide = false
-	avatars[sid64]=a
-	return a
-end
-function SetAvatarTexture184(sid64)
-	local cached = GetCachedAvatar184(sid64)
-	surface.SetTexture(0)
-	if cached then
-		cached:SetPaintedManually(false)
-		cached:PaintManual()
-		cached:SetPaintedManually(true)
-	end
-end
-
-
-local credits = {
-	{
-		"Python1320",
-		"76561197986413226",
-		[[The guy who wrote all this madness]],
-	},
-	{
-		"Willox",
-		"76561197998909316",
-		[[Facepunch dude who made this possible]],
-	},{
-		"CapsAdmin",
-		"76561197978977007",
-		[[Insipration from Player Appearance Customizer (PAC3)]],
-	},{
-		"Aerthas",
-		"76561198053556165",
-		[[Help with initial outfitter prototyping]],
-	},{
-		"Facepunch forums",
-		{'76561197960279927','http://steamcommunity.com/groups/facepunch'},
-		[[For helping with all the LAU selflessly and also for emotional support over the years for all of us. Lots of stuff would not have been possible without!]],
-	},{
-		"Garry",
-		"76561197960279927",
-		[[<Garry :D> You guys are crazy WTF]],
-	},{
-		"Meta Construct",
-		{'76561198047188411',"http://metastruct.uk.to"},
-		[[For testing server and being the inspiration and nagging reminder to continue outfitter]],
-	},
-}
-
-local inited
-local function initcredits()
-	if inited then return end
-	inited=true
-	
-	credits[#credits+1] = {
-		LocalPlayer():GetName(),
-		LocalPlayer():SteamID64(),
-		[[For being interested in outfitter!]],
-	}
-end
-
-local PANEL={}
-
-function PANEL:Init(asd) local _
-	
-	asd = asd==true
-	self.is_panel = asd
-	
-	initcredits()
-	if not self.is_panel then
-		self:SetTitle"Outfitter (About)"
-		local W,H=290,350
-		self:SetMinHeight(100)
-		self:SetMinWidth(200)
-		self:SetSize(W,H)
-		self:SetDeleteOnClose(true)
-		self:Center()
-
-		_=self.btnMinim and self.btnMinim:SetVisible(false)
-		_=self.btnMaxim and self.btnMaxim:SetVisible(false)
-		
-		self:SetDraggable( true )
-		self:SetSizable( true )
-		
-		local title = self.lblTitle
-		if title then
-			self:SetIcon'icon16/information.png'
-			
-		end
-	end
-	
-	local pnl = vgui.Create('DScrollPanel',self)
-	self.content = pnl
-	
-	-- HACK
-		pnl.VBar:SetParent(self)
-		pnl.VBar:Dock(RIGHT)
-		pnl.VBar:DockMargin(-pnl.VBar:GetWide()+4,0,0,0)
-	pnl:Dock(FILL)
-	
-	self:GenDesc()
-	for _,entry in next,credits do
-		self:GenAbout(entry)
-	end
-end
-
-function PANEL:GenDesc()
-	
-	
-	local lbl_desc = vgui.Create('DLabel',self)
-	local amt = #file.Find("cache/workshop/*.*",'MOD')
-	
-	local txt = ("Workshop cache: %d addons!"):format(amt)
-	lbl_desc:SetText(txt)
-	lbl_desc:DockMargin(4,4,4,4)
-	--lbl_desc:SetFont(fdesc)
-	lbl_desc:SetDark(true)
-	lbl_desc:SetAutoStretchVertical(true)
-	lbl_desc:SetWrap(true)
-	lbl_desc:Dock(TOP)
-	self:AddItem(lbl_desc)
-	
-	
-	local lbl_desc = vgui.Create('DLabel',self)
-	lbl_desc:SetText[[Hello there! Outfitter was made to fill the need of the GMod community and for procrastination.
-Although mostly working, outfitter still has bugs and you can help with that by reporting them.]]
-	lbl_desc:DockMargin(4,4,4,14)
-	--lbl_desc:SetFont(fdesc)
-	lbl_desc:SetDark(false)
-	lbl_desc:SetAutoStretchVertical(true)
-	lbl_desc:SetWrap(true)
-	lbl_desc:Dock(TOP)
-	self:AddItem(lbl_desc)
-	
-		
-	local b = vgui.Create( "DButton", self )
-	b:SetText"Bug reporting"
-	b.DoClick=function()
-		gui.OpenURL"https://github.com/Metastruct/outfitter/issues"
-	end
-	b:DockMargin(4,2,4,2)
-	self:AddItem(b)
-	
-	local b = vgui.Create( "DButton", self )
-	b:SetText"Get outfitter"
-	b.DoClick=function()
-		gui.OpenURL"http://www.google.com/search?q=garrysmod+outfitter"
-	end
-	b:DockMargin(4,2,4,2)
-	self:AddItem(b)
-	
-	local lbl_desc = vgui.Create('DLabel',self)
-	lbl_desc:SetText[[Finally, the people responsible for this mess include but are not limited to:]]
-	lbl_desc:DockMargin(4,14,4,8)
-	--lbl_desc:SetFont(fdesc)
-	lbl_desc:SetDark(false)
-	lbl_desc:SetAutoStretchVertical(true)
-	lbl_desc:SetWrap(true)
-	lbl_desc:Dock(TOP)
-	self:AddItem(lbl_desc)
-end
-
-function PANEL:AddItem(i)
-	i:Dock(TOP)
-	self.content:AddItem(i)
-end
-local link
-function PANEL:GenAbout(entry)
-	local title,id,desc = unpack(entry)
-	local sid64 = isstring(id) and id:match'^%d+$' and id
-	local custom
-	if istable(id) then
-		sid64=id[1]
-		id = id[2]
-		custom=true
-	end
-	
-	local pnl = vgui.Create('DPanel',self)
-	
-	local ftitle,fdesc = 'huddefault','default'
-	
-	self:AddItem(pnl)
-	pnl:SetTall(140)
-	pnl:DockMargin(0,0,0,4)
-	pnl:DockPadding(1,1,1,4)
-	
-	local avatar = vgui.Create('EditablePanel',pnl)
-	avatar:Dock(LEFT)
-	avatar:SetWidth(48)
-	avatar:DockMargin(2,2,2,2)
-	
-	avatar.Paint=sid64 and function(avatar,w,h)
-		local sz = w<h and w or h
-		SetAvatarTexture184(sid64)
-		local ox = w-sz
-		local oy = 0
-		if h-sz<5 then
-			oy = h*.5-sz*.5
-		end
-		
-		surface.SetDrawColor(255,255,255,255)
-		surface.DrawTexturedRect(ox,oy,sz,sz)
-		--surface.SetDrawColor(33,33,33,111)
-		--surface.DrawOutlinedRect(0,0,w,h)
-		if avatar:IsHovered() then
-			surface.SetDrawColor(111,155,255,77)
-			surface.DrawRect(ox,oy,sz,sz)
-		end
-	end or function(avatar,w,h)
-		local sz = w<h and w or h
-		local ox = w-sz
-		local oy = 0
-		if h-sz<5 then
-			oy = h*.5-sz*.5
-		end
-		surface.SetDrawColor(120,110,100,90)
-		surface.DrawOutlinedRect(ox,oy,sz,sz)
-		
-		surface.SetDrawColor(255,255,255,255)
-		link = link or Material"icon16/link.png"
-		surface.SetMaterial(link)
-		surface.DrawTexturedRect(ox+sz*.5-8,oy+sz*.5-8,16,16)
-		--surface.SetDrawColor(33,33,33,111)
-		--surface.DrawOutlinedRect(0,0,w,h)
-	end
-
-	avatar:SetCursor"hand"
-	avatar:SetMouseInputEnabled(true)
-	avatar.OnMousePressed = function(avatar)
-		local url = id
-		if url:match'^%d+$' then
-			url = 'http://steamcommunity.com/profiles/'..url
-		end
-		gui.OpenURL(url)
-	end
-	
-	--function pnl.Paint(pnl,w,h)
-	--	surface.SetDrawColor(255,255,255,100)
-	--	surface.DrawOutlinedRect(0,0,w,h)
-	--end
-
-	local lbl = vgui.Create('DButton',pnl)
-	lbl:SetText(title)
-	lbl:SetFont(ftitle) lbl:SetDark(true) lbl:SetAutoStretchVertical(true)
-	lbl:Dock(TOP)
-	lbl:SetDrawBorder(false)
-	lbl:SetDrawBackground(false)
-	lbl:SetContentAlignment( 1 )
-	lbl:SetCursor"hand"
-	if sid64 and not custom then 
-		co(function()
-			local nick,err = co.steamnick(sid64)
-			if not nick or not lbl:IsValid() then return end
-			lbl:SetText(tostring(nick))
-		end)
-	end
-	
-	lbl:DockMargin(4,0,0,0)
-	lbl:SetMouseInputEnabled(true)
-	lbl.DoClick = function()
-		local url = id
-		if url:match'^%d+$' then
-			url = 'http://steamcommunity.com/profiles/'..url
-		end
-		gui.OpenURL(url)
-	end
-	
-	local lbl_desc = vgui.Create('DLabel',pnl)
-	lbl_desc:SetText(desc)
-	lbl_desc:DockMargin(4+4,0,0,0)
-	lbl_desc:SetFont(fdesc) lbl_desc:SetDark(true) lbl_desc:SetAutoStretchVertical(true)
-	lbl_desc:SetWrap(true)
-	lbl_desc:Dock(TOP)
-	lbl_desc.PaintOver=function(lbl,w,h)
-		surface.SetDrawColor(120,110,100,5)
-		surface.DrawOutlinedRect(0,0,w,h)
-	end
-	
-	function pnl.PerformLayout(pnl)
-		local t = {}
-		local minh = self:GetTall()
-		for k,v in next,pnl:GetChildren() do
-			local dock = v:GetDock()
-			if dock==LEFT or dock==RIGHT then
-				t[v]={dock,v:GetSize()}
-				v:SetTall(1)
-			end
-		end
-		pnl:SizeToChildren(false,true)
-		local msz = 48+1*2+2*2+3.456
-		if pnl:GetTall()<msz then
-			pnl:SetTall(msz)
-		end
-		--for p,dat in next,t do
-		--	p:Dock(dat[1])
-		--	p:SetSize(dat[2],dat[3])
-		--end
-		--
-	end
-end
-
-PANEL._Init = PANEL.Init
-local PANEL2=table.Copy(PANEL)
-
-function PANEL:PerformLayout(w,h)
-	DFrame.PerformLayout(self,w,h)
-end
-function PANEL:Hide()
-        self:SetVisible(false)
-end
-
-
-function PANEL:Show()
-	surface.PlaySound"garrysmod/ui_return.wav"
-	self:SetVisible(true)
-	self:MakePopup()
-end
-
-function PANEL:Init() self:_Init(false) end
-local factor = vgui.RegisterTable(PANEL,'DFrame')
-
-function PANEL2:Init() self:_Init(true) end
-about_factor = vgui.RegisterTable(PANEL2,'EditablePanel')
-
-if this.m_pAboutDlg and ValidPanel(this.m_pAboutDlg) then
-	m_pAboutDlg:Remove()
-end
-
-m_pAboutDlg = NULL
-function GUIAbout()
-	
-	if not ValidPanel(m_pAboutDlg) then
-		local d = vgui.CreateFromTable(factor,nil,Tag..'_about')
-		m_pAboutDlg = d
-	end
-	
-	
-	m_pAboutDlg:Show()
-	
-	return m_pAboutDlg
-end
-
-	
-concommand.Add(Tag..'_about',function()
-	GUIAbout()
-end)
   
 
 -- button --
 
 --TODO: Integrate better?
+
 
 local icon = "icon64/outfitter.png"
 icon = file.Exists("materials/"..icon,'GAME') and icon or "icon64/playermodel.png"

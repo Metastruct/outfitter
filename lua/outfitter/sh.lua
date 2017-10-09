@@ -336,8 +336,8 @@ end
 
 function InitCrashSys()
 	local Tag = Tag..'_blacklist'
-	local CrashingTagk = Tag..'ingk'
-	local CrashingTagv = Tag..'ingv'
+	local CrashingTagk = Tag..'ing2k'
+	local CrashingTagv = Tag..'ing2v'
 	
 	local function SAVE(t)
 		local s= util.TableToJSON(t)
@@ -375,14 +375,19 @@ function InitCrashSys()
 	end
 	
 	function DidCrash(key,val)
+		if IsUnsafe() or not AutoblacklistEnabled() then return false end
+		
 		local t = crashlist[key]
 		return t and t[val]
 	end
 
 	function CRITICAL(a,b)
 		util.SetPData("0",CrashingTagk,a or "")
-		if not a or a=="" then return end
+		if not a or a=="" then
+			return
+		end
 		util.SetPData("0",CrashingTagv,b)
+		
 	end
 
 	-- check for crashes
@@ -393,10 +398,17 @@ function InitCrashSys()
 	
 	local err = ("[%s] CRASH: %s on %q\n"):format( Tag,tostring(key),tostring(val) )
 	
-	local t = crashlist[key] if not t then t = {} crashlist[key] = t end
-	t[val] = true
+	local t = crashlist[key] 
+	if not t then t = {} crashlist[key] = t end
+	
+	local curval = t[val]
+	
+	t[val] = (t[val] and tonumber(t[val]) or 0)+1
+	
 	SaveList()
-
+	
+	SetFailsafe()
+	
 	OnInitialize(function() ErrorNoHalt(err) end)
 end
 if CLIENT then

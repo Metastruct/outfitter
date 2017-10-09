@@ -5,9 +5,10 @@ module(Tag,package.seeall)
 
 local GENERIC = "ui/buttonclick.wav"
 
+local NOUI=OUTFITTER_NO_UI
 
 function SOUND(s,force)
-	if not force and not CanPlaySounds() then return end
+	if NOUI or (not force and not CanPlaySounds()) then return end
 	surface.PlaySound(s)
 end
 
@@ -134,6 +135,8 @@ end
 
 local function Command(com,v1)
 	com = com:lower()
+	
+	if NOUI then return end
 	
 	if com=="outfit" or com=="otufit" or com=="oufit" or com=="fouti" then
 		local n = v1 and tonumber(v1:Trim())
@@ -317,8 +320,11 @@ hook.Add("OutfitApply",Tag,function(pl,mdl)
 		local opengui = relay_opengui
 		relay_opengui=false
 		
+		if NOUI then return end
+		
 		notification.AddLegacy( "Outfit changed!", NOTIFY_UNDO, 2 )
 		SOUND( GENERIC )
+		
 		UIMsg"Write '!outfit send' to send this outfit to everyone"
 		if opengui then
 			GUIOpen()

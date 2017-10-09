@@ -1,0 +1,25 @@
+{
+	"title"		:	"Outfitter: Choose your player model",
+	"type"		:	"tool",
+	"tags"		:	[ "roleplay", "movie" ],
+	"ignore"	:
+	[
+		"*.zip",
+		"*.out",
+		"*.yml",
+		"*.psd",
+		"*.vcproj",
+		"*.svn*",
+		"LICENSE",
+		"*.git*",
+		"icon.jpg",
+		"icon.png",
+		"*.json*",
+		"*.out",
+		"*.md",
+		".gitignore",
+		"*.txt",
+		"*.cmd*",
+		"*.gma*"
+	]
+}

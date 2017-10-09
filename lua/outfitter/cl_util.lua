@@ -6,7 +6,9 @@ require'gmaparse'
 
 module(Tag,package.seeall)
 
-local SAVE =false  --TODO: make save after end of debugging
+local SAVE=true  --TODO: make save after end of debugging
+
+local NOUI=OUTFITTER_NO_UI
 
 local Player = FindMetaTable"Player"
 
@@ -103,7 +105,15 @@ end
 
 --TODO
 do
-	local outfitter_unsafe = CreateClientConVar("outfitter_unsafe","0",SAVE)
+	local outfitter_use_autoblacklist = CreateClientConVar("outfitter_use_autoblacklist","0",true)
+	function AutoblacklistEnabled()
+		return outfitter_use_autoblacklist:GetBool()
+	end
+end
+
+-- never save because of malicious servers?
+do
+	local outfitter_unsafe = CreateClientConVar("outfitter_unsafe","0",false)
 	function IsUnsafe()
 		return outfitter_unsafe:GetBool()
 	end
@@ -136,9 +146,12 @@ do
 end
 
 --TODO
-local outfitter_failsafe = CreateClientConVar("outfitter_failsafe","0",SAVE)
+local outfitter_failsafe = CreateClientConVar("outfitter_failsafe","0",true)
 function IsFailsafe()
 	return outfitter_failsafe:GetBool()
+end
+function SetFailsafe()
+	outfitter_failsafe:Set'1'
 end
 
 --TODO

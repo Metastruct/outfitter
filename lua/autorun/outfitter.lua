@@ -71,14 +71,31 @@ TODO
 		
 ]]
 
-AddCSLuaFile("includes/modules/gmaparse.lua")
-AddCSLuaFile("includes/modules/mdlinspect.lua")
-AddCSLuaFile("includes/modules/co.lua")
+
+
+local function requireSH(name)
+	AddCSLuaFile(("includes/modules/%s.lua"):format(name))
+	require(name)
+end
 
 if not util.OnLocalPlayer then
-	include'hooks.lua'
+	requireSH 'hookextras'
 end
-require"co"
+
+requireSH 'binfuncs'
+requireSH 'co'
+requireSH 'coext'
+requireSH 'fileextras'
+requireSH 'gmaparse'
+requireSH 'imgparse'
+requireSH 'isdormant'
+requireSH 'mdlinspect'
+requireSH 'netobj'
+requireSH 'netqueue'
+requireSH 'playerextras'
+requireSH 'sqlext'
+requireSH 'ubit'
+requireSH 'urlimage'
 
 
 local Tag='outfitter'
@@ -160,6 +177,11 @@ inc 'cows'		'cl'
 inc 'cl'		'cl'
 inc 'ui'		'cl'
 inc 'skin'		'cl'
+
+inc 'gui_about'	'cl'
+inc 'gui_ofworkshopicon'	'cl'
+inc 'gui_bodygroups'		'cl'
 inc 'gui'		'cl'
+
 inc 'net'		'sh'
 
