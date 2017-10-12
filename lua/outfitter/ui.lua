@@ -185,6 +185,62 @@ hook.Add("ChatCommand",Tag,function(com,v1)
 	return Command(com,v1)
 end)
 
+concommand.Add("outfitter_bodygroups_list",function(pl,_,_,mdl)
+	if not mdl or mdl:Trim()=="" then
+		mdl = pl:GetModel()
+	end
+	
+	MsgN("Listing bodygroups of ",mdl)
+	local ok,mdl = pcall(mdlinspect.Open,mdl)
+	if not ok then print(mdl) return end
+	
+	local t = mdl:BodyParts()
+	MsgN"================"
+	local found
+	for i,dat in next,t do
+		found=true
+		if dat.nummodels and dat.nummodels>1 then
+			Msg(' '..tostring(dat.nummodels)..' groups  |  ')
+			print(dat.name)
+		else
+			Msg(' No groups |  ')
+			print(dat.name)
+		end
+		
+	end
+	if not found then print"No bodygroups??" end
+	MsgN"================"
+end)
+
+concommand.Add("outfitter_bodygroups_set",function(pl,cmd,args,line)
+	if line:Trim()=="" then 
+		print("Usage: outfitter_bodygroups_set HeadAttachment=0,Backpack=2,Shorts=1")
+		return
+	end
+	
+	local t={}
+	for entry in line:gmatch'[^%,]+' do
+		local k,v = entry:match'([^%="]+)%=(%d)'
+		if k then
+			t[k]=tonumber(v)
+		end
+	end
+	
+	local mdl = mdlinspect.Open(pl:GetModel())
+	local bodyparts = mdl:BodyParts()
+	local bp = mdlinspect.BodyPartBuilder(bodyparts,0)
+	print(table.ToString(t))
+	for k,v in next,t do
+		local ok,a,b,c = bp:Set(k,v)
+		if not ok then
+			Msg("[Set Bodygroup] Failed setting ",k,": ")print(b)
+		end
+	end
+	pl:SetBodyGroupData(bp:GetValue())
+	Msg"Bodygroups: "print(bp:GetValue())
+end)
+
+
 CWHITE = Color(255,255,255,255)
 CBLACK = Color(0,0,0,0)
 local ns = 0

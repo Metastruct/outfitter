@@ -538,87 +538,53 @@ function MDL:Tell()
 	return self.file:Tell()-self.initial_offset
 end
 
-function BuildBodyGroupInfo(pbodypart,iValue,body)
-	body = body or 0
+
+-- bodygroup builder
+
+local MT={}
+function MT:SetBodygroup( group, val )
+	assert(group)
+	assert(val)
+	local bodypart = self.data[group]
+	if not bodypart then
+		for _,v in next,self.data do
+			if v.name == group then
+				bodypart = v
+				break
+			end
+		end
+		if not bodypart then return false,1,'bodypart missing' end
+	end
+	assert(bodypart.nummodels,"malformed data")
+	if bodypart.base == 0 or bodypart.nummodels == 0 then return false,2,'no such part' end
+
+	local cur = math.floor(self.bodynum / bodypart.base) % bodypart.nummodels
+
+	if val >= bodypart.nummodels then
+		return false,3,"no such model number",cur -- we could not set the right one
+	end
 	
-	local iCurrent = (body / pbodypart.base) % pbodypart.nummodels
-	
-	body = (body - (iCurrent * pbodypart.base) + (iValue * pbodypart.base))
-	
-	return body
-	
+	self.bodynum = math.floor(self.bodynum - math.floor(cur * bodypart.base) + math.floor(val * bodypart.base))
+
+	return true
 end
 
-
---[[ -- BodyPart test
-local fp ="models/"
-local flist = file.Find(fp..'*.mdl','GAME')
- flist = {'props_borealis/bluebarrel001.mdl','player/soldier.mdl','player/dukeplayermodel/dukeplayermodel.mdl'}
-
-for _,fn in next,flist do
-print("\n\n==== "..fn.." ====")
---local fn = 'matress.mdl'
-local fpath = fp..fn
-local f = file.Open(fpath,'rb','GAME')
-
-local mdl,err = Open(f)
-if not mdl then print("Parser init fail",err) return end
-
-local ok ,err = mdl:ParseHeader()
-if not ok then print("header parse failed",err) return end
-
-
-print("SURFNAME",mdl:SurfaceName())
-
-print("VERSION",mdl.version,"","","VALIDATE:",mdl:Validate(),mdl.initial_offset)
-print("NAME",("%q"):format(mdl.name))
-print("BodyPartCount",mdl.bodypart_count)
-
-for k,data in next,mdl:BodyParts() do
-	print("",data.name)
-	print("",data.nummodels)
+MT.Set = MT.SetBodygroup
+function MT:GetValue()
+	return self.bodynum
+end
+function MT:Reset(m)
+	self.bodynum = m or 0
 end
 
+function MT:GetData()
+	return self.data
 end
 
---]]
-
---[[ -- test
-local fp ="models/player/"
-local flist = file.Find(fp..'*.mdl','GAME')
--- flist = {'matress.mdl'}
-
-for _,fn in next,flist do
-print("\n\n==== "..fn.." ====")
---local fn = 'matress.mdl'
-
-local fpath = fp..fn
-local f = file.Open(fpath,'rb','GAME')
-
-local mdl,err = Open(f)
-if not mdl then print("Parser init fail",err) return end
-
-local ok ,err = mdl:ParseHeader()
-if not ok then print("header parse failed",err) return end
-
-print("VERSION",mdl.version,"","","VALIDATE:",mdl:Validate(),mdl.initial_offset)
-print("NAME",("%q"):format(mdl.name))
---print("bonec",mdl.bonecontroller_count,mdl.bonecontroller_offset)
---print("incmd",mdl.includemodel_count,mdl.includemodel_index)
---print("",mdl.includemodel_count)
---print("",mdl.includemodel_index)
-if mdl.skinrfamily_count>1 then print("SKINCOUNT",mdl.skinrfamily_count) end
-
-if mdl.flags~=0 then PrintTable("flags",mdl:ListFlags()) end
-
-for k,v in next,mdl:IncludedModels() do
---	print("",('%q'):format(v[2]),file.Exists(v[2],'GAME'))
+function BodyPartBuilder(t,cur)
+	assert(t,"need bodypart data")
+	return setmetatable({data=t,bodynum=cur or 0},{__index=MT})
 end
 
-print("bones",mdl.bone_count,mdl.bone_offset,mdl:BoneNames() [1],mdl:BoneNames() [2])
-
-end
-
---]]
 
 return _M
