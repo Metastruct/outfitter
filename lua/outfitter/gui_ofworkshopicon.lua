@@ -11,6 +11,7 @@ function PANEL:Init()
 end
 
 -- Adapted from https://github.com/robotboy655/gmod-lua-menu/blob/master/lua/menu/custom/addons.lua
+-- TODO: Use coroutines, cache results
 
 local gDataTable = gDataTable or {}
 function PANEL:SetAddon( data )
@@ -18,7 +19,9 @@ function PANEL:SetAddon( data )
 	if ( gDataTable[ data.wsid ] ) then self.AdditionalData = gDataTable[ data.wsid ] return end
 
 	steamworks.FileInfo( data.wsid, function( result )
+		if not result then return end
 		steamworks.VoteInfo( data.wsid, function( result )
+			if not result then return end
 			if ( gDataTable[ data.wsid ] ) then
 				gDataTable[ data.wsid ].VoteData = result
 			end
