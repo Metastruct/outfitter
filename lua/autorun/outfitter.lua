@@ -170,9 +170,9 @@ local function inc(str)
 	end
 end
 
+inc 'cl_util'	'cl'
 inc 'sh'		'sh'
 inc 'sv'		'sv'
-inc 'cl_util'	'cl'
 inc 'cows'		'cl'
 inc 'cl'		'cl'
 inc 'ui'		'cl'
