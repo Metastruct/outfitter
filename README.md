@@ -7,7 +7,7 @@ Now you can wear workshop playermodels also in multiplayer! (Yes, others will se
 
 ---
 
-You can test test the addon on [Meta Construct](http://metastruct.net) servers.
+You can test the addon on [Meta Construct](http://metastruct.net) servers.
 
 ### Download
 
