@@ -432,6 +432,8 @@ function MDL:offsetBodyPart( i )
 	return self.bodypart_offset + mstudiobodyparts_t_size * i
 end
 
+
+
 function MDL:BodyParts()
 	local f = self.file
 	local t = self.bodyparts
@@ -449,11 +451,13 @@ function MDL:BodyParts()
 			
 			local nummodels = from_u_int(f:Read(4),true)
 			local base = from_u_int(f:Read(4),true)
+			local modelindex = from_u_int(f:Read(4),true)
 			
 			assert(self:SeekTo(thispos + sznameindex))
 			local name = f:ReadString()
 			
-			t[#t+1] = {name=name,base=base,nummodels=nummodels}
+			
+			t[#t+1] = {this=thispos,name=name,base=base,nummodels=nummodels,modelindex=modelindex}
 			
 	end
 
@@ -461,6 +465,101 @@ function MDL:BodyParts()
 	
 	return t
 end
+
+
+
+
+-- bodypart model
+
+local  mstudiomodel_t_size =
+ 64 -- char		name[64];
++ 4 -- int		type;
++ 4 -- float	boundingradius;
++ 4 -- int		nummeshes;	
++ 4 -- int		meshindex;
++ 4 -- int		numvertices;		
++ 4 -- int		vertexindex;		
++ 4 -- int		tangentsindex;		
++ 4 -- int		numattachments;
++ 4 -- int		attachmentindex;
++ 4 -- int		numeyeballs;
++ 4 -- int		eyeballindex;
++ 4 -- void		*pVertexData;
++ 4 -- void		*pTangentData;
++ 4*8 -- int	unused[8];
+
+function MDL:offsetBodyPartModel( part, i )
+	local f = self.file
+	assert(i>=0 and i < part.nummodels)
+	return part.this + part.modelindex + mstudiomodel_t_size * i
+	
+end
+
+function MDL:BodyPartModel(part,i)
+	local f = self.file
+	
+	local thispos = self:offsetBodyPartModel(part, i)
+	assert(self:SeekTo(thispos))
+	
+	local name = f:Read(64):gsub("%z*$","")
+	local modeltype = from_u_int(f:Read(4),true)
+	local boundingradius = f:ReadFloat()
+	local nummeshes = from_u_int(f:Read(4),true)
+	local meshindex = from_u_int(f:Read(4),true)
+	local numvertices = from_u_int(f:Read(4),true)
+	local vertexindex = from_u_int(f:Read(4),true)
+	local tangentsindex = from_u_int(f:Read(4),true)
+	local numattachments = from_u_int(f:Read(4),true)
+	local attachmentindex = from_u_int(f:Read(4),true)
+	local numeyeballs = from_u_int(f:Read(4),true)
+	local eyeballindex = from_u_int(f:Read(4),true)
+	local pVertexData = from_u_int(f:Read(4),true)
+	local pTangentData = from_u_int(f:Read(4),true)
+	f:Skip(4*8) -- unused
+	
+	local t = {
+		name = name,
+		modeltype = modeltype,
+		boundingradius = boundingradius,
+		nummeshes = nummeshes,
+		meshindex = meshindex,
+		numvertices = numvertices,
+		vertexindex = vertexindex,
+		tangentsindex = tangentsindex,
+		numattachments = numattachments,
+		attachmentindex = attachmentindex,
+		numeyeballs = numeyeballs,
+		eyeballindex = eyeballindex,
+		pVertexData = pVertexData,
+		pTangentData = pTangentData
+	}
+	return t
+end
+
+
+function MDL:BodyPartsEx()
+	local t = self.bodypartsx
+	if t then return t end
+	
+	self:ParseHeader()
+	t = table.Copy(self:BodyParts())
+	
+	for _,part in next,t do
+		for i=0,part.nummodels-1 do
+			
+			part.models=part.models or {}
+			part.models[i+1] = self:BodyPartModel(part,i)
+			
+		end
+	end
+
+	self.bodypartsx = t
+	
+	return t
+end
+
+-- bones
+
 
 local bone_section_size =
 	  4 -- int
