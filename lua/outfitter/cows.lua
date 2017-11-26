@@ -470,7 +470,7 @@ function NeedWS(wsid,pl,mdl)
 		return
 	end
 	
-	local mdls,extra = GMAPlayerModels(path)
+	local mdls,extra,errlist = GMAPlayerModels(path)
 	
 	if not mdls then
 		dbge("NeedWS","GMAPlayerModels",wsid,"fail",extra)
@@ -480,6 +480,25 @@ function NeedWS(wsid,pl,mdl)
 	if not mdls[1] then
 		dbge("NeedWS","GMAPlayerModels",wsid,"has no models")
 		return false,"nomdls"
+	end
+	
+	local has = not mdl
+	if not has then
+		for k,v in next,mdls do
+			if mdl == v then
+				has=true
+				break
+			end
+		end
+		if not has then
+			-- TODO: Make enforced
+			local alt = extra.potential[mdl] or extra.discard[mdl]
+			if alt then
+				dbge("NeedWS",wsid,"requested mdl was discarded",mdl)
+			else
+				dbge("NeedWS",wsid,"missing requested mdl",mdl)			
+			end
+		end
 	end
 	
 	local ok,err = coMountWS( path )

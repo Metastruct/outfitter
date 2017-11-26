@@ -3,42 +3,11 @@ local Tag='outfitter'
 -- lua_openscript_cl srv/outfitter/lua/outfitter/ui.lua;lua_openscript_cl srv/outfitter/lua/outfitter/gui.lua;outfitter_open
 
 module(Tag,package.seeall)
-local _vgui = vgui
-
 local NOUI=OUTFITTER_NO_UI
 
 local outfitter_gui_focusdim = CreateClientConVar("outfitter_gui_focusdim","0",true)
+local vgui = GetVGUI()
 
-local recurse recurse = function(pnl)
-	pnl:SetSkin('Outfitter')
-	--print(pnl)
-	for k,v in next,pnl:GetChildren() do
-		recurse(v)
-	end
-end
-
-local vgui = {
-	Create=function(...)
-		local ret = _vgui.Create(...)
-		local _ = ret and ret:IsValid() and recurse(ret)
-		timer.Simple(0,function()
-			local _ = ret and ret:IsValid() and recurse(ret)
-		end)
-		return ret
-	end,
-	CreateFromTable=function(...)
-		local ret = _vgui.CreateFromTable(...)
-		local _ = ret and ret:IsValid() and recurse(ret)
-		timer.Simple(0,function()
-			local _ = ret and ret:IsValid() and recurse(ret)
-		end)
-		return ret
-	end,
-	
-}
---timer.Simple(1,function() derma.RefreshSkins()  end)
-setmetatable(vgui,{__index=_vgui})
- 
 -- GUIWantChangeModel
 	local PANEL = {}
 	function PANEL:Init()
@@ -228,9 +197,13 @@ function PANEL:Init()
 			if not ret then
 				surface.PlaySound"common/warning.wav"
 			end
+			self.btn_bg:Refresh()
 		end
 		--TODO : OnRowRightClick
-	
+		function mdllist.PerformLayout(mdllist)
+			DListView.PerformLayout(mdllist)
+			self.btn_bg:InvalidateLayout()
+		end
 		mdllist.PaintOver = function(b,w,h)
 			if next(mdllist:GetLines()) and not mdllist:GetSelectedLine() then
 				mdllist:NoClipping(false)
@@ -241,7 +214,6 @@ function PANEL:Init()
 				mdllist:NoClipping(true)
 			end
 		end
-		
 		
 	local sheet = self:Add( "DPropertySheet" )
 		self.sheet = sheet
@@ -507,6 +479,8 @@ function PANEL:Init()
 		b:DockMargin(16,2,16,1)
 		b:SetImage'icon16/eye.png'
 	
+	
+	
 	--local b = Add('EditablePanel')
 	--b:SetTall(1)
 	--b:DockMargin(-4,24,-4,1)
@@ -517,6 +491,98 @@ function PANEL:Init()
 	--local hr_line1 = b
 	
 	--------------------------------------------------
+	
+	
+		
+	-- second layer
+	local cont = functions:Add('EditablePanel','container')
+	cont:SetTall(24)
+	cont:Dock(BOTTOM)
+		
+	local b = vgui.Create('DButton',mdllist,'Bodyogroups button')
+		function b.Refresh(b)
+			-- poor man's pcall
+			co(function()
+				b.mdl = false
+				b:SetEnabled2(false)
+				dbg("Bodygroup","BTN","Refresh")
+				
+				local l = UIGetMDLList()
+				if not l then return end
+				local chosen = UIGetChosenMDL()
+				if not chosen then return false end
+				local mdl = l[chosen]
+				if not mdl then return false end
+				if not file.Exists(mdl.Name,'workshop') and not file.Exists(mdl.Name,'GAME') then return false end
+				local a = mdlinspect.Open(mdl.Name)
+				a:ParseHeader()
+				local parts = a:BodyPartsEx()
+				local ok 
+				for k,v in next,parts do
+					if v.nummodels>1 then
+						ok=true
+						break
+					end
+				end
+				if not ok then return end
+				
+				b:SetEnabled2(true)
+				b.mdl = mdl
+			end)
+		end
+		
+		self.btn_bg= b
+		b:Dock(NODOCK)
+		b:SetText("")
+		b:SetSize(24,24)
+		b:SetTooltip[[Choose bodygroups]]
+		b.DoClick= function()
+			GUIOpenBodyGroupOverlay(self) --, b.mdl.Name)
+		end
+		b:SetImage'icon16/group_edit.png'
+		b.PerformLayout=function(b,w,h)
+			DButton.PerformLayout(b,w,h)
+			
+			local w2 = b:GetParent():GetCanvas():GetWide()
+			
+			local _,y = b:GetParent():GetSize()
+			b:SetPos(w2-w-1,y-h-1)
+		end
+		function b.SetEnabled2(b,v)
+			b:SetDisabled(not v)
+			b._set_enabled = v
+		end
+		--b.PaintOver= function(b,w,h)
+		--	if b._set_enabled then
+		--		if UIGetChosenMDL() and UIGetMDLList() and LocalPlayer().latest_want~=UIGetMDLList()[UIGetChosenMDL()] then
+		--			surface.SetDrawColor(55,240,55,40+25*math.sin(RealTime()*7)^2)
+		--			surface.DrawRect(1,1,w-2,h-2)
+		--		end
+		--	end
+		--end
+	
+	local b = cont:Add('DButton','Autowear button')
+		self.btn_autowear = b
+		b:SetTooltip[[Automatically wear this outfit on servers]]
+		b:SetText("#Autowear")
+		b:Dock(FILL)
+		b:SizeToContents()
+		b.DoClick= function()
+			SetAutowear()
+		end
+		b.DoRightClick = function()
+			local m = DermaMenu()
+				m:AddOption("#Wear autowear",function()
+					if co.make() then return end
+					coDoAutowear()
+				end):SetIcon'icon16/bin.png'
+			m:Open()
+		end
+		b:SetImage'icon16/disk.png'
+	
+	
+	--------------------------------------------------
+
 	
 	local cont = functions:Add('EditablePanel','container')
 	cont:SetTall(32)
@@ -551,6 +617,8 @@ function PANEL:Init()
 			end
 		end
 	
+	
+	
 	local b = cont:Add('DButton','Clear button')
 		self.btn_clear = b
 		b:SetTooltip[[This removes all traces of you wearing an outfit]]
@@ -563,8 +631,8 @@ function PANEL:Init()
 			--self:GetParent():Hide()
 		end
 		b:SetImage'icon16/cancel.png'
-	
-	
+		
+		
 	
 	local div = self:Add"DHorizontalDivider"
 	div:Dock( FILL )
@@ -580,6 +648,7 @@ function PANEL:Init()
 	div:SetLeftWidth( 300 )
 	
 end
+
 
 gui_readytosend = false
 local wanting = false
@@ -661,11 +730,11 @@ function GUIChooseMDL(n)
 		dbg("GUIChooseMDL","FINISH",n)
 		want_n = nil
 		choosing = false
-		
 		GUICheckTransmit()
 	end)
-	return true
+	return mdl
 end
+
 
 function GUIClearHistory()
 	GUIDelHistory(-1)
@@ -726,13 +795,13 @@ function GUICheckTransmit()
 	
 	local cansend = UIGetChosenMDL() and UIGetWSID() and UIGetMDLList()
 	self.btnSendOutfit:SetEnabled2(cansend)
-	
+	self.btn_bg:Refresh()
 end
 
 function PANEL:DoRefresh(trychoose_mdl)
 	dbg("doRefresh",trychoose_mdl)
 	self.mdllist:Clear()
-	
+	self.btn_bg:Refresh()
 	self.mdlhist:Clear()
 	
 	self.lbl_chosen:SetText("Please choose a workshop addon")
@@ -825,6 +894,7 @@ function PANEL:DoRefresh(trychoose_mdl)
 		
 	end
 	
+	self.btn_bg:Refresh()
 	
 end
 

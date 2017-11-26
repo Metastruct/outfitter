@@ -8,8 +8,6 @@ module(Tag,package.seeall)
 
 local SAVE=true  --TODO: make save after end of debugging
 
-local NOUI=OUTFITTER_NO_UI
-
 local Player = FindMetaTable"Player"
 
 
@@ -38,10 +36,33 @@ do
 	end
 end
 
+local function AutoWearTimer()
+	if co.make() then return end
+	if OUTFITTER_NO_UI then return end
+	local _ = coDoAutowear and coDoAutowear()
+end
+
+local timestarted = math.huge
+local function InitPostEntity()
+	timestarted = RealTime()
+	timer.Simple(0.5,function()
+	timer.Simple(0.5,function()
+		timestarted = RealTime()
+		AutoWearTimer()
+	end)
+	end)
+end
+hook.Add("InitPostEntity",Tag,InitPostEntity)
+
 do
 	local outfitter_sounds = CreateClientConVar("outfitter_sounds","1",true)
 	function CanPlaySounds()
-		return outfitter_sounds:GetBool()
+		local ok = outfitter_sounds:GetBool()
+		if not ok then return ok end
+		
+		if RealTime()-timestarted<30 then return false end
+		
+		return ok
 	end
 end
 
@@ -508,7 +529,7 @@ function CheckVVD(gma,vvds,path_extless)
 		end
 		return true
 	else
-		dbge("CheckVVD","vvd not found",path_extless..'.vvd')
+		dbg("CheckVVD","vvd not found?",path_extless..'.vvd')
 	end
 end
 
@@ -760,6 +781,10 @@ do
 
 	function EnforceHands(mdl,_skin,_bodygroup)
 		enforce = mdl
+		
+		local t = {mdl=mdl,skin=skin,bodygroup=bodygroup}
+		LocalPlayer().outfitter_hands = t
+		
 		if enforce then
 			if not timer.Exists(HACKT) then
 				timer.Create(HACKT,5,0,hackt)
@@ -769,5 +794,68 @@ do
 			timer.Destroy(HACKT)
 		end
 		_skin,_bodygroup = skin,bodygroup
+	end
+end
+
+
+
+function MDLToUI(s)
+	if not s then return s end
+	if #s==0 then return s end
+	s=s:gsub("^models/player/","")
+	s=s:gsub("^models/","")
+	  
+	s=s:gsub("_([a-z])",function(a) return ' '..a:upper() end)
+	s=s:gsub("_"," ")
+	  
+	s=s:gsub("%.mdl","")
+	  
+	s=s:gsub("/([a-z])",function(a) return '/'..a:upper() end)
+	
+	local a,b = s:match'^(.+)/(.-)$'
+	if b then
+		s = ('%s ( %s )'):format(b,a)
+	end
+	
+	s=s:gsub("/",", ")
+	
+	return s
+end
+
+do
+	local _vgui = vgui
+
+	local recurse recurse = function(pnl)
+		pnl:SetSkin('Outfitter')
+		--print(pnl)
+		for k,v in next,pnl:GetChildren() do
+			recurse(v)
+		end
+	end
+
+	local vgui = {
+		Create=function(...)
+			local ret = _vgui.Create(...)
+			local _ = ret and ret:IsValid() and recurse(ret)
+			timer.Simple(0,function()
+				local _ = ret and ret:IsValid() and recurse(ret)
+			end)
+			return ret
+		end,
+		CreateFromTable=function(...)
+			local ret = _vgui.CreateFromTable(...)
+			local _ = ret and ret:IsValid() and recurse(ret)
+			timer.Simple(0,function()
+				local _ = ret and ret:IsValid() and recurse(ret)
+			end)
+			return ret
+		end,
+		
+	}
+	--timer.Simple(1,function() derma.RefreshSkins()  end)
+	setmetatable(vgui,{__index=_vgui})
+
+	function GetVGUI()
+		return vgui
 	end
 end

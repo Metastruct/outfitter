@@ -149,6 +149,8 @@ local function Command(com,v1)
 			UIBroadcastMyOutfit()
 		elseif v1 == "cancel" or v1=='c' or v1=='canecl'  or v1=='d'  or v1=='del'  or v1=='delete' or v1=='remove' then
 			UICancelAll()
+		elseif v1 == "autowear" or v1== "save" then
+			SetAutowear()
 		elseif v1 == "fullupdate" then
 			Fullupdate()
 		else
@@ -251,7 +253,6 @@ function UIError(...)
 	if ns<now then
 		ns=now + 1
 		SOUND("common/warning.wav")
-		return
 	end
 
 	local t={}
@@ -273,7 +274,6 @@ function UIMsg(...)
 	if ns<now then
 		ns=now + 1
 		SOUND("weapons/grenade/tick1.wav")
-		return
 	end
 	chat.AddText(unpack(t))
 end
@@ -309,6 +309,11 @@ function UICancelAll()
 	
 	RemoveOutfit()
 	EnforceHands()
+	UIClearBodyGroupData()
+end
+
+function UIClearBodyGroupData()
+	LocalPlayer():SetBodyGroupData(0)
 end
 
 function UIBroadcastMyOutfit()
@@ -328,6 +333,8 @@ function UIChangeModelToID(n,opengui)
 	if co.make(n,opengui) then return end
 	
 	dbg("UIChangeModelToID",n)
+	
+	UIClearBodyGroupData()
 	
 	chosen_mdl = nil
 	
@@ -361,7 +368,7 @@ function UIChangeModelToID(n,opengui)
 	-- returns instantly, but should be instant anyway
 	OnChangeOutfit(LocalPlayer(),mdl.Name,chosen_wsid)
 	dbg("EnforceHands?",ShouldHands(),n,mdllist[2]==nil,handslist,handslist and handslist[1])
-	if n==1 and nil==mdllist[2] and handslist and table.Count(handslist)==1 and ShouldHands() then
+	if n==1 and nil==mdllist[2] and handslist and next(handslist)~=nil and ShouldHands() then
 		local _,entry = next(handslist)
 		EnforceHands(entry.Name)
 	else
@@ -388,29 +395,6 @@ hook.Add("OutfitApply",Tag,function(pl,mdl)
 		
 	end
 end)
-
-function MDLToUI(s)
-	if not s then return s end
-	if #s==0 then return s end
-	s=s:gsub("^models/player/","")
-	s=s:gsub("^models/","")
-	  
-	s=s:gsub("_([a-z])",function(a) return ' '..a:upper() end)
-	s=s:gsub("_"," ")
-	  
-	s=s:gsub("%.mdl","")
-	  
-	s=s:gsub("/([a-z])",function(a) return '/'..a:upper() end)
-	
-	local a,b = s:match'^(.+)/(.-)$'
-	if b then
-		s = ('%s ( %s )'):format(b,a)
-	end
-	
-	s=s:gsub("/",", ")
-	
-	return s
-end
 
 function UIChoseWorkshop(wsid,opengui)
 	if co.make(wsid,opengui) then return end
@@ -498,3 +482,137 @@ function UIChoseWorkshop(wsid,opengui)
 	
 
 end
+
+
+
+
+
+-- autowear --
+
+
+
+function SetAutowear()
+	local pl = LocalPlayer()
+	
+	local mdl,wsid,skin,bodygroup = pl:OutfitInfo()
+	
+	local t = {mdl=mdl,wsid=wsid,skin=skin,bodygroup=bodygroup,setbodygroupdata = pl:GetBodyGroupData(),hands = pl.outfitter_hands}
+	
+	
+	if mdl then
+		util.SetPData("0",Tag..'_autowear',util.TableToJSON(t))
+		UIMsg("Autowear ON")
+	else
+		util.RemovePData("0",Tag..'_autowear')
+		UIMsg("Autowear OFF")
+	end
+
+end
+
+-- This is a horrible hack because of forethought was lacking when the rest of the code was made
+-- duplicated from two different functions, etc
+function coDoAutowear()
+	local dat = util.GetPData("0",Tag..'_autowear')
+	if not dat then return end
+	local t = util.JSONToTable(dat)
+	if not t then return end
+	if not t.mdl then return end
+	if t.mdl=="" then return end
+	
+	local mdl,wsid,skin,bodygroup,setbodygroupdata = t.mdl,t.wsid,t.skin,t.bodygroup,t.setbodygroupdata
+	local hands = t.hands
+	
+	if not mdl then return end
+	
+	dbg("Autowearing",mdl,"from",wsid,"setbodygroupdata=",setbodygroupdata)
+	
+	
+	SetUIFetching(wsid,true)
+		co.sleep(.5)
+			local path,err,err2 = coFetchWS( wsid )
+		co.sleep(.2)
+	SetUIFetching(wsid,false,not path and (err and tostring(err) or "FAILED?"))
+	
+	if not path then
+		dbg("coDoAutowear",wsid,"FetchWS failed:",err,err2)
+		if opengui then GUIOpen() end
+		return UIError("Download failed for workshop "..wsid..": "..tostring(err~=nil and tostring(err) or GetLastMountErr and GetLastMountErr()))
+	end
+	co.sleep(.2)
+	
+	local mdls,extra,err = GMAPlayerModels( path )
+	
+	if not mdls and extra=='notgma' then
+		dbgn(2," TestLZMA(",path,") ==", ("%q"):format(file.Read(path,'GAME'):sub(1,14)),TestLZMA(path) )
+	end
+	if not mdls and extra=='notgma' and TestLZMA(path) then
+		local newpath,extra = coDecompress(path)
+		if not newpath then
+			if opengui then GUIOpen() end
+			return UIError("Download failed for workshop "..wsid..": "..tostring(extra~=nil and tostring(extra) or GetLastMountErr and GetLastMountErr())) 
+		end
+		path = newpath
+		
+		-- retry --
+		mdls,extra,err = GMAPlayerModels( path )
+		-----------
+	end
+	
+	
+	if not mdls then
+		dbge("coDoAutowear",wsid,"GMAPlayerModels failed for:",extra,err)
+		notification.AddLegacy( '[Outfitter] '..tostring(extra=="nomdls" and "no valid models found" or extra), NOTIFY_ERROR, 2 )
+		return UIError("Parsing workshop addon "..wsid.." failed: "..tostring(extra=="nomdls" and "no valid models found" or extra))
+	end
+	
+	local ok,err = GMABlacklist(path)
+	if not ok then
+		return UIError("OUTFIT BLOCKED: "..tostring(err=="oversize vtf" and "Contains too big textures" or err))
+	end
+	
+	if not mdls[1] then
+		dbge("coDoAutowear","GMAPlayerModels",wsid,"no models!?")
+		return UIError("Workshop addon "..wsid.." has no playermodels")
+	end
+	
+	co.sleep(.2)
+	
+	local chosen_wsid = wsid
+	local mdllist = mdls
+	local handslist = extra.hands
+	local mount_path = path
+	
+	
+	
+	
+	assert(mount_path,"mount_path missing for "..tostring(chosen_wsid))
+	local ok,err = coMountWS( mount_path )
+
+	if not ok then
+		return UIError("The workshop addon could not be mounted: "..tostring(err))
+	end
+	
+	assert(mdl)
+	
+	
+	-- returns instantly, but should be instant anyway
+	OnChangeOutfit(LocalPlayer(),mdl,chosen_wsid)
+	
+	dbg("coDoAutowear","EnforceHands",ShouldHands(),next(handslist or {}))
+	if next(handslist or {})~=nil and ShouldHands() then
+		local _,entry = next(handslist)
+		EnforceHands(entry.Name)
+	else
+		EnforceHands()
+	end
+	
+	--LocalPlayer():SetWantOutfit(mdl,wsid,skin,bodygroup)
+	
+	if setbodygroupdata and setbodygroupdata~=0 then
+		dbg("SetBodyGroupData",setbodygroupdata)
+		LocalPlayer():SetBodyGroupData(setbodygroupdata)
+	end
+	
+	return true
+end
+
