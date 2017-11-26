@@ -613,6 +613,8 @@ function coDoAutowear()
 		LocalPlayer():SetBodyGroupData(setbodygroupdata)
 	end
 	
+	BroadcastMyOutfit()
+	
 	return true
 end
 
