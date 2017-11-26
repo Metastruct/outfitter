@@ -492,7 +492,7 @@ function NeedWS(wsid,pl,mdl)
 		end
 		if not has then
 			-- TODO: Make enforced
-			local alt = extra.potential[mdl] or extra.discard[mdl]
+			local alt = extra.potential[mdl] or extra.discards[mdl]
 			if alt then
 				dbge("NeedWS",wsid,"requested mdl was discarded",mdl)
 			else
