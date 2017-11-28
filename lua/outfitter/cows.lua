@@ -484,20 +484,17 @@ function NeedWS(wsid,pl,mdl)
 	
 	local has = not mdl
 	if not has then
-		for k,v in next,mdls do
-			if mdl == v then
-				has=true
-				break
-			end
-		end
+		has = extra.playermodels[mdl] or extra.hands[mdl]
 		if not has then
 			-- TODO: Make enforced
-			local alt = extra.potential[mdl] or extra.discards[mdl]
-			if alt then
-				dbge("NeedWS",wsid,"requested mdl was discarded",mdl)
+			local bad = extra.potential[mdl] or extra.discards[mdl]
+			if bad then
+				dbge("NeedWS",wsid,path,"requested mdl was discarded",mdl)
+--			elseif GMAHasFile()
 			else
-				dbge("NeedWS",wsid,"missing requested mdl",mdl)			
+				dbge("NeedWS",wsid,path,"missing requested mdl",mdl)		
 			end
+			
 		end
 	end
 	
