@@ -172,6 +172,7 @@ function IsFailsafe()
 	return outfitter_failsafe:GetBool()
 end
 function SetFailsafe()
+	if not outfitter_failsafe.Set then return end
 	outfitter_failsafe:Set'1'
 end
 
@@ -311,7 +312,10 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",true)
 		StartEnforcing(pl)
 		
 		if pl==LocalPlayer() and curmdl ~= mdl then
-			Fullupdate()
+			LazyFullupdate(mdl)
+			if not mdl then
+				Fullupdate()
+			end
 		end
 		
 		return true
@@ -660,9 +664,40 @@ end
 
 --outfitter.EnforceHands("models/weapons/c_arms_timeshiftsoldier.mdl")
 
+local needmdl,omdl
+local _twhen=0
+function ThinkFullupdate()
+	if needmdl then
+		if util.IsValidModel(needmdl) then
+			dbg("Fullupdate","Became valid",needmdl,CurTime()-_twhen)
+			needmdl = nil
+			
+			Fullupdate()
+		end
+	end
+	
+	local mdl = LocalPlayer():GetModel()
+	if mdl ~= omdl then
+		omdl=mdl
+		if not util.IsValidModel(mdl) then
+			dbg("Requesting fullupdate for",mdl)
+			_twhen = CurTime()
+			needmdl = mdl
+		else
+			dbg("Fullupdate","not needed",mdl)
+		end
+	end
+	
+end
+
+function LazyFullupdate(mdl)
+	needmdl = mdl
+end
+
 local function Think()
 	ThinkEnforce()
 	ThinkEnforce_DeathRagdoll()
+	ThinkFullupdate()
 end
 hook.Add("Think",Tag,Think)
 
