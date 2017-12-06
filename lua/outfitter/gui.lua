@@ -916,7 +916,10 @@ function PANEL:Init()
 	local pnl = vgui.CreateFromTable(factory,self)
 	self.content = pnl
 	pnl:Dock(FILL)
-
+	
+	local t=os.date"*t"
+	self.m_bPaintHat = t.month==12 and t.day<=25
+	
 	self:SetCookieName"ofp"
 	self:SetTitle"Outfitter"
 	self:SetMinHeight(290)

@@ -9,8 +9,26 @@ SKIN.Author 		= "Python1320"
 SKIN.DermaVersion	= 1
 SKIN.GwenTexture	= Material( "gwenskin/GModDefault.png" )
 
-
+pcall(require,'urlimage')
+local function URLImage(m)
+	local first=true
+	local img
+	local function initator(...)
+		if first then
+			first = false
+			img = surface.URLImage and surface.URLImage(m) -- begin fetching
+		end
+		if not img then return end 
+		if img then
+			return img(...)
+		end
+	end
+	return initator
+end
+local xmashat = URLImage "https://metastruct.github.io/outfitter/xmashat.png"
 function SKIN:PaintFrame( panel, w, h )
+	
+
 	
 	if ( panel.m_bPaintShadow ) then
 	
@@ -41,6 +59,27 @@ function SKIN:PaintFrame( panel, w, h )
 	surface.SetDrawColor(130,130,130,200)
 	surface.DrawOutlinedRect(0,0,w,h)
 
+	if ( panel.m_bPaintHat ) then
+		
+		DisableClipping( true )
+		
+		local w,h = xmashat()
+		if w then
+			local now = RealTime()
+			local startt = panel.skin_xhat_startt
+			if startt==nil then 
+				startt = now 
+				panel.skin_xhat_startt = startt 
+			end
+			local f = now-startt
+			f=f>1 and 1 or f
+			surface.SetDrawColor(255,255,255,f*255)
+			surface.DrawTexturedRect(-30,-32-8,64,64)
+		end
+		DisableClipping( false )
+	
+	end	
+	
 end
 
 function SKIN:PaintTab( panel, w, h )
