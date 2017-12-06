@@ -122,7 +122,7 @@ function NetData(pl,k,val)
 end
 
 
-CreateConVar("_outfitter_version","0.7",FCVAR_NOTIFY)
+CreateConVar("_outfitter_version","0.8.1",FCVAR_NOTIFY)
 resource.AddSingleFile "materials/icon64/outfitter.png"
 
 
