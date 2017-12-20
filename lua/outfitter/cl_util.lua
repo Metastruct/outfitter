@@ -526,10 +526,10 @@ function CheckVVD(gma,vvds,path_extless)
 	local vvd_offset = vvds[path_extless..'.vvd'] or vvds[path_extless..'.VVD']
 	if vvd_offset then
 		if not gma:SeekToFileOffset(vvd_offset) then return nil,"seekfail" end
-		local ok ,in_err = ValidateVVDVerts(gma:GetFile())
+		local ok ,in_err,verts = ValidateVVDVerts(gma:GetFile())
 		if not ok then
-			dbg("CheckVVD","ValidateVVDVerts",path_extless,in_err)
-			--return nil,in_err
+			dbg("CheckVVD","ValidateVVDVerts",path_extless,in_err,verts)
+			return false,in_err
 		end
 		return true
 	else
@@ -777,7 +777,7 @@ function ValidateVVDVerts(f)
 	if not dat then return nil,err end
 	
 	local num = dat.numLODVertexes[1]
-	if num > 44031 --[[magic]] then return false, 'too many verts, decals on model might cause crashes, use r_drawmodeldecals 0 to avoid this' end
+	if num > 44031 --[[magic]] then return false, 'too many verts, decals on model might cause crashes, use r_drawmodeldecals 0 to avoid this',num end
 	return true,num
 end
 
