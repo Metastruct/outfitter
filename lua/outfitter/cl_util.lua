@@ -529,7 +529,10 @@ function CheckVVD(gma,vvds,path_extless)
 		local ok ,in_err,verts = ValidateVVDVerts(gma:GetFile())
 		if not ok then
 			dbg("CheckVVD","ValidateVVDVerts",path_extless,in_err,verts)
-			return false,in_err
+			if not IsUnsafe() then
+				return false,in_err
+			end
+
 		end
 		return true
 	else
