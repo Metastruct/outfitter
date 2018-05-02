@@ -106,8 +106,9 @@ do
 
 	local outfitter_nohighperf = CreateClientConVar("outfitter_nohighperf","0",false)
 	local highperf = 0
+	local prehighperf=true
 	function IsHighPerf()
-		return not outfitter_nohighperf:GetBool() and highperf>0
+		return prehighperf or (not outfitter_nohighperf:GetBool() and highperf>0)
 	end
 
 	function SetHighPerf(mode,refresh_all)
@@ -121,6 +122,12 @@ do
 			RefreshPlayers()
 		end
 	end
+	
+	hook.Add("RenderScene",Tag..'_highperf',function()
+		prehighperf=false
+		hook.Remove("RenderScene",Tag..'_highperf')
+		dbgn(2,'Stopping forced highperf mode',IsHighPerf())
+	end)
 	
 end
 
