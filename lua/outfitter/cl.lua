@@ -149,7 +149,6 @@ function ChangeOutfitThread(pl)
 	pl.outfitter_changing = false
 	
 end
-
 local function HBAD(pl,hash)
 	local ok = pl:OutfitCheckHash(hash)
 	return not ok
@@ -158,8 +157,6 @@ end
 
 --TODO: change to iterative to fix shit
 function ChangeOutfitThreadWorker(pl,hash)
-	
-	
 	
 	assert(pl:OutfitCheckHash(hash))
 	assert(not HBAD(pl,hash))
@@ -195,6 +192,9 @@ function ChangeOutfitThreadWorker(pl,hash)
 	local ok, err = NeedWS(wsid,pl,mdl)
 	if not ok then
 		dbg("DoChangeOutfit","NeedWS failed",err,"continuing...",pl,mdl,wsid)
+		if err == 'oversize' then
+			coUIOversizeMsg(pl,wsid)				
+		end
 	end
 	
 	local ok,err = co.wait_player(pl) -- so check for player validity
@@ -209,7 +209,7 @@ function ChangeOutfitThreadWorker(pl,hash)
 	
 	-- 4. if model doesnt exist then screw it
 	if not HasMDL(mdl) then
-		dbg("DoChangeOutfit","HASMDL",pl,mdl,wsid)
+		dbg("DoChangeOutfit","HasMDL()=false",pl,mdl,wsid)
 		RESET(pl)
 		return false,"mdl"
 	end

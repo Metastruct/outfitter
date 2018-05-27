@@ -120,7 +120,9 @@ function MDLIsPlayermodel(f,sz)
 	if not attachments or not next(attachments) then
 		if not found_anm then
 			--PrintTable(mdl:Attachments())
-			return false,"noattachments"
+			if not IsUnsafe() then
+				return false,"noattachments"
+			end
 		else
 			dbg("MDLIsPlayermodel",mdl.name,"no attachments but included")
 		end
@@ -135,7 +137,9 @@ function MDLIsPlayermodel(f,sz)
 		if not found then
 			if not found_anm then
 				--PrintTable(mdl:Attachments())
-				return false,"attachments"
+				if not IsUnsafe() then
+					return false,"attachments"
+				end
 			else
 				dbg("MDLIsPlayermodel",mdl.name,"no attachments but included")
 			end

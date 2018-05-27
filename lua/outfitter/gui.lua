@@ -849,6 +849,23 @@ function PANEL:DoRefresh(trychoose_mdl)
 		
 	end
 	
+	local extra = UIGetMDLListExtra()
+	if extra and extra.discards then
+		
+		for k,dat in next,extra.discards or {} do
+			local pnl = self.mdllist:AddLine( dat.Name and MDLToUI(dat.Name) or "???" )
+			pnl:SetTooltip(dat.error_player or dat.error_vvd or "INVALID MODEL")
+			local Paint = pnl.Paint or function() end
+			pnl.Paint = function(pnl,w,h)
+				local r = Paint(pnl,w,h)
+				surface.SetDrawColor(240,30,30,120)
+				surface.DrawRect(0,0,w,h)
+				return r
+			end
+		end
+	
+	end
+	
 	for _,v in next,GUIGetHistory() do
 		local wsid,mdl,title = unpack(v)
 
@@ -1114,8 +1131,10 @@ end
 local prev = rawget(_M,'m_vGUIDlg')
 if ValidPanel(prev) then prev:Remove() end
 m_vGUIDlg = NULL
+local alerted
 function GUIOpen(_,trychoose_mdl)
 	
+
 	if not ValidPanel(m_vGUIDlg) then
 		local d = vgui.CreateFromTable(factory,nil,Tag..'_GUI')
 		m_vGUIDlg = d
@@ -1123,6 +1142,11 @@ function GUIOpen(_,trychoose_mdl)
 	
 	
 	m_vGUIDlg:Show(nil,trychoose_mdl)
+	
+	if Derma_Message and not alerted and game.SinglePlayer() then
+		alerted = true
+		Derma_Message("You are playing singleplayer. Outfitter may not work at all.",'WARNING')
+	end
 	
 	return m_vGUIDlg
 end

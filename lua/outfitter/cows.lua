@@ -64,10 +64,13 @@ function GetLastMountErr(wsid)
 	return lme
 end
 
-local function cantmount(wsid,reason)
+local function cantmount(wsid,reason,...)
 	fetching[wsid] = false
 	res[wsid] = reason or "failed?"
-	dbge("FetchWS","downloading",wsid,"failed for",reason)
+	if reason~='oversize' or outfitter_maxsize:GetInt()==60 then
+		dbge("FetchWS","downloading",wsid,"failed for",reason,...)
+	end
+	
 	lme= reason or "?"
 	lwsid=wsid
 	return false,reason
@@ -258,7 +261,7 @@ function coFetchWS(wsid,skip_maxsize)
 	end
 	
 	local maxsz = outfitter_maxsize:GetFloat()
-	maxsz = maxsz*1024*1024
+	maxsz = maxsz*1000*1000
 	
 	if maxsz>0.1 and (fileinfo.size or 0) > maxsz then
 		skip_maxsize = skip_maxsize or skip_maxsizes[wsid]
@@ -436,6 +439,9 @@ end
 function NeedWS(wsid,pl,mdl)
 	if co.make(wsid,pl,mdl) then return end
 	
+	-- already mounted, don't mount again
+	if steamworks.IsSubscribed(wsid) and file.Exists(mdl,'GAME') then return true end
+	
 	SetUIFetching(wsid,true)
 	
 		co.sleep(.1)
@@ -447,8 +453,10 @@ function NeedWS(wsid,pl,mdl)
 	SetUIFetching(wsid,false,not path and (err and tostring(err) or "FAILED?"))
 	
 	if not path then
-		dbge("NeedWS",wsid,"fail",err)
-		return nil,err or "fetchws"
+		if err~='oversize' then
+			dbge("NeedWS",wsid,"fail",err,err2)
+		end
+		return nil,err or "fetchws",err2
 	end
 	
 	local ok,err = GMABlacklist(path)

@@ -159,7 +159,7 @@ local function Command(com,v1)
 		end
 		return true
 		
-	elseif com==Tag or com=='outfiter'  or com=='oufitr' or com=='utfitter' or com=='utfiter' then
+	elseif com==Tag or com=='outfiter'  or com=='oufiter'  or com=='oufitr' or com=='utfitter' or com=='utfiter' then
 		local n = v1 and tonumber(v1)
 		if n then
 			UIChoseWorkshop(n)
@@ -248,23 +248,22 @@ CBLACK = Color(0,0,0,0)
 local ns = 0
 function UIError(...)
 	dbgn(2,...)
-	local t= {Color(200,50,10),'[Outfitter Err] ',CWHITE,...}
+	local t= {Color(200,50,10),'[Outfitter ERROR] ',CWHITE,...}
 	local now = RealTime()
 	if ns<now then
 		ns=now + 1
 		SOUND("common/warning.wav")
 	end
-
-	local t={}
+	local t2={}
 	for i=1,select('#',...) do
 		local v=select(i,...)
 		v=tostring(v) or "no value"
-		t[i]=v
+		t2[i]=v
 	end
-	local str = table.concat(t,' ')
+	local str = table.concat(t2,' ')
 	
 	notification.AddLegacy( str, NOTIFY_ERROR, 4 )
-	chat.AddText(unpack(t))
+	chat.AddText(CWHITE,unpack(t))
 end
 
 local ns = 0
@@ -284,10 +283,15 @@ local chosen_wsid
 local tried_mounting
 local mount_path
 local chosen_mdl
-
+local mdllist_extra
 function UIGetMDLList()
 	return mdllist
 end
+
+function UIGetMDLListExtra()
+	return mdllist_extra
+end
+
 function UITriedMounting()
 	return tried_mounting
 end
@@ -302,6 +306,7 @@ function UICancelAll()
 	UIMsg"Unsetting everything"
 	
 	mdllist = nil
+	mdllist_extra = nil
 	chosen_wsid = nil
 	mount_path = nil
 	tried_mounting = nil
@@ -452,9 +457,22 @@ function UIChoseWorkshop(wsid,opengui)
 	end
 	
 	if not mdls[1] then
-		dbge("UIChoseWorkshop","GMAPlayerModels",wsid,"no models!?")
+		dbg("UIChoseWorkshop","GMAPlayerModels",wsid,"no valid models!?")
+		
 		if opengui then GUIOpen() end
-		return UIError("Workshop addon "..wsid.." has no playermodels")
+		
+		UIError("Workshop addon "..wsid.." has no valid playermodels")
+		if extra and istable(extra) and extra.discards and next(extra.discards) then
+			for mdl,dat in next,extra.discards or {} do
+				mdl = MDLToUI(mdl)
+				if dat.error_vvd then
+					UIError(mdl,":",tostring(TranslateError(dat.error_vvd)))
+				elseif dat.error_player then
+					UIError(mdl,":",tostring(TranslateError(dat.error_player)))
+				end
+			end
+		end
+		
 	end
 	
 	co.sleep(.2)
@@ -464,12 +482,13 @@ function UIChoseWorkshop(wsid,opengui)
 		for k,mdl in next,mdls do
 			UIMsg(" "..k..". "..tostring(mdl and MDLToUI(mdl.Name)))
 		end
-	else
+	elseif mdls[1] then
 		UIMsg("Got model: "..tostring(MDLToUI(mdls[1].Name)))
 	end
 	
 	chosen_wsid = wsid
 	mdllist = mdls
+	mdllist_extra = extra
 	handslist = extra.hands
 	mount_path = path
 	
@@ -508,6 +527,30 @@ function SetAutowear()
 	end
 
 end
+
+			
+local oversized = {}
+function coUIOversizeMsg(pl,wsid)
+
+	
+	if oversized[wsid] then return end
+	oversized[wsid] = true
+	
+	local fileinfo = co_steamworks_FileInfo(wsid)
+	
+	local maxsz = outfitter_maxsize:GetFloat()
+	maxsz = maxsz*1000*1000
+	maxsz = string.NiceSize(maxsz)
+	local szstr=""
+	if fileinfo and istable(fileinfo) and fileinfo.size then
+		szstr = ("(%s) "):format(string.NiceSize(fileinfo.size or 0))
+	end
+	
+	UIMsg("The outfit of ",pl,(" is too big %saccording to your settings (%s) so it was not mounted!"):format(szstr,maxsz))
+
+end
+
+
 
 -- This is a horrible hack because of forethought was lacking when the rest of the code was made
 -- duplicated from two different functions, etc
@@ -581,7 +624,7 @@ function coDoAutowear()
 	local mdllist = mdls
 	local handslist = extra.hands
 	local mount_path = path
-	
+	local mdllist_extra = extra
 	
 	
 	

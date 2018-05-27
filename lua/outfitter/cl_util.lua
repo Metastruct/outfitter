@@ -10,6 +10,16 @@ local SAVE=true  --TODO: make save after end of debugging
 
 local Player = FindMetaTable"Player"
 
+function TranslateError(err,...)
+	if err=='maxverts' then
+		err = 'Model is too complex (too many vertexes). Shooting the player could cause others to crash (Can use r_drawmodeldecals 0 to avoid this)'
+	elseif err=='nobones' then
+		err = "Playermodel needs to have bones"
+	elseif err=='noattachments' then
+		err = "Does not have eyes attachment, this breaks many addons"
+	end
+	return err
+end
 
 function Fullupdate()
 	timer.Create(Tag..'fullupdate',.2,1,function()
@@ -227,9 +237,33 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",true)
 		rag:DrawModel()
 	end
 
+	local cache={}
+	local function BadRagdoll(mdl)
+		local cached=cache[mdl]
+		if cached~=nil then return cached end
+		cache[mdl] = false
+		
+		local sz = file.Size(mdl:gsub("%.mdl$",'.phy'),'GAME')
+		cache[mdl]=cached
+		
+		if sz and sz>100*1000 then
+			cached=true
+		end
+		cache[mdl]=cached
+		
+		return cached
+	end
+	
 	function OnDeathRagdollCreated(rag,pl)
 		local mdl = pl:GetEnforceModel()
 		if not mdl then return end
+		
+		if BadRagdoll(mdl) then 
+			dbgn(2,'Bad ragdoll',mdl)
+			if not IsUnsafe() then
+				return
+			end
+		end
 		
 		local mdlr = rag:GetModel()
 		local mdlp = pl:GetModel()
@@ -320,7 +354,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",true)
 		
 		if pl==LocalPlayer() and curmdl ~= mdl then
 			LazyFullupdate(mdl)
-			if not mdl then
+			if pl:GetNWBool("IsListenServerHost",false) or not mdl then
 				Fullupdate()
 			end
 		end
@@ -498,7 +532,7 @@ function GMAParseModels(gma)
 			--mdlfiles[path:gsub("%.[^%.]+%.vtx$",""):lower()] = true
 			mdlfiles[path_extless] = true
 		elseif ext=='.phy' then
-			phys[path_extless] = true
+			phys[path_extless] = {entry.Offset,entry.Size}
 		end
 	end
 	return mdls,vvds,mdlfiles,phys
@@ -528,6 +562,23 @@ function CategorizeBadModelPath(n)
 	if n:find("/props_",1,true) 			then return "prop" end
 end
 
+function CheckPHY(gma,phys,path_extless)
+	-- validate VVD vertex count 
+	local data = phys[path_extless..'.phy']
+	if not data then return end
+	
+	--if phy_size then
+	--	if not IsUnsafe() and phy_size>128*1000 then
+	--		return false,'filesize'
+	--	end
+	--end
+	local phy_offset = data[1]
+	if phy_offset then
+		if not gma:SeekToFileOffset(phy_offset) then return nil,"seekfail" end
+	end
+	return true
+end
+
 function CheckVVD(gma,vvds,path_extless)
 	-- validate VVD vertex count 
 	local vvd_offset = vvds[path_extless..'.vvd'] or vvds[path_extless..'.VVD']
@@ -537,7 +588,9 @@ function CheckVVD(gma,vvds,path_extless)
 		if not ok then
 			dbg("CheckVVD","ValidateVVDVerts",path_extless,in_err,verts)
 			if not IsUnsafe() then
-				return false,in_err
+				if DrawingDecals() then
+					return false,in_err
+				end
 			end
 
 		end
@@ -546,7 +599,6 @@ function CheckVVD(gma,vvds,path_extless)
 		dbg("CheckVVD","vvd not found?",path_extless..'.vvd')
 	end
 end
-
 
 function GMAPlayerModels(fpath)
 	assert(fpath)
@@ -595,7 +647,7 @@ function GMAPlayerModels(fpath)
 		local plerr
 		if isplr==nil then 
 			dbge("MDLIsPlayermodel",path_extless,err,err2) 
-			discard=true
+			discard="MDLIsPlayermodel"
 		elseif not isplr then
 			plerr = err
 			entry.error_player = plerr
@@ -620,12 +672,20 @@ function GMAPlayerModels(fpath)
 		end
 		
 
-		
+		if phys[path_extless] then
+			local phy_ok,err = CheckPHY(gma,phys,path_extless)
+			entry.phy_ok = phy_ok
+			if not phy_ok then
+				discard = "phy"
+			end
+		end
 		
 		local vvd_ok,err = CheckVVD(gma,vvds,path_extless)
 		entry.vvd_ok = vvd_ok
+		entry.error_vvd = err
+		
 		if not vvd_ok then
-			discard = true
+			discard = "vvd"
 			ishands = false
 			isplr = false
 		end
@@ -644,6 +704,8 @@ function GMAPlayerModels(fpath)
 			or cat == 'animation' 
 			or cat == 'viewmodel' 
 			or cat == 'worldmodel'
+		
+		entry.discard = discard
 		
 		if isplr then
 			playermodels[path]=entry
@@ -699,6 +761,15 @@ function ThinkFullupdate()
 	end
 	
 end
+
+
+local function OnEntityCreated(ent)
+	local me = LocalPlayer()
+	if ent~=me then return end
+	dbgn(2,'LocalPlayer (re)created')
+end
+
+hook.Add("OnEntityCreated", Tag, OnEntityCreated)
 
 function LazyFullupdate(mdl)
 	needmdl = mdl
@@ -787,10 +858,14 @@ function ValidateVVDVerts(f)
 	if not dat then return nil,err end
 	
 	local num = dat.numLODVertexes[1]
-	if num > 44031 --[[magic]] then return false, 'too many verts, decals on model might cause crashes, use r_drawmodeldecals 0 to avoid this',num end
+	if num > 44031 --[[magic]] then return false,'maxverts',num end
 	return true,num
 end
 
+local r_drawdecals = GetConVar"r_drawdecals"
+function DrawingDecals()
+	return r_drawdecals:GetBool()
+end
 
 
 do 

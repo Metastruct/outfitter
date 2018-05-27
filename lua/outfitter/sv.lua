@@ -121,8 +121,15 @@ function NetData(pl,k,val)
 	return true
 end
 
+if not game.IsDedicated() and not game.SinglePlayer() then
+	hook.Add("OnEntityCreated",Tag,function(e)
+		if e:IsPlayer() and e:IsListenServerHost() then
+			e:SetNWBool("IsListenServerHost",true)
+		end
+	end)
+end
 
-CreateConVar("_outfitter_version","0.8.1",FCVAR_NOTIFY)
+CreateConVar("_outfitter_version","0.8.5",FCVAR_NOTIFY)
 resource.AddSingleFile "materials/icon64/outfitter.png"
 
 
