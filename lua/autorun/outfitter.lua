@@ -14,6 +14,9 @@ OUTFITTER REJECTS
 	252519802
 	Strict mode?
 
+	(partially fixed) 1367741116 ragdoll lags to hell
+	(partially fixed) OnDeathRagdollCreated Enforce call lags to hell, but without it ragdoll won't get applied force
+		
 Worldmodel vanishing
 	is it pac bug or outfitter?
 
@@ -22,7 +25,6 @@ Prevent workshop addon overriding resources to prevent crashes and trolling
 
 Any prop wear from any game instead of a workshop addon
 
-OnDeathRagdollCreated Enforce call lags to hell, but without it ragdoll won't get applied force
 ent:SnatchModelInstance()
 "hl2mp_ragdoll"
 
@@ -75,12 +77,23 @@ TODO
 
 local function requireSH(name)
 	AddCSLuaFile(("includes/modules/%s.lua"):format(name))
-	require(name)
+	local ok,err = pcall(require,name)
+	if not ok then
+		hook.Add("Initialize",Tag..'fail',function()
+
+			timer.Simple(1,function()
+				chat.AddText(Color(200,50,10,255),"OUTFITTER LOADING FAILED:",Color(255,255,255,255),err)
+			end)
+		
+		end)
+		return
+	end
 end
 
 if not util.OnLocalPlayer then
 	requireSH 'hookextras'
 end
+
 
 requireSH 'binfuncs'
 requireSH 'co'
