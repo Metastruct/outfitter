@@ -184,6 +184,7 @@ local function inc(str)
 end
 
 inc 'cl_util'	'cl'
+inc 'cl_hacks'	'cl'
 inc 'sh'		'sh'
 inc 'sv'		'sv'
 inc 'cows'		'cl'
