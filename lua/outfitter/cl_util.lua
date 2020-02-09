@@ -713,8 +713,8 @@ function GMAPlayerModels(fpath)
 		
 		if gma and not gma:SeekToFileOffset(entry) then return nil,"seekfail" end
 		local path_fd = not gma and file.Open(path,'rb','GAME')
-		if not path_fd then
-			dbge(path_fd,path,fpath)
+		if not path_fd and not gma then
+			dbge("GMAParseModels","file should exist but doesn't",path_fd,path,fpath)
 			continue
 		end
 		
