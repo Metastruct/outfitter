@@ -242,9 +242,10 @@ function coFetchWS(wsid,skip_maxsize)
 			local disabled = fileinfo.disabled
 			if banned then
 				dbge(wsid,"BANNED!?")
+				return SYNC(dat,cantmount(wsid,"banned"))
 			end
 			if created<60*60*24*7 then
-				dbge(wsid,"ONE WEEK OLD ADDON")
+				dbg(wsid,"WARNING: ONE WEEK OLD ADDON. NOT ENOUGH TIME FOR WORKSHOP MODERATORS.")
 			end
 			if disabled then
 				dbgn(3,"FileInfo",wsid,"Disabled?")
