@@ -1,0 +1,9 @@
+package.json
+.travis.yml
+addon.json
+.gitignore
+.npmignore
+/ci
+ci.sh
+package-lock.json
+dist

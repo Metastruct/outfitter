@@ -2,10 +2,6 @@
   "name": "gmod-outfitter",
   "version": "1.0.0",
   "description": "Garry's Mod Outfitter Addon",
-  "files": [
-    "lua",
-    "materials"
-  ],
   "peerDependencies": {
     "gmod-imageutils": "git+https://github.com/Metastruct/gmod-imageutils.git",
     "co": "git+https://github.com/Metastruct/glua_utilities.git#co",
@@ -15,15 +11,15 @@
     "netext": "git+https://github.com/Metastruct/glua_utilities.git#netext",
     "webbrowser": "git+https://github.com/Metastruct/glua_utilities.git#webbrowser"
   },
-  "bundledDependencies": [
-    "gmod-imageutils",
-    "co",
-    "coext",
-    "helpers",
-    "gmod-clientchatcommand",
-    "netext",
-    "webbrowser"
-  ],
+  "bundledDependencies": {
+    "gmod-imageutils": "git+https://github.com/Metastruct/gmod-imageutils.git",
+    "co": "git+https://github.com/Metastruct/glua_utilities.git#co",
+    "coext": "git+https://github.com/Metastruct/glua_utilities.git#coext",
+    "helpers": "git+https://github.com/Metastruct/glua_utilities.git#helpers",
+    "gmod-clientchatcommand": "git+https://github.com/Metastruct/glua_utilities.git#clientchatcommand",
+    "netext": "git+https://github.com/Metastruct/glua_utilities.git#netext",
+    "webbrowser": "git+https://github.com/Metastruct/glua_utilities.git#webbrowser"
+  },
   "devDependencies": {
     "gmod-packager": "git+https://github.com/Python1320/gmod-packager.git"
   },
