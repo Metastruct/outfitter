@@ -3,21 +3,20 @@
 local Tag='outfitter'
 module(Tag,package.seeall)
 
-
-
--- External decompression helper
-local outfitter_decompress_ext = CreateClientConVar("outfitter_decompress_ext",'0',true)
-local has_decompress_helper
-if outfitter_decompress_ext:GetInt()>0 then
-	http.Fetch("http://localhost:27099",function(data,len,hdr,code)
-		has_decompress_helper = code==200
-		if has_decompress_helper then
-			dbg('We have external helper!')
-		end
-	end,function() end)
+function IsUGCFilePath(path)
+	return path:find("^.:") or path:find("^[%\\%/]") or false
 end
+
+-- External decompression helper (nerfed by http.Fetch)
+
+local outfitter_disable_decompress_helper = CreateClientConVar("outfitter_disable_decompress_helper",'1',true)
+if not outfitter_disable_decompress_helper:GetBool() then 
+	file.Write("decomp_in_steamworks.dat",'INIT')
+end
+local has_decompress_helper
 function HasDecompressHelper()
-	return outfitter_decompress_ext:GetInt()>0 and (has_decompress_helper or outfitter_decompress_ext:GetInt()==2)
+	if outfitter_disable_decompress_helper:GetBool() then return false end
+	return os.time()-(file.Time("of_dchelper.dat",'DATA') or 0)<120
 end
 ---------------------------------
 
@@ -35,7 +34,7 @@ local function SYNC(cbs,...)
 	return ...
 end
 
-local function steamworks_Download( fileid, uncomp )
+local function steamworks_Download( fileid )
 	local instant
 	local path
 	local cb = co.newcb()
@@ -48,7 +47,7 @@ local function steamworks_Download( fileid, uncomp )
 		end
 		cb(a,b)
 	end
-	steamworks.Download( fileid, uncomp, cb2 )
+	steamworks.DownloadUGC( fileid, cb2 )
 	if instant==nil then
 		instant = false
 		path = co.waitcb(cb)
@@ -68,7 +67,7 @@ local function cantmount(wsid,reason,...)
 	fetching[wsid] = false
 	res[wsid] = reason or "failed?"
 	if reason~='oversize' or outfitter_maxsize:GetInt()==60 then
-		dbge("FetchWS","downloading",wsid,"failed for",reason,...)
+		dbgelvl(2,"FetchWS","downloading",wsid,"failed for",reason,...)
 	end
 	
 	lme= reason or "?"
@@ -256,7 +255,7 @@ function coFetchWS(wsid,skip_maxsize)
 		end
 	end
 	
-	if not fileinfo or not fileinfo.fileid then
+	if not fileinfo or not fileinfo.title then
 		return SYNC(dat,cantmount(wsid,"fileinfo"))
 	end
 	
@@ -275,10 +274,10 @@ function coFetchWS(wsid,skip_maxsize)
 		
 	co.wait(.3)
 	
-	local decomp = not HasDecompressHelper()
+	local decomp_in_steamworks = true --not HasDecompressHelper()
 	
 	local TIME = isdbg and SysTime()
-	local path = steamworks_Download( fileinfo.fileid, decomp )
+	local path = steamworks_Download( wsid )
 	if isdbg then dbg("Download",wsid,"to",path or "<ERROR>","took",SysTime()-TIME) end
 	
 	assert(path~=true)
@@ -286,19 +285,20 @@ function coFetchWS(wsid,skip_maxsize)
 	if not path then
 		return SYNC(dat,cantmount(wsid,"download"))
 	end
-
-	if not file.Exists(path,'MOD') then
+	
+	if not IsUGCFilePath(path) and not file.Exists(path,'MOD') then
 		return SYNC(dat,cantmount(wsid,"file"))
 	end
 	
-	if not decomp then
+	if not decomp_in_steamworks then
 		local err
 		path,err = coDecompress(path)
 		if not path then
 			return SYNC(dat,cantmount(wsid,'decompress'))
 		end
 
-		if not file.Exists(path,'MOD') then
+		if not IsUGCFilePath(path) and not file.Exists(path,'MOD') then
+			dbg(path,"IsUGCFilePath",IsUGCFilePath(path),"file.Exists",file.Exists(path,'MOD'))
 			return SYNC(dat,cantmount(wsid,"file"))
 		end
 	end
@@ -324,7 +324,7 @@ function MountWS( path )
 				it gets whitelisted
 		]]
 
-
+	assert(path,'no file given')
 	local crashed = DidCrash("mountws",path)
 	
 	dbg("MountWS",path,crashed and "CRASHED, BAILING OUT")
@@ -333,7 +333,7 @@ function MountWS( path )
 	
 	local TIME = SysTime()
 	CRITICAL("mountws",path)
-	local ok, files = game.MountGMA( path )
+	local ok, files = MountGMA( path )
 	CRITICAL(false)
 	local took = SysTime() - TIME
 	if isdbg() then dbg("MountGMA",path,"took",math.Round(took*1000)..' ms') end
@@ -363,6 +363,7 @@ coMountWS = co.worker(worker)
 
 
 function _coDecompressExt(path)
+	if not HasDecompressHelper() then return nil,'no helper' end
 	if not path then return nil,'invalid parameter' end
 	dbgn(2,"coDecompressExt",path)
 	
@@ -370,9 +371,10 @@ function _coDecompressExt(path)
 		file = path
 	})
 	
-	if not ok then
+	if not ok or code~=200 then
 		has_decompress_helper = false
-		return coDecompress(path)
+		dbge("_coDecompressExt",data,code)
+		return nil,data
 	end
 	
 	
@@ -387,12 +389,15 @@ function _coDecompressExt(path)
 	return resultpath
 end
 
+-- TODO rework if even needed anymore
 function coDecompress(path)
 	if not path then return nil,'invalid parameter' end
+	if IsUGCFilePath(path) then return nil,'new workshop file' end
+	
 	dbgn(2,"coDecompress",path)
-	if HasDecompressHelper() then
-		return _coDecompressExt(path)
-	end
+	
+	local ok,ret = _coDecompressExt(path)
+	if ok then return ok,ret end
 	
 	local safepath = path:gsub("%.cache$",".dat")
 	if not file.Exists(safepath,'DATA') then
@@ -400,27 +405,18 @@ function coDecompress(path)
 		file.CreateDir("cache",'DATA')
 		file.CreateDir("cache/workshop",'DATA')
 		
-		for i=1,2048 do
-			--print(math.ceil(i^2))
-			if collectgarbage('step',math.ceil(i^2)) then dbgn(2,'coDecompress','finished collecting 1') break end
-			co.waittick()
-		end
+		dbgn(2,'coDecompress','finished collecting 1',coMinimizeGarbage())
 		
 		local data = file.Read(path,'GAME')				co.sleep(.3)
 		if not data then dbge("coDecompress","File Read",path) return nil,'read' end
 		
-		local decomp,err = util.Decompress(data) data = nil	co.sleep(.3)
-		if not decomp then dbge("coDecompress","LZMA Decompress",path,err or "failed :(") return nil,'decompress' end
-		local sz = #decomp
+		local decomp_in_steamworks,err = util.Decompress(data) data = nil	co.sleep(.3)
+		if not decomp_in_steamworks then dbge("coDecompress","LZMA Decompress",path,err or "failed :(") return nil,'decompress' end
+		local sz = #decomp_in_steamworks
 		
-		file.Write(safepath,decomp)	decomp = nil 		co.sleep(.3)
+		file.Write(safepath,decomp_in_steamworks)	decomp_in_steamworks = nil 		co.sleep(.3)
 		
-		for i=1,2048 do
-			--print(math.ceil(i^2))
-			if collectgarbage('step',math.ceil(i^2)) then dbgn(2,'coDecompress','finished collecting 2') break end
-			co.waittick()
-		end
-		
+		dbgn(2,'coDecompress','finished collecting 2',coMinimizeGarbage())
 		
 		if file.Size('data/'..safepath,'GAME')~=sz then 
 			dbge("coDecompress","LZMA Decompress SZ",

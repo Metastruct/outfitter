@@ -12,7 +12,7 @@ local Player = FindMetaTable"Player"
 
 function TranslateError(err,...)
 	if err=='maxverts' then
-		err = 'Model is too complex (too many vertexes). Shooting the player could cause others to crash (Can use r_drawmodeldecals 0 to avoid this)'
+		err = 'Model is too complex (too many vertexes). This would lag lower quality PCs.'
 	elseif err=='nobones' then
 		err = "Playermodel needs to have bones"
 	elseif err=='noattachments' then
@@ -138,6 +138,17 @@ do
 		hook.Remove("RenderScene",Tag..'_highperf')
 		dbgn(2,'Stopping forced highperf mode',IsHighPerf())
 	end)
+	
+	function coMinimizeGarbage()
+		for i=1,2048 do
+			if collectgarbage('step',math.ceil(i^2)) then 
+				local steps_done = (i+1)^2-1
+				return steps_done
+			end
+			co.waittick()
+		end
+		return 2049^2-1
+	end
 	
 end
 
@@ -413,6 +424,8 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",true)
 	end)
 
 function TestLZMA(fpath)
+	-- if IsUGCFilePath(fpath) -- TODO
+	
 	local f = file.Open(fpath,'rb','MOD')
 
 	if not f then
@@ -438,10 +451,12 @@ function TestLZMA(fpath)
 end
 function GMABlacklist(fpath,wsid)
 	assert(fpath)
+
 	local f = file.Open(fpath,'rb','MOD')
-	dbg("GMABlacklist",fpath,f and "" or "INVALIDFILE")
+	dbg("GMABlacklist",fpath,f and "" or (IsUGCFilePath(fpath) and "UGC, SKIP" or "INVALIDFILE"))
 	
 	if not f then
+		if IsUGCFilePath(fpath) then return true,'file' end -- Can no longer access gma data
 		return nil,"file"
 	end
 	
@@ -509,11 +524,12 @@ end
 
 
 function GMAParseModels(gma)
+	assert(gma)
 	local mdls,vvds,mdlfiles,phys = {},{},{},{}
 	for i=1,32000 do
 		local entry,err = gma:EnumFiles()
 		if not entry then
-			if err then 
+			if err then
 				dbge("GMAParseModels",err) 
 				return nil,err
 			end
@@ -537,7 +553,27 @@ function GMAParseModels(gma)
 	end
 	return mdls,vvds,mdlfiles,phys
 end
-
+function FileListParseModels(files)
+	local mdls,vvds,mdlfiles,phys = {},{},{},{}
+	for _,path in pairs(files) do
+	
+		local ext = path:sub(-4):lower()
+		local path_extless = path:sub(1,-5):lower()
+		
+		if ext=='.mdl' then
+			mdls[#mdls+1] = {Name=path,path=path,nogma=true}
+		elseif ext=='.vvd' then
+			mdlfiles[path_extless] = true
+			vvds[path:lower()] = true
+		elseif ext=='.vtx' then
+			--mdlfiles[path:gsub("%.[^%.]+%.vtx$",""):lower()] = true
+			mdlfiles[path_extless] = true
+		elseif ext=='.phy' then
+			phys[path_extless] = true
+		end
+	end
+	return mdls,vvds,mdlfiles,phys
+end
 -- purge {false,false,good,false}
 function RemoveListVals(t,val)
 	for i=#t,1,-1 do
@@ -563,7 +599,7 @@ function CategorizeBadModelPath(n)
 end
 
 function CheckPHY(gma,phys,path_extless)
-	-- validate VVD vertex count 
+
 	local data = phys[path_extless..'.phy']
 	if not data then return end
 	
@@ -579,12 +615,16 @@ function CheckPHY(gma,phys,path_extless)
 	return true
 end
 
-function CheckVVD(gma,vvds,path_extless)
+function CheckVVD(gma,vvds,path_extless,path_fd)
 	-- validate VVD vertex count 
 	local vvd_offset = vvds[path_extless..'.vvd'] or vvds[path_extless..'.VVD']
 	if vvd_offset then
-		if not gma:SeekToFileOffset(vvd_offset) then return nil,"seekfail" end
-		local ok ,in_err,verts = ValidateVVDVerts(gma:GetFile())
+		if gma and not gma:SeekToFileOffset(vvd_offset) then return nil,"seekfail" end
+		local ok ,in_err,verts = ValidateVVDVerts(not gma and path_extless..'.vvd' or gma:GetFile())
+		if not ok and in_err=='file missing' then
+			dbgn("CheckVVD","ValidateVVDVerts",path_extless,in_err,verts)
+			return true
+		end
 		if not ok then
 			dbg("CheckVVD","ValidateVVDVerts",path_extless,in_err,verts)
 			if not IsUnsafe() then
@@ -592,7 +632,6 @@ function CheckVVD(gma,vvds,path_extless)
 					return false,in_err
 				end
 			end
-
 		end
 		return true
 	else
@@ -600,21 +639,53 @@ function CheckVVD(gma,vvds,path_extless)
 	end
 end
 
+function GetGMAFiles(fpath)
+	local ok ,files = MountWS( fpath )
+	if ok and files then
+		return files
+	end
+	return nil,files
+end
+
+-- helper function that probably should not exist
+local function GMAORFILE(a,gma,...)
+	if gma then return gma,... end
+	if isstring(a) then return a end
+	a:Seek(0)
+	return a
+end
+
+
+
 function GMAPlayerModels(fpath)
 	assert(fpath)
 	local f = file.Open(fpath,'rb','MOD')
-	dbgn(2,"GMAPlayerModels pre",fpath,f and "" or "INVALIDFILE")
+	dbgn(2,"GMAPlayerModels pre",fpath,f and "" or (IsUGCFilePath(fpath) and "UGC, SKIP" or "INVALIDFILE"))
 	
-	if not f then return nil,"file" end
+	local gma,files,err
+	if f then 
+		gma,err = gmaparse.Parser(f)
+		if not gma then return nil,err end
+	else
+		files,err = GetGMAFiles(fpath)
+		if not files then
+			return nil,err
+		end
+	end
 	
-	local gma,err = gmaparse.Parser(f)
-	if not gma then return nil,err end
-
-	local ok ,err = gma:ParseHeader()
-	if not ok then return nil,err end
-
-	local modellist,vvds,mdlfiles,phys = GMAParseModels(gma)
-	if modellist==nil then return nil,vvds end
+	if gma then
+		local ok ,err = gma:ParseHeader()
+		if not ok then return nil,err end
+	end
+	
+	local modellist,vvds,mdlfiles,phys
+	if gma then
+		modellist,vvds,mdlfiles,phys = GMAParseModels(gma) 
+	else
+		modellist,vvds,mdlfiles,phys = FileListParseModels(files)
+	end
+	
+	if not modellist then return nil,vvds end
 
 
 	local playermodels = {}
@@ -632,17 +703,24 @@ function GMAPlayerModels(fpath)
 	--TODO: Check other files exist for mdl (otherwise might be anim for example)
 	
 	-- go through all model entries found from the gma
+	
+	
 	for k,entry in next,modellist do
 		local path = entry.Name
 		local path_extless = entry.Name:sub(1,-5)
 		
 		local cat = CategorizeBadModelPath(path)
 		
-		if not gma:SeekToFileOffset(entry) then return nil,"seekfail" end
+		if gma and not gma:SeekToFileOffset(entry) then return nil,"seekfail" end
+		local path_fd = not gma and file.Open(path,'rb','GAME')
+		if not path_fd then
+			dbge(path_fd,path,fpath)
+			continue
+		end
 		
 		can = mdlfiles[path_extless]
 		local discard
-		local isplr,err,err2 = MDLIsPlayermodel(gma:GetFile(),entry.Size)
+		local isplr,err,err2 = MDLIsPlayermodel(GMAORFILE(path_fd,gma and gma:GetFile(),entry.Size))
 		local hasAnims = err
 		local plerr
 		if isplr==nil then 
@@ -657,8 +735,8 @@ function GMAPlayerModels(fpath)
 			entry.error_player = plerr
 		end
 		
-		if not gma:SeekToFileOffset(entry) then return nil,"seekfail" end
-		local ishands,err,err2 = MDLIsHands(gma:GetFile(),entry.Size)
+		if gma and not gma:SeekToFileOffset(entry) then return nil,"seekfail" end
+		local ishands,err,err2 = MDLIsHands(GMAORFILE(path_fd,gma and gma:GetFile(),entry.Size))
 		local handserr
 		if ishands==nil then 
 			dbge("MDLIsHands",path_extless,err,err2) 
@@ -671,8 +749,8 @@ function GMAPlayerModels(fpath)
 			entry.error_hands = handserr
 		end
 		
-
-		if phys[path_extless] then
+		-- TODO: fix non gma
+		if phys[path_extless] and gma then
 			local phy_ok,err = CheckPHY(gma,phys,path_extless)
 			entry.phy_ok = phy_ok
 			if not phy_ok then
@@ -853,13 +931,24 @@ function ParseVVD(f)
 end
 
 function ValidateVVDVerts(f)
+	local do_close
+	if isstring(f) then
+		f = file.Open(f,'rb','GAME')
+		if not f then return nil,'file missing' end
+		do_close = true
+	end
+	local function RETURN(...)
+		if do_close then f:Close() end
+		return ...
+	end
+		
 	local dat,err = ParseVVD(f)
 	
-	if not dat then return nil,err end
+	if not dat then return RETURN(nil,err) end
 	
 	local num = dat.numLODVertexes[1]
-	if num > 44031 --[[magic]] then return false,'maxverts',num end
-	return true,num
+	if num > 64534 --[[magic]] then return RETURN(false,'maxverts',num) end
+	return RETURN(true,num)
 end
 
 local r_drawdecals = GetConVar"r_drawdecals"
@@ -978,4 +1067,106 @@ do
 	function GetVGUI()
 		return vgui
 	end
+end
+
+
+
+require 'gmaparse'
+local cache={}
+function AlreadyMounted(fpath)
+	local cached = cache[fpath]
+	if cached~=nil then return cached end
+	
+	if not fpath then return nil, 'no filepath' end
+	local f = file.Open(fpath, 'rb', 'MOD')
+	if not f then 
+		if IsUGCFilePath(fpath) then
+			return nil,'ugc'
+		end
+		return nil, "file" 
+	end
+	local gma, err = gmaparse.Parser(f)
+	if not gma then return nil, err end
+	local ok, err = gma:ParseHeader()
+	if not ok then return nil, err end
+	local paths = {}
+
+	for i = 1, 2 ^ 14 do
+		local entry, err = gma:EnumFiles(i==1)
+
+		if not entry then
+			if err then return nil, err end
+			break
+		end
+
+		local path = entry.Name
+		assert(path)
+		paths[#paths + 1] = path
+	end
+	gma:Close()
+	
+	if #paths >= 2^16 then
+		return nil,'Over 2^16 files???'
+	end
+	if #paths == 0 then
+		return nil,'No files??'
+	end
+	
+	for i = 1, #paths do
+		local path = paths[i]
+		if not file.Exists(path,'workshop') then
+			return false,path
+		end
+	end
+	cache[fpath] = paths or true --  we had to check all the files in the gma, let's not check them again
+	return paths or true
+end
+
+function GMAFiles(fpath)
+	if not fpath then return nil, 'no filepath' end
+	local f = file.Open(fpath, 'rb', 'MOD')
+	if not f then return nil, "file" end
+	local gma, err = gmaparse.Parser(f)
+	if not gma then return nil, err end
+	local ok, err = gma:ParseHeader()
+	if not ok then return nil, err end
+	local paths = {}
+	for i = 1, 2 ^ 14 do
+		local entry, err = gma:EnumFiles(i==1)
+
+		if not entry then
+			if err then return nil, err end
+			break
+		end
+
+		local path = entry.Name
+		assert(path)
+		paths[#paths + 1] = path
+	end
+	gma:Close()
+	return paths
+end
+
+local game_MountGMA = game.MountGMA
+function MountGMA(fpath,opt)
+	if opt~='force' then
+		local ok,res,err = pcall(AlreadyMounted,fpath)
+		if not ok then
+			res,err = nil,res
+		end
+		
+		if res then
+			dbg("MountGMA","Not remounting",fpath)
+			return true,res
+		else
+			if err then
+				if res~=false then
+					dbg("MountGMA",(("AlreadyMounted(%q) -> %s\n"):format(fpath,err)))
+				end
+			else
+				-- not mounted, all ok
+			end
+		end
+	end
+	return game_MountGMA(fpath,opt)
 end
