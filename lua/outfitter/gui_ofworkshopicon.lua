@@ -20,12 +20,6 @@ function PANEL:SetAddon( data )
 
 	steamworks.FileInfo( data.wsid, function( result )
 		if not result then return end
-		steamworks.VoteInfo( data.wsid, function( result )
-			if not result then return end
-			if ( gDataTable[ data.wsid ] ) then
-				gDataTable[ data.wsid ].VoteData = result
-			end
-		end )
 
 		gDataTable[ data.wsid ] = result
 
