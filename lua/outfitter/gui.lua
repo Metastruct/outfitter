@@ -42,7 +42,7 @@ local vgui = GetVGUI()
 		-- sharedfiles/filedetails/?id=422403917&searchtext=playermodel
 
 
-		local id = url:match'://steamcommunity.com/sharedfiles/filedetails/.*[%?%&]id=(%d+)'
+		local id = url:match'://steamcommunity.com/sharedfiles/filedetails/.*[%?%&]id=(%d+)' or url:match'://steamcommunity.com/workshop/filedetails/.*[%?%&]id=(%d+)'
 		self.chooseb:SetEnabled(id and true or false)
 		self.chosen_id = tonumber(id)
 		--print(id)
