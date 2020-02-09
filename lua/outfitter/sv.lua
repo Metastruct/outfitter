@@ -129,12 +129,13 @@ if not game.IsDedicated() and not game.SinglePlayer() then
 	end)
 end
 
-CreateConVar("_outfitter_version","0.8.5",FCVAR_NOTIFY)
+CreateConVar("_outfitter_version","0.9",FCVAR_NOTIFY)
 resource.AddSingleFile "materials/icon64/outfitter.png"
 
 
 function TestOutfitsOnBots()
 	local t = {
+		{ "models/player/fillipuster/fillipuster.mdl",1982247237},
 		{ "models/player/mikier/renamon.mdl",599541401},
 		{ "models/pechenko_121/deadpool/chr_deadpoolclassic.mdl",200700693},
 		{ "models/pechenko_121/deadpool/chr_deadpool2.mdl",200700693},
@@ -152,3 +153,20 @@ function TestOutfitsOnBots()
 		SHNetworkOutfit(v,unpack(of))
 	end
 end
+
+-- Add me to server.cfg
+concommand.Add("outfitter_testmode",function(pl)
+	if IsValid(pl) then return end
+
+	timer.Simple(3,function()
+		if not player.GetBots()[1] then
+			RunConsoleCommand"bot"
+			RunConsoleCommand("bot_zombie",'1')
+		end
+		timer.Simple(1,function()
+			player.GetBots()[1]:GodEnable()
+			TestOutfitsOnBots()
+		end)
+	end)
+
+end)

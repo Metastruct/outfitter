@@ -152,17 +152,24 @@ function dbgn(n,...)
 end
 
 function dbge(...)
+	return dbgelvl(2,...)
+end
+
+function dbgelvl(lvl,...)
 	--if not outfitter_dbg:GetBool() then return end
-	
-	local t = {'[OF]'}
+	local caller = debug.getinfo((lvl or 1)) or {}
+	local src = caller.source or "?"
+	src=src:gsub(".*/lua/","/")
+	local t = {'[OF ERROR]',src..':'..(caller.currentline or -1)..':' }
 	for i=1,select('#',...) do
 		local v=select(i,...)
 		v=tostring(v) or "no value"
-		t[i]=v
+		t[#t+1]=v
 	end
-	ErrorNoHalt(table.concat(t,' ')..'\n')
+	local traceback = debug.traceback
+	ErrorNoHalt(traceback(table.concat(t,' '),(lvl or 1))..'\n')
 end
---concommand.Add()
+
 
 local S=SERVER
 local C=CLIENT
