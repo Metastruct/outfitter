@@ -1168,5 +1168,6 @@ function MountGMA(fpath,opt)
 			end
 		end
 	end
+	dbg("game.MountGMA","REAL",fpath)
 	return game_MountGMA(fpath,opt)
 end

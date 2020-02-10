@@ -382,6 +382,10 @@ function UIChangeModelToID(n,opengui)
 		
 end
 
+local silent_apply_mdl
+function UISetSilentApplyModel(mdl)
+	silent_apply_mdl = mdl
+end
 hook.Add("OutfitApply",Tag,function(pl,mdl)
 	
 	if pl==LocalPlayer() and mdl then
@@ -392,8 +396,10 @@ hook.Add("OutfitApply",Tag,function(pl,mdl)
 		
 		notification.AddLegacy( "Outfit changed!", NOTIFY_UNDO, 2 )
 		SOUND( GENERIC )
-		
-		UIMsg"Write '!outfit send' to send this outfit to everyone"
+		if silent_apply_mdl ~= mdl then
+			UIMsg"Write '!outfit send' to send this outfit to everyone"
+		end
+		silent_apply_mdl = nil
 		if opengui then
 			GUIOpen()
 		end
@@ -423,31 +429,31 @@ function UIChoseWorkshop(wsid,opengui)
 	end
 	co.sleep(.2)
 	
-	local mdls,extra,err = GMAPlayerModels( path )
+	local mdls,extramodelinfos,err = GMAPlayerModels( path )
 	--PrintTable(mdls)
 	
-	if not mdls and extra=='notgma' then
+	if not mdls and extramodelinfos=='notgma' then
 		dbgn(2," TestLZMA(",path,") ==", ("%q"):format(file.Read(path,'GAME'):sub(1,14)),TestLZMA(path) )
 	end
-	if not mdls and extra=='notgma' and TestLZMA(path) then
-		local newpath,extra = coDecompress(path)
+	if not mdls and extramodelinfos=='notgma' and TestLZMA(path) then
+		local newpath,extramodelinfos = coDecompress(path)
 		if not newpath then
 			if opengui then GUIOpen() end
-			return UIError("Download failed for workshop "..wsid..": "..tostring(extra~=nil and tostring(extra) or GetLastMountErr and GetLastMountErr())) 
+			return UIError("Download failed for workshop "..wsid..": "..tostring(extramodelinfos~=nil and tostring(extramodelinfos) or GetLastMountErr and GetLastMountErr())) 
 		end
 		path = newpath
 		
 		-- retry --
-		mdls,extra,err = GMAPlayerModels( path )
+		mdls,extramodelinfos,err = GMAPlayerModels( path )
 		-----------
 	end
 	
 	
 	if not mdls then
-		dbge("UIChoseWorkshop",wsid,"GMAPlayerModels failed for:",extra,err)
-		notification.AddLegacy( '[Outfitter] '..tostring(extra=="nomdls" and "no valid models found" or extra), NOTIFY_ERROR, 2 )
+		dbge("UIChoseWorkshop",wsid,"GMAPlayerModels failed for:",extramodelinfos,err)
+		notification.AddLegacy( '[Outfitter] '..tostring(extramodelinfos=="nomdls" and "no valid models found" or extramodelinfos), NOTIFY_ERROR, 2 )
 		if opengui then GUIOpen() end
-		return UIError("Parsing workshop addon "..wsid.." failed: "..tostring(extra=="nomdls" and "no valid models found" or extra))
+		return UIError("Parsing workshop addon "..wsid.." failed: "..tostring(extramodelinfos=="nomdls" and "no valid models found" or extramodelinfos))
 	end
 	
 	local ok,err = GMABlacklist(path)
@@ -462,8 +468,8 @@ function UIChoseWorkshop(wsid,opengui)
 		if opengui then GUIOpen() end
 		
 		UIError("Workshop addon "..wsid.." has no valid playermodels")
-		if extra and istable(extra) and extra.discards and next(extra.discards) then
-			for mdl,dat in next,extra.discards or {} do
+		if extramodelinfos and istable(extramodelinfos) and extramodelinfos.discards and next(extramodelinfos.discards) then
+			for mdl,dat in next,extramodelinfos.discards or {} do
 				mdl = MDLToUI(mdl)
 				if dat.error_vvd then
 					UIError(mdl,":",tostring(TranslateError(dat.error_vvd)))
@@ -488,8 +494,8 @@ function UIChoseWorkshop(wsid,opengui)
 	
 	chosen_wsid = wsid
 	mdllist = mdls
-	mdllist_extra = extra
-	handslist = extra.hands
+	mdllist_extra = extramodelinfos
+	handslist = extramodelinfos.hands
 	mount_path = path
 	
 	if mdls[2] then
@@ -568,8 +574,7 @@ function coDoAutowear()
 	if not mdl then return end
 	
 	dbg("Autowearing",mdl,"from",wsid,"setbodygroupdata=",setbodygroupdata)
-	
-	
+
 	SetUIFetching(wsid,true)
 		co.sleep(.5)
 			local path,err,err2 = coFetchWS( wsid )
@@ -582,65 +587,77 @@ function coDoAutowear()
 		return UIError("Download failed for workshop "..wsid..": "..tostring(err~=nil and tostring(err) or GetLastMountErr and GetLastMountErr()))
 	end
 	co.sleep(.2)
-	
-	local mdls,extra,err = GMAPlayerModels( path )
-	
-	if not mdls and extra=='notgma' then
-		dbgn(2," TestLZMA(",path,") ==", ("%q"):format(file.Read(path,'GAME'):sub(1,14)),TestLZMA(path) )
+
+	local mdl_exists = file.Exists(mdl,'GAME')
+	local skip_additional_checks = mdl_exists
+	if not IsUGCFilePath(path) then
+		skip_additional_checks = false
 	end
-	if not mdls and extra=='notgma' and TestLZMA(path) then
-		local newpath,extra = coDecompress(path)
-		if not newpath then
-			if opengui then GUIOpen() end
-			return UIError("Download failed for workshop "..wsid..": "..tostring(extra~=nil and tostring(extra) or GetLastMountErr and GetLastMountErr())) 
-		end
-		path = newpath
+	
+	local mdls,extramodelinfos,err
+	
+	if not skip_additional_checks then		
+		mdls,extramodelinfos,err = GMAPlayerModels( path )
 		
-		-- retry --
-		mdls,extra,err = GMAPlayerModels( path )
-		-----------
-	end
+		if not mdls and extramodelinfos=='notgma' then
+			dbgn(2," TestLZMA(",path,") ==", ("%q"):format(file.Read(path,'GAME'):sub(1,14)),TestLZMA(path) )
+		end
+		if not mdls and extramodelinfos=='notgma' and TestLZMA(path) then
+			local newpath,extramodelinfos = coDecompress(path)
+			if not newpath then
+				if opengui then GUIOpen() end
+				return UIError("Download failed for workshop "..wsid..": "..tostring(extramodelinfos~=nil and tostring(extramodelinfos) or GetLastMountErr and GetLastMountErr())) 
+			end
+			path = newpath
+			
+			-- retry --
+			mdls,extramodelinfos,err = GMAPlayerModels( path )
+			-----------
+		end
+		
 	
 	
-	if not mdls then
-		dbge("coDoAutowear",wsid,"GMAPlayerModels failed for:",extra,err)
-		notification.AddLegacy( '[Outfitter] '..tostring(extra=="nomdls" and "no valid models found" or extra), NOTIFY_ERROR, 2 )
-		return UIError("Parsing workshop addon "..wsid.." failed: "..tostring(extra=="nomdls" and "no valid models found" or extra))
-	end
+		if not mdls then
+			dbge("coDoAutowear",wsid,"GMAPlayerModels failed for:",extramodelinfos,err)
+			notification.AddLegacy( '[Outfitter] '..tostring(extramodelinfos=="nomdls" and "no valid models found" or extramodelinfos), NOTIFY_ERROR, 2 )
+			return UIError("Parsing workshop addon "..wsid.." failed: "..tostring(extramodelinfos=="nomdls" and "no valid models found" or extramodelinfos))
+		end
+		
+		local ok,err = GMABlacklist(path)
+		if not ok then
+			return UIError("OUTFIT BLOCKED: "..tostring(err=="oversize vtf" and "Contains too big textures" or err))
+		end
+		
+		if not mdls[1] then
+			dbge("coDoAutowear","GMAPlayerModels",wsid,"no models!?")
+			return UIError("Workshop addon "..wsid.." has no playermodels")
+		end
 	
-	local ok,err = GMABlacklist(path)
-	if not ok then
-		return UIError("OUTFIT BLOCKED: "..tostring(err=="oversize vtf" and "Contains too big textures" or err))
-	end
-	
-	if not mdls[1] then
-		dbge("coDoAutowear","GMAPlayerModels",wsid,"no models!?")
-		return UIError("Workshop addon "..wsid.." has no playermodels")
 	end
 	
 	co.sleep(.2)
 	
 	local chosen_wsid = wsid
-	local mdllist = mdls
-	local handslist = extra.hands
+	local handslist = extramodelinfos and extramodelinfos.hands
 	local mount_path = path
-	local mdllist_extra = extra
 	
-	
-	
-	assert(mount_path,"mount_path missing for "..tostring(chosen_wsid))
-	local ok,err = coMountWS( mount_path )
+	if not skip_additional_checks then
+		assert(mount_path,"mount_path missing for "..tostring(chosen_wsid))
+		local ok,err = coMountWS( mount_path )
 
-	if not ok then
-		return UIError("The workshop addon could not be mounted: "..tostring(err))
+		if not ok then
+			return UIError("The workshop addon could not be mounted: "..tostring(err))
+		end
 	end
 	
 	assert(mdl)
 	
+	UISetSilentApplyModel(mdl)
 	
 	-- returns instantly, but should be instant anyway
 	OnChangeOutfit(LocalPlayer(),mdl,chosen_wsid)
 	
+	-- cannot enforce hands without crashing at the moment
 	dbg("coDoAutowear","EnforceHands",ShouldHands(),next(handslist or {}))
 	if next(handslist or {})~=nil and ShouldHands() then
 		local _,entry = next(handslist)
@@ -657,7 +674,7 @@ function coDoAutowear()
 	end
 	
 	BroadcastMyOutfit()
-	
+
 	return true
 end
 
