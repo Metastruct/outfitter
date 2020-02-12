@@ -34,27 +34,47 @@ local function SYNC(cbs,...)
 	return ...
 end
 
-local function steamworks_Download( fileid )
+local function steamworks_Download_work( fileid )
 	local instant
-	local path
-	local cb = co.newcb()
-	local function cb2(a,b)
-		dbg("SWDL",fileid,instant==false and "" or "instant?","result",a,b)
-		if instant==nil then
-			path = a
-			instant = true
-			return
+	local path,fd
+	local cb
+	
+	-- retry
+	for i=0,4 do
+		if path then break end
+		
+		instant,path,fd,cb = nil,nil,nil,nil
+		
+		if i~=0 then
+			dbg("DownloadUGC","retry attempt ====",i)
+			co.sleep(math.random()*3+1)
 		end
-		cb(a,b)
+		
+		cb = co.newcb()
+		local function cb2(a,b)
+			dbg("DownloadUGC",fileid,instant==false and "" or "instant?","result",a,b)
+			if instant==nil then
+				path = a
+				fd = b
+				instant = true
+				return
+			end
+			cb(a,b)
+		end
+		dbgn(2,"DownloadUGC",fileid,"START")
+		steamworks.DownloadUGC( fileid, cb2 )
+		if instant==nil then
+			instant = false
+			path,fd = co.waitcb(cb)
+		end
 	end
-	steamworks.DownloadUGC( fileid, cb2 )
-	if instant==nil then
-		instant = false
-		path = co.waitcb(cb)
-	end
-	dbg("SWDL",fileid,"returning",path,"instant:",instant)
-	return path
+	
+	dbg("DownloadUGC",fileid,"returning",path,fd,instant and "<CACHED>" or "")
+	return path,fd
 end
+
+
+DownloadUGC = co.worker(steamworks_Download_work)
 
 local lme
 local lwsid
@@ -67,7 +87,7 @@ local function cantmount(wsid,reason,...)
 	fetching[wsid] = false
 	res[wsid] = reason or "failed?"
 	if reason~='oversize' or outfitter_maxsize:GetInt()==60 then
-		dbgelvl(2,"FetchWS","downloading",wsid,"failed for",reason,...)
+		dbgelvl(2,"FetchWS","downloading",wsid,"failed for reason:",reason,...)
 	end
 	
 	lme= reason or "?"
@@ -278,7 +298,7 @@ function coFetchWS(wsid,skip_maxsize)
 	local decomp_in_steamworks = true --not HasDecompressHelper()
 	
 	local TIME = isdbg and SysTime()
-	local path = steamworks_Download( wsid )
+	local path,fd = DownloadUGC( wsid )
 	if isdbg then dbg("Download",wsid,"to",path or "<ERROR>","took",SysTime()-TIME) end
 	
 	assert(path~=true)

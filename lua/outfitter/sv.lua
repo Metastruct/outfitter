@@ -129,7 +129,7 @@ if not game.IsDedicated() and not game.SinglePlayer() then
 	end)
 end
 
-CreateConVar("_outfitter_version","0.9",FCVAR_NOTIFY)
+CreateConVar("_outfitter_version","0.9.2",FCVAR_NOTIFY)
 resource.AddSingleFile "materials/icon64/outfitter.png"
 
 
@@ -160,6 +160,9 @@ concommand.Add("outfitter_testmode",function(pl)
 
 	timer.Simple(3,function()
 		if not player.GetBots()[1] then
+			RunConsoleCommand"bot"
+			RunConsoleCommand"bot"
+			RunConsoleCommand"bot"
 			RunConsoleCommand"bot"
 			RunConsoleCommand("bot_zombie",'1')
 		end
