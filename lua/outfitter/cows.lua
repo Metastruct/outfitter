@@ -20,7 +20,12 @@ function HasDecompressHelper()
 end
 ---------------------------------
 
-
+-- shadowing "dbge" because showing errors to expected behaviors in
+-- user targeted code is highly stupid
+local function dbge(...)
+	Msg("[Outfitter] ")
+	print(...)
+end
 
 local fetching = {}
 
