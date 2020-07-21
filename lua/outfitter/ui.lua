@@ -525,7 +525,7 @@ function SetAutowear()
 	
 	
 	if mdl then
-		util.SetPData("0",Tag..'_autowear',util.TableToJSON(t))
+		util.SetPData("0",Tag..'_autowear',json.encode(t))
 		UIMsg("Autowear ON")
 	else
 		util.RemovePData("0",Tag..'_autowear')
@@ -563,7 +563,7 @@ end
 function coDoAutowear()
 	local dat = util.GetPData("0",Tag..'_autowear')
 	if not dat then return end
-	local t = util.JSONToTable(dat)
+	local t = json.decode(dat)
 	if not t then return end
 	if not t.mdl then return end
 	if t.mdl=="" then return end

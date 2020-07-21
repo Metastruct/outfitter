@@ -185,10 +185,12 @@ local function inc(str)
 			or (S and m=='sv')
 			or (C and m=='cl')
 		then
-			include(path)
+			return include(path)
 		end
 	end
 end
+
+_M.json = inc 'json'		'sh'
 
 inc 'cl_util'	'cl'
 inc 'cl_hacks'	'cl'

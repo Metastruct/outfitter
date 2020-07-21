@@ -391,7 +391,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",true)
 	--TODO: REVISIT (Single frame spazzing on local player wear)
 	local recursing
 	local localpl
-	hook.Add("PrePlayerDraw",Tag,function(p)
+	hook.Add("PlayerPostThink",Tag,function(p)
 		localpl = localpl or LocalPlayer()
 		if p~=localpl then
 			return
@@ -1073,12 +1073,12 @@ end
 
 require 'gmaparse'
 local cache={}
-function AlreadyMounted(fpath)
+function AlreadyMounted(fpath,fd)
 	local cached = cache[fpath]
 	if cached~=nil then return cached end
 	
 	if not fpath then return nil, 'no filepath' end
-	local f = file.Open(fpath, 'rb', 'MOD')
+	local f = fd or file.Open(fpath, 'rb', 'MOD')
 	if not f then 
 		if IsUGCFilePath(fpath) then
 			return nil,'ugc'
@@ -1090,6 +1090,7 @@ function AlreadyMounted(fpath)
 	local ok, err = gma:ParseHeader()
 	if not ok then return nil, err end
 	local paths = {}
+
 
 	for i = 1, 2 ^ 14 do
 		local entry, err = gma:EnumFiles(i==1)
@@ -1121,6 +1122,15 @@ function AlreadyMounted(fpath)
 	cache[fpath] = paths or true --  we had to check all the files in the gma, let's not check them again
 	return paths or true
 end
+
+hook.Add("OutfitterDownloadUGCResult",Tag..'_alreadymounter',function(fileid,path,fd)
+	local pos = fd:Tell()
+	local sz = fd:Size()
+	fd:Seek(pos)
+	dbg("Preload AlreadyMounted",fileid,path,fd,fd and string.NiceSize(sz),"ret=",pcall(AlreadyMounted,path,fd))
+	fd:Seek(pos)
+	print"Beep"
+end)
 
 function GMAFiles(fpath)
 	if not fpath then return nil, 'no filepath' end

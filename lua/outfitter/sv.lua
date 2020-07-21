@@ -129,7 +129,7 @@ if not game.IsDedicated() and not game.SinglePlayer() then
 	end)
 end
 
-CreateConVar("_outfitter_version","0.9.2",FCVAR_NOTIFY)
+CreateConVar("_outfitter_version","0.9.3",FCVAR_NOTIFY)
 resource.AddSingleFile "materials/icon64/outfitter.png"
 
 
@@ -137,7 +137,7 @@ function TestOutfitsOnBots()
 	local t = {
 		{ "models/player/fillipuster/fillipuster.mdl",1982247237},
 		{ "models/player/mikier/renamon.mdl",599541401},
-		{ "models/pechenko_121/deadpool/chr_deadpoolclassic.mdl",200700693},
+		{ "models/epangelmatikes/revan/revan.mdl",2018997751},
 		{ "models/pechenko_121/deadpool/chr_deadpool2.mdl",200700693},
 		{ "models/pechenko_121/deadpool/chr_deadpoolclassic.mdl",200700693},
 		{ "models/raptor_player/raptor_player_red.mdl",609850164},

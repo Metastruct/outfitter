@@ -57,6 +57,8 @@ local function steamworks_Download_work( fileid )
 
 		cb = co.newcb()
 		local function cb2(a,b)
+			--SafeRunHook("OutfitterDownloadUGCResult",fileid,a,b)
+
 			dbg("DownloadUGC",fileid,instant==false and "" or "instant?","result",a,b)
 			if instant==nil then
 				path = a
@@ -75,9 +77,9 @@ local function steamworks_Download_work( fileid )
 	end
 
 	dbg("DownloadUGC",fileid,"returning",path,fd,instant and "<CACHED>" or "")
+	
 	return path,fd
 end
-
 
 DownloadUGC = co.worker(steamworks_Download_work)
 
@@ -128,81 +130,6 @@ do -- steamworks fileinfo worker
 end
 
 
-do -- steam webapi fileinfo worker
-	-- TODO: conversion to FileInfo and combination interface and aggregator?t
-
-	local conv = {
-		[""] = "size",
-		[""] = "banned",
-		[""] = "id",
-		[""] = "previewid",
-		[""] = "disabled",
-		[""] = "installed",
-		[""] = "previewsize",
-		[""] = "owner",
-		[""] = "fileid",
-		[""] = "title",
-		[""] = "ownername",
-		[""] = "tags",
-
-		[""] = "updated",
-		[""] = "created",
-		[""] = "description",
-	}
-
-	local function intFileInfo(wsid)
-		local url = "http://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1"
-		local dat = {
-			itemcount = "1",
-			['publishedfileids[0]']=tostring(wsid)
-		}
-
-		local retok,dat, len, hdr, ok = co.post(url,dat)
-
-		if not retok then return nil,dat end
-		if ok ~= 200 then return nil,tostring(ok) end
-
-		local fileinfo = util.JSONToTable(dat)
-
-		if not fileinfo then return nil,'json' end
-		fileinfo = fileinfo.response
-
-		if not fileinfo then return nil,'response' end
-		if fileinfo.result and fileinfo.result~=1 then return false,tostring(fileinfo.result) end
-		if fileinfo.resultcount == 0 then return false,'noresults' end
-
-		fileinfo=fileinfo and fileinfo.publishedfiledetails
-		fileinfo=fileinfo and fileinfo[1]
-
-
-		if not fileinfo then return false,'fileinfo' end
-		if fileinfo.result~=1 then return false,'fileinforesult' end
-
-		do return fileinfo end
-
-		local cb = co.newcb()
-			steamworks.FileInfo(wsid,cb)
-		local fileinfo = co.waitcb(cb)
-
-		return fileinfo
-	end
-	local worker,cache = co.work_cacher_filter(
-		function(key,fileinfo)
-			return (not key) or fileinfo
-		end,
-
-		co.work_cacher(intFileInfo)
-		)
-	co_steamworks_FileInfo2 = co.worker(worker)
-
-	--co(function()
-	--	local ret,err = steamworks.coFileInfoX(569576795)
-	--	if not ret then ErrorNoHalt(tostring(err)..'\n') end
-	--	PrintTable(ret)
-	--end)
-
-end
-
 do
 	local worker,cache = co.work_cacher_filter(
 		function(key,fileinfo)
@@ -221,6 +148,7 @@ do
 		)
 	co_steamworks_VoteInfo = co.worker(worker)
 end
+
 
 function coFetchWS(wsid,skip_maxsize)
 
@@ -259,6 +187,9 @@ function coFetchWS(wsid,skip_maxsize)
 		dbg("steamworks.FileInfo",wsid,"->",fileinfo)
 		if istable(fileinfo) then
 			dbg("","title",fileinfo.title)
+			if fileinfo.error then
+				dbg("","error",fileinfo.error)
+			end
 			dbg("","owner",fileinfo.owner)
 			dbg("","tags",fileinfo.tags)
 			dbg("","size",string.NiceSize(fileinfo.size or 0))
@@ -270,13 +201,19 @@ function coFetchWS(wsid,skip_maxsize)
 			--TODO: Check banned
 			--TODO: Check popularity before mounting
 
-			local banned = fileinfo.banned
 			local installed = fileinfo.installed
 			local disabled = fileinfo.disabled
-			if banned then
+			
+			if fileinfo.banned then
 				dbge(wsid,"BANNED!?")
 				return SYNC(dat,cantmount(wsid,"banned"))
 			end
+			
+			if next(fileinfo.children or {}) then
+				dbge(wsid,"dependencies")
+				return SYNC(dat,cantmount(wsid,"dependencies"))
+			end
+			
 			if created<60*60*24*7 then
 				dbg(wsid,"WARNING: ONE WEEK OLD ADDON. NOT ENOUGH TIME FOR WORKSHOP MODERATORS.")
 			end
@@ -293,6 +230,14 @@ function coFetchWS(wsid,skip_maxsize)
 		return SYNC(dat,cantmount(wsid,"fileinfo"))
 	end
 
+	if fileinfo.error and fileinfo.error ~="" then
+		return SYNC(dat,cantmount(wsid,"fileinfo: "..tostring(fileinfo.error)))
+	end
+	
+	if tonumber(fileinfo.size or 0)==0 or tonumber(fileinfo.size or 0)==0 then
+		return SYNC(dat,cantmount(wsid,"undownloadable"))
+	end
+	
 	local maxsz = outfitter_maxsize:GetFloat()
 	maxsz = maxsz*1000*1000
 

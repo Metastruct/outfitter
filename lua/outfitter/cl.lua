@@ -2,7 +2,7 @@ local Tag='outfitter'
 local NTag = 'OF'
 
 module(Tag,package.seeall)
-
+	
 	
 -- Incoming new outfit
 -- We dont' know if model or wsid exist
@@ -117,6 +117,7 @@ function ChangeOutfitThread(pl)
 	co.waittick() -- detach, need to check player validity after this
 	
 	for i=1,8192 do
+		assert(i<8000,"loop fuckup")
 		
 		if i>1 then
 			co.sleep(.5)

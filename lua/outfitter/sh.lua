@@ -335,6 +335,18 @@ function Player.OutfitSetInfo(pl,mdl,wsid,skin,bodygroups)
 
 end
 
+local function filt(ok,err,...)
+	if not ok then
+		ErrorNoHalt(err..'\n')
+		return nil
+	end
+	return err,...
+end
+
+function SafeRunHook(...)
+	return filt(xpcall(hook.Run,debug.traceback,...))
+end
+
 --- Crashing code detector thingy
 --TODO: Stack, blacklist of files
 
@@ -344,14 +356,14 @@ function InitCrashSys()
 	local CrashingTagv = Tag..'ing2v'
 	
 	local function SAVE(t)
-		local s= util.TableToJSON(t)
+		local s= json.encode(t)
 		util.SetPData("0",Tag,s)
 	end
 	
 	local function LOAD()
 		local s= util.GetPData("0",Tag,false)
 		if not s or s=="" then return {} end
-		local t = util.JSONToTable(s)
+		local t = json.decode(s)
 		return t
 	end
 	

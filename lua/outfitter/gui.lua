@@ -741,14 +741,14 @@ function GUIClearHistory()
 end
 
 local function SAVE(t)
-	local s= util.TableToJSON(t)
+	local s= json.encode(t)
 	util.SetPData("0",Tag,s)
 end
 
 local function LOAD()
 	local s= util.GetPData("0",Tag,false)
 	if not s or s=="" then return {} end
-	local t = util.JSONToTable(s)
+	local t = json.decode(s)
 	return t or {}
 end
 
