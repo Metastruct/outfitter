@@ -562,7 +562,7 @@ end
 -- duplicated from two different functions, etc
 function coDoAutowear()
 	local dat = util.GetPData("0",Tag..'_autowear')
-	if not dat then return end
+	if not dat or dat=="" or dat=="nil" then return end
 	local t = json.decode(dat)
 	if not t then return end
 	if not t.mdl then return end

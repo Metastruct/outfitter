@@ -501,7 +501,7 @@ function PANEL:Init()
 	cont:SetTall(24)
 	cont:Dock(BOTTOM)
 		
-	local b = vgui.Create('DButton',mdllist,'Bodyogroups button')
+	local b = vgui.Create('DButton',mdllist,'Bodygroups button')
 		function b.Refresh(b)
 			-- poor man's pcall
 			co(function()
@@ -749,7 +749,7 @@ end
 
 local function LOAD()
 	local s= util.GetPData("0",Tag,false)
-	if not s or s=="" then return {} end
+	if not s or s=="" or s=="nil" then return {} end
 	local t = json.decode(s)
 	return t or {}
 end

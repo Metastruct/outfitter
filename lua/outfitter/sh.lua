@@ -362,7 +362,7 @@ function InitCrashSys()
 	
 	local function LOAD()
 		local s= util.GetPData("0",Tag,false)
-		if not s or s=="" then return {} end
+		if not s or s=="" or s=="nil" then return {} end
 		local t = json.decode(s)
 		return t
 	end
