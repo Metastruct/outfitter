@@ -1126,6 +1126,7 @@ function AlreadyMounted(fpath,fd)
 end
 
 hook.Add("OutfitterDownloadUGCResult",Tag..'_alreadymounter',function(fileid,path,fd)
+	if not fileid or not path or not fd then return end
 	local pos = fd:Tell()
 	local sz = fd:Size()
 	fd:Seek(pos)
