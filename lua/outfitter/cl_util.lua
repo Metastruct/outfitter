@@ -1079,6 +1079,7 @@ function AlreadyMounted(fpath,fd)
 	
 	if not fpath then return nil, 'no filepath' end
 	local f = fd or file.Open(fpath, 'rb', 'MOD')
+	assert(not fd or f==fd)
 	if not f then 
 		if IsUGCFilePath(fpath) then
 			return nil,'ugc'
@@ -1104,8 +1105,9 @@ function AlreadyMounted(fpath,fd)
 		assert(path)
 		paths[#paths + 1] = path
 	end
-	gma:Close()
-	
+	if not fd then
+		gma:Close()
+	end
 	if #paths >= 2^16 then
 		return nil,'Over 2^16 files???'
 	end
@@ -1129,7 +1131,6 @@ hook.Add("OutfitterDownloadUGCResult",Tag..'_alreadymounter',function(fileid,pat
 	fd:Seek(pos)
 	dbg("Preload AlreadyMounted",fileid,path,fd,fd and string.NiceSize(sz),"ret=",pcall(AlreadyMounted,path,fd))
 	fd:Seek(pos)
-	print"Beep"
 end)
 
 function GMAFiles(fpath)

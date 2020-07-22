@@ -131,7 +131,7 @@ local PANEL = {}
 function PANEL:Init()
 	
 	local functions = self:Add('DPanel','settings')
-	functions:Dock(LEFT)
+	functions:Dock(TOP)
 	functions:SetWidth(300)
 	functions:SetHeight(300)
 	functions:DockMargin(4,1,24,0)
@@ -179,8 +179,10 @@ function PANEL:Init()
 		l:DockMargin(1,1,1,1)
 		l:SetWrap(true)
 		l:SetTooltip[[Title of the chosen workshop addon]]
-		l:SetText("Please choose a workshop addon")
+		l:SetText("1. Choose a workshop addon")
 		l:SetTall(44)
+		l:SetFont"BudgetLabel"
+		l:SetTextColor(Color(255,255,255,255))
 		
 		
 	
@@ -634,18 +636,18 @@ function PANEL:Init()
 		
 		
 	
-	local div = self:Add"DHorizontalDivider"
+	local div = self:Add"DVerticalDivider"
 	div:Dock( FILL )
 	
 	functions:Dock(NODOCK)
 	sheet:Dock(NODOCK)
 	div:SetCookieName(Tag)
-	div:SetLeft( functions )
-	div:SetRight( sheet )
-	div:SetDividerWidth( 4 ) --set the divider width. DEF: 8
-	div:SetLeftMin( 150 )	 --set the minimun width of left side
-	div:SetRightMin( 0 )
-	div:SetLeftWidth( 300 )
+	div:SetTop( functions )
+	div:SetBottom( sheet )
+	div:SetDividerHeight( 8 )
+	div:SetTopMin( 150 )
+	div:SetBottomMin( 150 )
+	div:SetTopHeight( 300 )
 	
 end
 
@@ -939,28 +941,26 @@ function PANEL:Init()
 	
 	self:SetCookieName"ofp"
 	self:SetTitle"Outfitter"
-	self:SetMinHeight(290)
+	self:SetMinHeight(400)
 	self:SetMinWidth(312)
-	self:SetPos(32,32)
+	self:SetPos(8,8)
 	self:SetDeleteOnClose(false)
 	self.btnMinim:SetEnabled(true)
 	self.btnMaxim:SetEnabled(true)
 	local had_max = self:GetCookie( "pmax", "" ) == '1'
 	
 	if had_max then
-		self:SetSize(640,400)
+		self:SetSize(313,ScrH()-16)
 	else
-		self:SetSize(313,293)
+		self:SetSize(313,ScrH()-16)
 	end
 	 
 	self.btnMaxim.DoClick=function()
-		self:SetSize(640,400)
+		self:SetSize(313,ScrH()-16)
 		self:SetCookie( "pmax", '1' )
 		had_max = true
-		self:CenterHorizontal()
 	end
 	
-	self:CenterHorizontal()
 	
 	if not had_max then
 		self.btnMaxim.PaintOver = function(b,w,h)
@@ -974,8 +974,7 @@ function PANEL:Init()
 		end
 	end
 	self.btnMinim.DoClick=function()
-		self:SetSize(313,293)
-		self:CenterHorizontal()
+		self:SetSize(313,ScrH()-16)
 	end
 	self:SetDraggable( true )
     self:SetSizable( true )

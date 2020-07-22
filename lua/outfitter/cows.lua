@@ -43,7 +43,8 @@ local function steamworks_Download_work( fileid )
 	local instant
 	local path,fd
 	local cb
-
+	local done
+	
 	-- retry
 	for i=0,4 do
 		if path then break end
@@ -57,8 +58,9 @@ local function steamworks_Download_work( fileid )
 
 		cb = co.newcb()
 		local function cb2(a,b)
-			--SafeRunHook("OutfitterDownloadUGCResult",fileid,a,b)
-
+			SafeRunHook("OutfitterDownloadUGCResult",fileid,a,b)
+			if done then return end
+			
 			dbg("DownloadUGC",fileid,instant==false and "" or "instant?","result",a,b)
 			if instant==nil then
 				path = a
@@ -66,11 +68,20 @@ local function steamworks_Download_work( fileid )
 				instant = true
 				return
 			end
+			done = true
 			cb(a,b)
 		end
 		dbgn(2,"DownloadUGC",fileid,"START")
 		steamworks.DownloadUGC( fileid, cb2 )
 		if instant==nil then
+			timer.Simple(60*3,function()
+				if done then return end
+				dbg("DownloadUGC",fileid,"TIMEOUT (WIP)")
+				UIWarnDownloadFailures(wsid)
+
+				--cb2(false,false)
+				--done=true
+			end)
 			instant = false
 			path,fd = co.waitcb(cb)
 		end

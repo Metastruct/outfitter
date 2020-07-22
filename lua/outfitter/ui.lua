@@ -678,3 +678,13 @@ function coDoAutowear()
 	return true
 end
 
+local warned
+function UIWarnDownloadFailures(wsid)
+	wsid=tostring(wsid or "0")
+	SetUIFetching(wsid,false,"TIMEOUT ERROR")
+	SOUND("common/warning.wav")
+	if not warned then
+		warned=true
+		chat.AddText(Color(255,100,100,255),"!!! ALERT !!! ",Color(255,144,144,255),"Workshop download may have timed out (a steam bug). Open downloads tab in steam and check if GarrysMod workshop updating has paused, try resuming it. More info: https://steamcommunity.com/workshop/filedetails/discussion/882463775/3096727865549498026/ Other downloads will not resume before this is done.")
+	end	
+end

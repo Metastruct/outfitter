@@ -91,11 +91,6 @@ end
 
 local credits = {
 	{
-		"Python1320",
-		"76561197986413226",
-		[[The guy who wrote all this madness]],
-	},
-	{
 		"Willox",
 		"76561197998909316",
 		[[Facepunch dude who made this possible]],
@@ -116,9 +111,13 @@ local credits = {
 		"76561197960279927",
 		[[<Garry :D> You guys are crazy WTF]],
 	},{
+		"Python1320",
+		"76561197986413226",
+		[[The guy who wrote all this madness]],
+	},{
 		"Meta Construct",
-		{'76561198047188411',"http://metastruct.uk.to"},
-		[[For testing server and being the inspiration and nagging reminder to continue outfitter]],
+		{'76561198047188411',"http://metastruct.net"},
+		[[The programming community that made outfitter possible]],
 	},
 }
 
@@ -188,8 +187,8 @@ function PANEL:GenDesc()
 	local txt = ("Workshop cache: %d addons!"):format(amt)
 	lbl_desc:SetText(txt)
 	lbl_desc:DockMargin(4,4,4,4)
-	--lbl_desc:SetFont(fdesc)
-	lbl_desc:SetDark(true)
+	lbl_desc:SetTextColor(Color(255,255,255,255))
+	lbl_desc:SetFont"BudgetLabel"
 	lbl_desc:SetAutoStretchVertical(true)
 	lbl_desc:SetWrap(true)
 	lbl_desc:Dock(TOP)
@@ -252,7 +251,7 @@ function PANEL:GenAbout(entry)
 	
 	local pnl = vgui.Create('DPanel',self)
 	
-	local ftitle,fdesc = 'huddefault','default'
+	local ftitle,fdesc = 'TargetID','default'
 	
 	self:AddItem(pnl)
 	pnl:SetTall(140)
