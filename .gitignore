@@ -2,6 +2,7 @@
 /icon.jpg
 /*.gma
 *.zip
+*.gma
 /outfitter
 /node_modules
 /dist

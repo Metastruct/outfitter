@@ -103,6 +103,10 @@ local credits = {
 		"76561198053556165",
 		[[Help with initial outfitter prototyping]],
 	},{
+		"Henke",
+		"76561198000730944",
+		[[Found anim fix alternative]],
+	},{
 		"Facepunch forums",
 		{'76561197960279927','http://steamcommunity.com/groups/facepunch'},
 		[[For helping with all the LAU selflessly and also for emotional support over the years for all of us. Lots of stuff would not have been possible without!]],
@@ -113,7 +117,7 @@ local credits = {
 	},{
 		"Python1320",
 		"76561197986413226",
-		[[The guy who wrote all this madness]],
+		[[The guy who wrote this madness]],
 	},{
 		"Meta Construct",
 		{'76561198047188411',"http://metastruct.net"},

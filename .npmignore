@@ -7,3 +7,4 @@ addon.json
 ci.sh
 package-lock.json
 dist
+*.gma

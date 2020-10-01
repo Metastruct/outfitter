@@ -20,6 +20,6 @@
 		".gitignore",
 		"*.txt",
 		"*.cmd*",
-		"*.gma*"
+		"*.gma"
 	]
 }

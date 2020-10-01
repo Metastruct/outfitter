@@ -457,6 +457,14 @@ function PANEL:Init()
 		check:DockMargin(1,4,1,1)
 		local d_2 = check
 		
+	local check = AddS( "DCheckBoxLabel" )
+	 	check:SetConVar(Tag.."_animfix_oldmethod")
+		check:SetText( "Legacy: Use fullupdate for local player animations")
+		check:SizeToContents()
+		check:SetTooltip[[Previously we needed a fullupdate to fix animations. Now a different technique is used.]]
+
+		check:DockMargin(1,4,1,1)
+		
 	local check = AddS( "DButton" )
 	 	check:SetText( "FIX: Clear models blacklist") 
 		check:DockMargin(1,4,1,1)
@@ -473,13 +481,21 @@ function PANEL:Init()
 		end
 		check:SetImage'icon16/transmit_error.png'
 		
+	local check = AddS( "DButton" )
+	 	check:SetText( "FIX: Local player animations") 
+		check:DockMargin(1,4,1,1)
+		check.DoClick=function()
+			FixLocalPlayerAnimations()
+		end
+		check:SetImage'icon16/transmit_error.png'
+		
 	local b = Add('DButton','thirdperson')
 		b:SetText("#tool.camera.name")
 		b:SetTooltip[[Enables/disable thirdperson (if one is installed)]]
 
 		b.DoClick=function() ToggleThirdperson() end
 		b:DockMargin(16,2,16,1)
-		b:SetImage'icon16/eye.png'
+		b:SetImage'icon16/magnifier.png'
 	
 	
 	
@@ -569,18 +585,18 @@ function PANEL:Init()
 		b:SetText("#Autowear")
 		b:Dock(FILL)
 		b:SizeToContents()
-		b.DoClick= function()
-			SetAutowear()
-		end
-		b.DoRightClick = function()
+		b.DoClick = function()
 			local m = DermaMenu()
+				m:AddOption("#set_autowear",function()
+					SetAutowear()
+				end):SetIcon'icon16/vcard_edit.png'
 				m:AddOption("#Wear autowear",function()
 					if co.make() then return end
 					coDoAutowear()
-				end):SetIcon'icon16/bin.png'
+				end):SetIcon'icon16/transmit_go.png'
 			m:Open()
 		end
-		b:SetImage'icon16/disk.png'
+		b:SetImage'icon16/user_suit.png'
 	
 	
 	--------------------------------------------------
@@ -1166,7 +1182,6 @@ end)
 
 -- button --
 
---TODO: Integrate better?
 
 
 local icon = "icon64/outfitter.png"

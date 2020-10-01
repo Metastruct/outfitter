@@ -9,9 +9,9 @@ GOING THROUGH WITHOUT REJECT !outfitter 187243854
 OUTFITTER REJECTS
 	191146401 -- noattachments
 	164449803 -- hip
-	503568129
-	393931403
-	252519802
+	
+	
+	
 	Strict mode?
 
 	(partially fixed) 1367741116 ragdoll lags to hell

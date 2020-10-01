@@ -315,6 +315,7 @@ function MountWS( path )
 		]]
 
 	assert(path,'no file given')
+	assert(DidCrash,"Outfitter has not initialized properly??? Contact Python1320")
 	local crashed = DidCrash("mountws",path)
 
 	dbg("MountWS",path,crashed and "CRASHED, BAILING OUT")

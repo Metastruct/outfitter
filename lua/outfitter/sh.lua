@@ -425,7 +425,7 @@ function InitCrashSys()
 	
 	SetFailsafe()
 	
-	OnInitialize(function() ErrorNoHalt(err) end)
+	util.OnInitialize(function() ErrorNoHalt(err) end)
 end
 if CLIENT then
 	InitCrashSys()

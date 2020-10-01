@@ -21,11 +21,13 @@ function TranslateError(err,...)
 	return err
 end
 
+
 function Fullupdate()
 	timer.Create(Tag..'fullupdate',.2,1,function()
 		UIFullupdate()
 		LocalPlayer():ConCommand("record removeme",true)
 		RunConsoleCommand'stop'
+		
 	end)
 end
 
@@ -83,6 +85,23 @@ do
 	end
 end
 
+do
+	local outfitter_animfix_oldmethod = CreateClientConVar("outfitter_animfix_oldmethod","0",true)
+	function UseOldAnimFixMethod()
+		return outfitter_animfix_oldmethod:GetBool()
+	end
+	function FixLocalPlayerAnimations()
+		if UseOldAnimFixMethod() then
+			return Fullupdate()
+		end
+		
+		-- credits to Henke for finding a possible "fix"
+		local state = LocalPlayer():GetPredictable()
+		LocalPlayer():SetPredictable(not state)
+		LocalPlayer():SetPredictable(state)
+	end
+end
+	
 do
 	-- -1: server preference
 	-- 0: force disable distance check
@@ -340,7 +359,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",true)
 				
 			-- need to fullupdate or it doesn't reset either
 			if pl==LocalPlayer() then
-				Fullupdate()
+				FixLocalPlayerAnimations()
 			end
 			
 			return true
@@ -366,7 +385,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",true)
 		if pl==LocalPlayer() and curmdl ~= mdl then
 			LazyFullupdate(mdl)
 			if pl:GetNWBool("IsListenServerHost",false) or not mdl then
-				Fullupdate()
+				FixLocalPlayerAnimations()
 			end
 		end
 		
@@ -822,7 +841,7 @@ function ThinkFullupdate()
 			dbg("Fullupdate","Became valid",needmdl,CurTime()-_twhen)
 			needmdl = nil
 			
-			Fullupdate()
+			FixLocalPlayerAnimations()
 		end
 	end
 	
