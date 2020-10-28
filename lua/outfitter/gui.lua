@@ -485,7 +485,7 @@ function PANEL:Init()
 	 	check:SetText( "FIX: Local player animations") 
 		check:DockMargin(1,4,1,1)
 		check.DoClick=function()
-			FixLocalPlayerAnimations()
+			FixLocalPlayerAnimations(true)
 		end
 		check:SetImage'icon16/transmit_error.png'
 		

@@ -90,11 +90,11 @@ do
 	function UseOldAnimFixMethod()
 		return outfitter_animfix_oldmethod:GetBool()
 	end
-	function FixLocalPlayerAnimations()
-		if UseOldAnimFixMethod() then
+	function FixLocalPlayerAnimations(allow_old)
+		if allow_old and UseOldAnimFixMethod() then
 			return Fullupdate()
 		end
-		
+		dbgn(8,"FixLocalPlayerAnimations()",allow_old and "allow_old" or "")
 		-- credits to Henke for finding a possible "fix"
 		local state = LocalPlayer():GetPredictable()
 		LocalPlayer():SetPredictable(not state)
@@ -359,7 +359,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",true)
 				
 			-- need to fullupdate or it doesn't reset either
 			if pl==LocalPlayer() then
-				FixLocalPlayerAnimations()
+				FixLocalPlayerAnimations(true)
 			end
 			
 			return true
@@ -385,7 +385,7 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",true)
 		if pl==LocalPlayer() and curmdl ~= mdl then
 			LazyFullupdate(mdl)
 			if pl:GetNWBool("IsListenServerHost",false) or not mdl then
-				FixLocalPlayerAnimations()
+				FixLocalPlayerAnimations(true)
 			end
 		end
 		
@@ -841,7 +841,7 @@ function ThinkFullupdate()
 			dbg("Fullupdate","Became valid",needmdl,CurTime()-_twhen)
 			needmdl = nil
 			
-			FixLocalPlayerAnimations()
+			FixLocalPlayerAnimations(true)
 		end
 	end
 	

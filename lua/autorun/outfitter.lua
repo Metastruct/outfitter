@@ -51,7 +51,8 @@ TODO
 	
 	mdl parse further to prevent easy crashing
 	
-	
+	[OF ERROR] @lua/outfitter/cl_util.lua:792: GMAPlayerModels Disagreement X:\g\steam\steamapps\workshop\content\4000\2242241647/ena_pm7.gma models/player/ena/ch/ena_carm.mdl
+
 	More sounds / notifications
 		npc/vort/claw_swing1.wav
 

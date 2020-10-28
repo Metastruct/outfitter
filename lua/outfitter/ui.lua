@@ -152,7 +152,7 @@ local function Command(com,v1)
 		elseif v1 == "autowear" or v1== "save" then
 			SetAutowear()
 		elseif v1 == "fixanims" then
-			FixLocalPlayerAnimations()
+			FixLocalPlayerAnimations(true)
 		elseif v1 == "fullupdate" then
 			Fullupdate()
 		else
@@ -166,7 +166,7 @@ local function Command(com,v1)
 		if n then
 			UIChoseWorkshop(n)
 		elseif v1 == "fixanims" then
-			FixLocalPlayerAnimations()
+			FixLocalPlayerAnimations(true)
 		elseif v1 == "fullupdate" then
 			Fullupdate()
 		elseif v1 and v1:len()>0 then
