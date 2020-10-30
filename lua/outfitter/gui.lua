@@ -897,7 +897,7 @@ function PANEL:DoRefresh(trychoose_mdl)
 			if mc==MOUSE_RIGHT then
 				local m = DermaMenu()
 					m:AddOption("#open_workshop",function()
-						gui.OpenURL(("steamcommunity.com/workshop/filedetails/?id=%d"):format(wsid))
+						gui.OpenURL(("https://steamcommunity.com/workshop/filedetails/?id=%d"):format(wsid))
 					end):SetIcon'icon16/world.png'
 					m:AddOption("#gameui_delete",function()
 						for n,vv in next,GUIGetHistory() do
