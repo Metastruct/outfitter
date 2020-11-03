@@ -133,7 +133,7 @@ local vgui = GetVGUI()
 		if txt~=self.lasttextobserved then
 			self.lasttextobserved = txt
 			local id = UrlToWorkshopID(txt)
-			print("checked entry, found",id,"from",txt)
+			--print("checked entry, found",id,"from",txt)
 			self.chooseb:SetEnabled(id and true or false)
 			self.chosen_id = tonumber(id)
 
@@ -545,7 +545,7 @@ function PANEL:Init()
 
 		b.DoClick=function() ToggleThirdperson() end
 		b:DockMargin(16,2,16,1)
-		b:SetImage'icon16/camera_go.png'
+		b:SetImage'icon16/find.png'
 	
 	
 	
@@ -646,7 +646,7 @@ function PANEL:Init()
 				end):SetIcon'icon16/transmit_go.png'
 			m:Open()
 		end
-		b:SetImage'icon16/user_suit.png'
+		b:SetImage'icon16/disk.png'
 	
 	
 	--------------------------------------------------

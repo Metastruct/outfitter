@@ -105,9 +105,7 @@ local function cantmount(wsid,reason,...)
 	fetching[wsid] = false
 	res[wsid] = reason or "failed?"
 	if reason~='oversize' or outfitter_maxsize:GetInt()==60 then
-		--dbgelvl(2,"FetchWS","downloading",wsid,"failed for reason:",reason,...)
-		-- this is SERIOUSLY annoying, if you want to let the user know his outfit
-		-- failed to dl an error is not the way.
+		dbgn(3,"FetchWS","downloading",wsid,"failed for reason:",reason,...)
 
 		local err_msg = ("FetchWS downloading %s failed for reason: %s"):format(tostring(wsid), reason)
 		Msg("[Outfitter] ")
@@ -252,7 +250,7 @@ function coFetchWS(wsid,skip_maxsize)
 	local maxsz = outfitter_maxsize:GetFloat()
 	maxsz = maxsz*1000*1000
 
-	if maxsz>0.1 and (fileinfo.size or 0) > maxsz then
+	if maxsz>0.1 and ((fileinfo.size or 0)-1024*1024) > maxsz then
 		skip_maxsize = skip_maxsize or skip_maxsizes[wsid]
 
 		dbg("FetchWS","MAXSIZE",skip_maxsize and "OVERRIDE" or "",wsid,string.NiceSize(fileinfo.size or 0))
