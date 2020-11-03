@@ -72,7 +72,7 @@ do
 		local ok = outfitter_sounds:GetBool()
 		if not ok then return ok end
 		
-		if RealTime()-timestarted<30 then return false end
+		if GetElapsedInteractive()<30 then return false end
 		
 		return ok
 	end
@@ -872,13 +872,25 @@ function LazyFullupdate(mdl)
 	needmdl = mdl
 end
 
+-------------------
+local elapsed=0
+function GetElapsedInteractive()
+	return elapsed
+end
+local function ElapsedThink()
+	local ft = FrameTime()
+	ft = ft>0.3 and 0.3 or ft
+	elapsed=elapsed+ft
+	
+end
+	
 local function Think()
 	ThinkEnforce()
 	ThinkEnforce_DeathRagdoll()
 	ThinkFullupdate()
+	ElapsedThink()
 end
 hook.Add("Think",Tag,Think)
-
 
 
 

@@ -18,13 +18,28 @@ local vgui = GetVGUI()
 			b:SetIcon("icon16/eye.png")
 			b:SetText"CHOOSE THIS WORKSHOP ADDON"
 			b:SizeToContents()
+			
 			b:SetWidth(b:GetSize()+32)
 			b:SetEnabled(false)
+			b:SetCookieName("ofchoosewsbutn")
+			b.hideusehint = b:GetCookie("hideusehint")
+			b.PaintOver = function(b,w,h)
+				if not b.hideusehint and b:IsEnabled() then
+					b:NoClipping(false)
+					surface.SetDrawColor(255,66,22,255*.5 + 255*.3 * (math.sin(RealTime()*7)>0.3 and 1 or -1))
+
+					surface.DrawOutlinedRect(-1,-1,w+2,h+2)
+					surface.DrawOutlinedRect(0,0,w,h)
+					b:NoClipping(true)
+				end
+			end
+		
 			b.DoClick=function(b,mc)
+				b.hideusehint=true
+				b:SetCookie("hideusehint",'1')
 				self:WSChoose()
 			end
 			self:GetBrowser():AddFunction( "gmod", "wssubscribe", function() self:WSChoose() end )
-			
 			
 	end
 

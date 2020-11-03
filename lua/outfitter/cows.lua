@@ -221,8 +221,8 @@ function coFetchWS(wsid,skip_maxsize)
 			end
 			
 			if next(fileinfo.children or {}) then
-				dbge(wsid,"dependencies")
-				return SYNC(dat,cantmount(wsid,"dependencies"))
+				dbg(wsid,"has dependencies, these will not be mounted")
+				--return SYNC(dat,cantmount(wsid,"dependencies"))
 			end
 			
 			if created<60*60*24*7 then
