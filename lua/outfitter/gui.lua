@@ -11,12 +11,15 @@ local vgui = GetVGUI()
 -- GUIWantChangeModel
 	local PANEL = {}
 	function PANEL:Init()
+		local b = vgui.Create('DLabel',self,'msg')
+		b:Dock(TOP)
+		b:SetText"!!!! If you can not choose a workshop addon using the button you can run console command outfitter WORKSHOP_ID_HERE to change your outfit too."
 		local b = vgui.Create('DButton',self.top,'choose button')
 			
 			self.chooseb = b
 			b:Dock(RIGHT)
 			b:SetIcon("icon16/eye.png")
-			b:SetText"CHOOSE THIS WORKSHOP ADDON"
+			b:SetText"#select_character"
 			b:SizeToContents()
 			
 			b:SetWidth(b:GetSize()+32)
@@ -597,7 +600,7 @@ function PANEL:Init()
 	local b = cont:Add('DButton','Autowear button')
 		self.btn_autowear = b
 		b:SetTooltip[[Automatically wear this outfit on servers]]
-		b:SetText("#Autowear")
+		b:SetText("#makepersistent")
 		b:Dock(FILL)
 		b:SizeToContents()
 		b.DoClick = function()
@@ -605,7 +608,7 @@ function PANEL:Init()
 				m:AddOption("#set_autowear",function()
 					SetAutowear()
 				end):SetIcon'icon16/vcard_edit.png'
-				m:AddOption("#Wear autowear",function()
+				m:AddOption("#vgui_htmlreload",function()
 					if co.make() then return end
 					coDoAutowear()
 				end):SetIcon'icon16/transmit_go.png'
@@ -1111,7 +1114,7 @@ function PANEL:PerformLayout(w,h)
 		local bw,bh = b:GetWide(),b:GetTall()
 		local bx,by = b:GetPos()
 		if check then
-			check:SetPos(bx-cw-4,by+bh*.5-ch*.5-4)
+			check:SetPos(bx-cw-4,by+bh*.5-ch*.5-7)
 			check:SetVisible(w>256)
 		end
 	end

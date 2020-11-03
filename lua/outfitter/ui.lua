@@ -141,6 +141,14 @@ local function Command(com,v1)
 	if com=="outfit" or com=="otufit" or com=="oufit" or com=="fouti" then
 		local n = v1 and tonumber(v1:Trim())
 		v1=v1 and v1:lower():Trim()
+		
+		if not n and v1 then
+			n = tostring(v1):match("steamcommunity.*id=([0-9][0-9]+)")
+			if n then
+				n=tonumber(n)
+			end
+		end
+		
 		dbg("outfitcmd",v1,n)
 		if n then
 			UIChangeModelToID(n)
@@ -163,6 +171,12 @@ local function Command(com,v1)
 		
 	elseif com==Tag or com=='outfiter'  or com=='oufiter'  or com=='oufitr' or com=='utfitter' or com=='utfiter' then
 		local n = v1 and tonumber(v1)
+		if not n and v1 then
+			n = tostring(v1):match("steamcommunity.*id=([0-9][0-9]+)")
+			if n then
+				n=tonumber(n)
+			end
+		end
 		if n then
 			UIChoseWorkshop(n)
 		elseif v1 == "fixanims" then
@@ -179,11 +193,22 @@ local function Command(com,v1)
 end
 
 
-concommand.Add(Tag..'_cmd',function(_,_,args)
+concommand.Add(Tag..'_cmd',function(_,_,args,line)
+	if args and args[1]then
+	local n = tostring(line):match("steamcommunity.*id=([0-9][0-9]+)")
+	if n then
+		args={n}
+	end
+	
 	Command('outfit',unpack(args))
 end)
 
-concommand.Add(Tag,function(_,_,args)
+concommand.Add(Tag,function(_,_,args,line)
+	if args and args[1]then
+	local n = tostring(line):match("steamcommunity.*id=([0-9][0-9]+)")
+	if n then
+		args={n}
+	end
 	Command(Tag,unpack(args))
 end)
 
