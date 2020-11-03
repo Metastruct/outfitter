@@ -10,30 +10,48 @@ local vgui = GetVGUI()
 
 -- GUIWantChangeModel
 	local PANEL = {}
+	
+	local matUp = Material"icon16/arrow_up.png"
+	
 	function PANEL:Init()
-		local b = vgui.Create('DLabel',self,'msg')
-		b:Dock(TOP)
-		b:SetText"!!!! If you can not choose a workshop addon using the button you can run console command outfitter WORKSHOP_ID_HERE to change your outfit too."
+		local txt = vgui.Create('DLabel',self,'msg')
+		txt:Dock(TOP)
+		txt:SetText"If the browser does not change URL please paste the URL yourself in the browser bar from your web browser."
+		txt:SetTextColor(Color(0,0,0,255))
 		local b = vgui.Create('DButton',self.top,'choose button')
 			
 			self.chooseb = b
 			b:Dock(RIGHT)
-			b:SetIcon("icon16/eye.png")
+			b:SetIcon("icon16/accept.png")
 			b:SetText"#select_character"
 			b:SizeToContents()
 			
-			b:SetWidth(b:GetSize()+32)
+			b:SetWidth(math.min(b:GetSize(),256)+32)
 			b:SetEnabled(false)
+			b:SetZPos(100)
 			b:SetCookieName("ofchoosewsbutn")
 			b.hideusehint = b:GetCookie("hideusehint")
+			b:NoClipping(false)
 			b.PaintOver = function(b,w,h)
-				if not b.hideusehint and b:IsEnabled() then
-					b:NoClipping(false)
-					surface.SetDrawColor(255,66,22,255*.5 + 255*.3 * (math.sin(RealTime()*7)>0.3 and 1 or -1))
+
+				if b:IsEnabled() then
+					DisableClipping(true)
+					
+					surface.SetDrawColor(30,255,0,30)
+					surface.DrawRect(0,0,w,h)
+					surface.SetDrawColor(66,255,22,255*.5 + 255*.3 * (math.sin(RealTime()*7)>0.3 and 1 or -1))
+					surface.SetDrawColor(66,255,22,255*.5 + 255*.3 * (math.sin(RealTime()*7)>0.3 and 1 or -1))
 
 					surface.DrawOutlinedRect(-1,-1,w+2,h+2)
 					surface.DrawOutlinedRect(0,0,w,h)
-					b:NoClipping(true)
+					
+					
+					surface.SetDrawColor(255,255,255,255)
+					surface.SetMaterial(matUp)
+					local sz = 32
+					surface.DrawTexturedRect(w*.5-sz*.5,h-2+math.sin(RealTime()*7)*4,sz,sz)
+					
+					DisableClipping(false)
 				end
 			end
 		
@@ -59,8 +77,7 @@ local vgui = GetVGUI()
 		
 		-- sharedfiles/filedetails/?id=422403917&searchtext=playermodel
 
-
-		local id = url:match'://steamcommunity.com/sharedfiles/filedetails/.*[%?%&]id=(%d+)' or url:match'://steamcommunity.com/workshop/filedetails/.*[%?%&]id=(%d+)'
+		local id = UrlToWorkshopID(url)
 		self.chooseb:SetEnabled(id and true or false)
 		self.chosen_id = tonumber(id)
 		--print(id)
@@ -109,9 +126,24 @@ local vgui = GetVGUI()
 		end
 		self.BaseClass.Show(self)
 	end
+	function PANEL:CheckEntryURLChange()
+		if self.chooseb:IsEnabled() then return end
+		local txt = self.entry and self.entry:GetValue()
+		if not txt then return end
+		if txt~=self.lasttextobserved then
+			self.lasttextobserved = txt
+			local id = UrlToWorkshopID(txt)
+			print("checked entry, found",id,"from",txt)
+			self.chooseb:SetEnabled(id and true or false)
+			self.chosen_id = tonumber(id)
+
+		end
+		
+	end
+	
 	function PANEL:Think()
 		self.BaseClass.Think(self)
-		--print(self.LoadedURL)
+		self:CheckEntryURLChange()
 	end
 	vgui.Register(Tag,PANEL,'custombrowser')
 
@@ -183,9 +215,9 @@ function PANEL:Init()
 		b.PaintOver = function(b,w,h)
 			if not next(self.mdllist:GetLines()) then
 				b:NoClipping(false)
-				surface.SetDrawColor(255,66,22,255*.5 + 255*.3 * math.sin(RealTime()*4))
+				surface.SetDrawColor(140,255,140,255*.5 + 255*.3 * math.sin(RealTime()*4))
 
-				surface.DrawOutlinedRect(-1,-1,w+1,h+1)
+				surface.DrawOutlinedRect(-1,-1,w+2,h+2)
 				surface.DrawOutlinedRect(0,0,w,h)
 				b:NoClipping(true)
 			end
@@ -513,7 +545,7 @@ function PANEL:Init()
 
 		b.DoClick=function() ToggleThirdperson() end
 		b:DockMargin(16,2,16,1)
-		b:SetImage'icon16/magnifier.png'
+		b:SetImage'icon16/camera_go.png'
 	
 	
 	
@@ -605,7 +637,7 @@ function PANEL:Init()
 		b:SizeToContents()
 		b.DoClick = function()
 			local m = DermaMenu()
-				m:AddOption("#set_autowear",function()
+				m:AddOption("#makepersistent",function()
 					SetAutowear()
 				end):SetIcon'icon16/vcard_edit.png'
 				m:AddOption("#vgui_htmlreload",function()
@@ -993,10 +1025,10 @@ function PANEL:Init()
 		self:SetSize(640,400)
 		self:SetCookie( "pmax", '1' )
 		had_max = true
-		self:CenterHorizontal()
+		self:CenterVertical()
 	end
 	
-	self:CenterHorizontal()
+	self:CenterVertical()
 	
 	if not had_max then
 		self.btnMaxim.PaintOver = function(b,w,h)
@@ -1011,7 +1043,8 @@ function PANEL:Init()
 	end
 	self.btnMinim.DoClick=function()
 		self:SetSize(313,293)
-		self:CenterHorizontal()
+		self:CenterVertical()
+		
 	end
 	self:SetDraggable( true )
     self:SetSizable( true )
@@ -1114,7 +1147,7 @@ function PANEL:PerformLayout(w,h)
 		local bw,bh = b:GetWide(),b:GetTall()
 		local bx,by = b:GetPos()
 		if check then
-			check:SetPos(bx-cw-4,by+bh*.5-ch*.5-7)
+			check:SetPos(bx-cw-4,by+bh*.5-ch*.5+1)
 			check:SetVisible(w>256)
 		end
 	end

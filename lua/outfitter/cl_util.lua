@@ -899,14 +899,22 @@ hook.Add("Think",Tag,Think)
 
 local viewing
 local view={}
+local lastt
 function CalcView(pl,pos,oang,fov)
-	local speedup = 60
-	local t = RealTime()*speedup
+	local speedup = 20
+	local off = GetGUIInteractionOffset()
+	off = off and -off*speedup*math.pi*8
+		
+	local speedytime = RealTime()*speedup
+	
+	local t = (off and lastt or speedytime) + (off or 0)
+	lastt = off and lastt or speedytime
+	
 	t=( t )%360
 	local slowdown= math.sin(t/360*math.pi*2 +math.pi + math.pi*.1)*speedup*.80
 	
 	local ang = Angle(15, ((t - slowdown) + LocalPlayer():GetAngles().y)%360,0)
-	view.origin = pos - ang:Forward()*111
+	view.origin = pl:GetPos()+Vector(0,0,pl:OBBMaxs().z*.5) - ang:Forward()*65 - ang:Right()*20
 	view.fov = fov
 	view.angles = ang
 	return view
@@ -930,6 +938,34 @@ function ToggleThirdperson(want)
 	end
 
 end
+
+local off
+function GetGUIInteractionOffset()
+	return off
+end
+local mstartx
+local function GUIMousePressed()
+	mstartx = input.GetCursorPos()
+end
+hook.Add( "GUIMousePressed", Tag, GUIMousePressed )
+
+local function GUIMousePressedThink()
+	if not mstartx then return end
+	local x = input.GetCursorPos()
+	off = (x-mstartx)/ScrW()
+end
+hook.Add( "Think", Tag..'mintoff', GUIMousePressedThink )
+
+local function GUIMouseReleased()
+	off=nil
+	mstartx=nil
+end
+
+hook.Add( "GUIMouseReleased", Tag, GUIMouseReleased )
+
+
+
+
 concommand.Add("outfitter_camera_toggle",function(a,b,c) if c[1] then ToggleThirdperson(tonumber(c[1])) else ToggleThirdperson() end end) 
 
 ------------
@@ -1214,3 +1250,8 @@ function MountGMA(fpath,opt)
 	dbg("game.MountGMA","REAL",fpath)
 	return game_MountGMA(fpath,opt)
 end
+
+
+---------------
+
+

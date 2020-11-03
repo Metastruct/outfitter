@@ -7,13 +7,17 @@ function ServerSuggestDistance()
 	return outfitter_sv_distance:GetBool()
 end
 
+-- Shared Utils
+
+function UrlToWorkshopID(url)
+	if not url or not isstring(url) then return end
+	return url:match'://steamcommunity.com/sharedfiles/filedetails/.*[%?%&]id=(%d+)' or url:match'://steamcommunity.com/workshop/filedetails/.*[%?%&]id=(%d+)'
+end
+
 function HasMDL(mdl)
 	mdl = mdl:gsub("%.mdl$","")
 	return file.Exists(mdl..'.mdl','GAME')
 end
-
-net.Receive(Tag,function(...) if this.OnReceive then OnReceive(...) end end)
-
 
 function SanityCheckNData(mdl,wsid)
 	
@@ -49,6 +53,9 @@ function DecodeOW(str)
 	if o then o=o..'.mdl' end
 	return o,w
 end
+
+
+net.Receive(Tag,function(...) if this.OnReceive then OnReceive(...) end end)
 
 
 -- parse model from file
