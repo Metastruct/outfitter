@@ -194,6 +194,10 @@ end
 
 
 concommand.Add(Tag..'_cmd',function(_,_,args,line)
+	if not line then
+		chat.AddText("[Outfitter] Something is messing with the concommand library (outdated addon?)")
+		line=args[1]
+	end
 	if line:find"https?:$" then
 		MsgC(Color(255,155,111,255),'Invalid usage! ',Color(255,240,240,255),'Please quote the URL. Example: outfitter "https://steamcommunity.com/sharedfiles/filedetails/?id=1234"\n')
 		return
@@ -208,6 +212,10 @@ concommand.Add(Tag..'_cmd',function(_,_,args,line)
 end)
 
 concommand.Add(Tag,function(_,_,args,line)
+	if not line then
+		chat.AddText("[Outfitter] Something is messing with the concommand library (outdated addon?)")
+		line=args[1]
+	end
 	if line:find"https?:$" then
 		MsgC(Color(255,155,111,255),'Invalid usage! ',Color(255,240,240,255),'Please quote the URL. Example: outfitter "https://steamcommunity.com/sharedfiles/filedetails/?id=1234"\n')
 		return
@@ -254,6 +262,10 @@ concommand.Add("outfitter_bodygroups_list",function(pl,_,_,mdl)
 end)
 
 concommand.Add("outfitter_bodygroups_set",function(pl,cmd,args,line)
+	if not line then
+		chat.AddText("[Outfitter] Something is messing with the concommand library (outdated addon?)")
+		line=args[1]
+	end
 	if line:Trim()=="" then 
 		print("Usage: outfitter_bodygroups_set HeadAttachment=0,Backpack=2,Shorts=1")
 		return
