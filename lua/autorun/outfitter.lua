@@ -9,14 +9,14 @@ GOING THROUGH WITHOUT REJECT !outfitter 187243854
 OUTFITTER REJECTS
 	191146401 -- noattachments
 	164449803 -- hip
-	
-	
-	
+
+
+
 	Strict mode?
 
 	(partially fixed) 1367741116 ragdoll lags to hell
 	(partially fixed) OnDeathRagdollCreated Enforce call lags to hell, but without it ragdoll won't get applied force
-		
+
 Worldmodel vanishing
 	is it pac bug or outfitter?
 
@@ -37,20 +37,20 @@ TODO
 		Multiple ws addons single outfit?
 			separate workshop mounter thing
 	Hands model from outfits
-	
+
 	Interlock functions so they don't execute at the same time?
 		At least prevent more than 2 downloads at once
 		LZMA decompress in separate step
-	
+
 	Bodygroups
 	skin
 
 	Allow custom skinning from jpg??
-	
+
 	Whitelist mode for competitive servers
-	
+
 	mdl parse further to prevent easy crashing
-	
+
 	[OF ERROR] @lua/outfitter/cl_util.lua:792: GMAPlayerModels Disagreement X:\g\steam\steamapps\workshop\content\4000\2242241647/ena_pm7.gma models/player/ena/ch/ena_carm.mdl
 
 	More sounds / notifications
@@ -71,7 +71,7 @@ TODO
 
 		Great scott
 		vo/trainyard/kl_morewarn01.wav
-		
+
 ]]
 
 
@@ -85,7 +85,7 @@ local function requireSH(name)
 			timer.Simple(1,function()
 				chat.AddText(Color(200,50,10,255),"OUTFITTER LOADING FAILED:",Color(255,255,255,255),err)
 			end)
-		
+
 		end)
 		return
 	end
@@ -156,6 +156,7 @@ function dbge(...)
 	return dbgelvl(2,...)
 end
 
+local redcolor = Color(255, 0, 0)
 function dbgelvl(lvl,...)
 	--if not outfitter_dbg:GetBool() then return end
 	local caller = debug.getinfo((lvl or 1)) or {}
@@ -168,7 +169,7 @@ function dbgelvl(lvl,...)
 		t[#t+1]=v
 	end
 	local traceback = debug.traceback
-	ErrorNoHalt(traceback(table.concat(t,' '),(lvl or 1))..'\n')
+	MsgC(redcolor, traceback(table.concat(t,' '), (lvl or 1))..'\n')
 end
 
 
@@ -177,11 +178,11 @@ local C=CLIENT
 local function inc(str)
 	return function(m)
 		local path = Tag..'/'..str..'.lua'
-		
+
 		if S and (m=='sh' or m=='cl') then
 			AddCSLuaFile(path)
 		end
-		
+
 		if m == 'sh'
 			or (S and m=='sv')
 			or (C and m=='cl')
