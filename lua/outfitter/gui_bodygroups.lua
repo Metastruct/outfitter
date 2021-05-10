@@ -164,6 +164,8 @@ function PANEL:OnSelected(part,n)
 end
 
 function PANEL:CreatePanels()
+	local activeBodyGroups = LocalPlayer().outfitter_bodygroups or {}
+	
 	for k,part in next,self.parts do
 		
 		if #part.models<2 then continue end
@@ -198,13 +200,10 @@ function PANEL:CreatePanels()
 			if name=="" then
 				pnl:SetZPos(-10)
 			end
-			
-			print(part.name.. ' - ' ..name)
-			
+		
 		end
 		
-		r:SetChecked(1)
-		
+		r:SetChecked((activeBodyGroups[part.name] or 0)+1)
 	end
 end
 

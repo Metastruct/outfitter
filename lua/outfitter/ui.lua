@@ -282,13 +282,21 @@ concommand.Add("outfitter_bodygroups_set",function(pl,cmd,args,line)
 	local mdl = mdlinspect.Open(pl:GetModel())
 	local bodyparts = mdl:BodyParts()
 	local bp = mdlinspect.BodyPartBuilder(bodyparts,0)
+
 	print(table.ToString(t))
+
+	pl.outfitter_bodygroups = {}
+
 	for k,v in next,t do
 		local ok,a,b,c = bp:Set(k,v)
-		if not ok then
+
+		if ok then
+			pl.outfitter_bodygroups[k] = v
+		else
 			Msg("[Set Bodygroup] Failed setting ",k,": ")print(b)
 		end
 	end
+
 	pl:SetBodyGroupData(bp:GetValue())
 	Msg"Bodygroups: "print(bp:GetValue())
 end)
