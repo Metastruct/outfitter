@@ -56,6 +56,7 @@ local PANEL={}
 function PANEL:Init()
 	self.lbl = vgui.Create('DLabel',self,'description')
 	self.lbl:Dock(FILL)
+	self.lbl:SetTextColor(Color(0,0,0,255))
 	self.lbl:SetText"Radio buttons tester"
 
 	self.lbl.Paint=function(self,w,h)
@@ -143,6 +144,8 @@ function PANEL:Refresh()
 	local parts = a:BodyPartsEx()
 	self.parts = parts
 
+	self.skins = a:ParseSkins()
+
 	self:CreatePanels()	
 	self:InvalidateLayout()
 end
@@ -164,9 +167,33 @@ function PANEL:OnSelected(part,n)
 end
 
 function PANEL:CreatePanels()
+
+
+	-- skin
+	local r = self:Add("OFRadioBatton")
+	r.OnSelected=function(r,n) 
+		RunConsoleCommand("outfitter_skin_set",tostring(n))
+		LocalPlayer().outfitter_skin = n
+	end
+	
+	r:SetText("Skin")
+	r:Dock(TOP)
+	r:SizeToContents()
+
+	for id,skindata in pairs(self.skins) do
+		r:AddOption(skindata[1][1],tostring(id))
+	end
+	
+	r:SetChecked(LocalPlayer().outfitter_skin or 1)
+
+	local r = self:Add("EditablePanel")
+	r:SetSize(1,16)
+	r:Dock(TOP)
+	-- bodygroups
 	local activeBodyGroups = LocalPlayer().outfitter_bodygroups or {}
 	
 	for k,part in next,self.parts do
+		
 		
 		if #part.models<2 then continue end
 		
@@ -205,6 +232,9 @@ function PANEL:CreatePanels()
 		
 		r:SetChecked((activeBodyGroups[part.name] or 0)+1)
 	end
+
+
+
 end
 
 
@@ -227,10 +257,10 @@ function GUIOpenBodyGroupOverlay(owner,mdl)
 	if not mdl then
 		local l = UIGetMDLList()
 		if not l then return end
-		print(l)
+		--print(l)
 		local chosen = UIGetChosenMDL()
 		if not chosen then return false end
-		print(chosen)
+		--print(chosen)
 		mdl = l[chosen]
 		if not mdl then return false end
 		mdl = mdl.Name
@@ -246,7 +276,7 @@ function GUIOpenBodyGroupOverlay(owner,mdl)
 	frame:SetSizable( false )
 	frame:SetScreenLock( true )
 	frame:SetDeleteOnClose( true )
-	frame:SetTitle( "Bodygroup selector" )
+	frame:SetTitle( "Bodygroup and skin selector" )
 	frame:ShowCloseButton(false)
 	frame:SetIcon('icon16/group_edit.png')
 	frame.pnlOwner = owner
@@ -269,7 +299,8 @@ function GUIOpenBodyGroupOverlay(owner,mdl)
 	end
 	
 
-	frame:SetSize(250,400)
+	local W,H=250,400
+	frame:SetSize(W,H)
 	frame:SetPos(gui.MousePos())
 	timer.Simple(60,function() 
 		if IsValid(frame) then frame:Remove() end

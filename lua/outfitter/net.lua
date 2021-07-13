@@ -1,7 +1,10 @@
 local Tag='outfitter'
 local NTag = 'OF'
+local NTagSkin = 'OFSKin'
 
 module(Tag,package.seeall)
+_M.NTagSkin=NTagSkin
+_M.NTag=NTag
 
 hook.Add("NetData",Tag,function(...) return NetData(...) end)
 
@@ -27,7 +30,9 @@ if CLIENT then
 	end
 end
 
-if SERVER then return end
+if SERVER then
+	return
+end
 
 function NetData(plid,k,val)
 	if k~=NTag then return end
@@ -143,4 +148,12 @@ end)
 -- I want to tell others about my outfit
 function NetworkOutfit(...)
 	return SHNetworkOutfit(LocalPlayer(),...)
+end
+
+
+
+function RequestSkin(n)
+	net.Start(NTagSkin)
+		net.WriteUInt(n or 1,32)
+	net.SendToServer()
 end

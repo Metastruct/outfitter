@@ -651,7 +651,7 @@ function PANEL:Init()
 		b:Dock(NODOCK)
 		b:SetText("")
 		b:SetSize(24,24)
-		b:SetTooltip[[Choose bodygroups]]
+		b:SetTooltip[[#GameUI_Modify]]
 		b.DoClick= function()
 			GUIOpenBodyGroupOverlay(self) --, b.mdl.Name)
 		end

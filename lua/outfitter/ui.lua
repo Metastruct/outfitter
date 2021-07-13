@@ -266,6 +266,13 @@ concommand.Add("outfitter_bodygroups_list",function(pl,_,_,mdl)
 	MsgN"================"
 end)
 
+concommand.Add("outfitter_skin_set",function(pl,cmd,args,line)
+	n = tonumber(args[1] or 1) or 1
+	RequestSkin(n)
+	pl.outfitter_skin = n
+end)
+
+
 concommand.Add("outfitter_bodygroups_set",function(pl,cmd,args,line)
 	if not line then
 		chat.AddText("[Outfitter] Something is messing with the concommand library (outdated addon?)")
@@ -291,6 +298,7 @@ concommand.Add("outfitter_bodygroups_set",function(pl,cmd,args,line)
 	print(table.ToString(t))
 
 	pl.outfitter_bodygroups = {}
+	--pl.outfitter_skin = 1
 
 	for k,v in next,t do
 		local ok,a,b,c = bp:Set(k,v)
@@ -303,7 +311,6 @@ concommand.Add("outfitter_bodygroups_set",function(pl,cmd,args,line)
 	end
 
 	pl:SetBodyGroupData(bp:GetValue())
-	Msg"Bodygroups: "print(bp:GetValue())
 end)
 
 
@@ -379,10 +386,15 @@ function UICancelAll()
 	RemoveOutfit()
 	EnforceHands()
 	UIClearBodyGroupData()
+	UIClearSkin()
 end
 
 function UIClearBodyGroupData()
 	LocalPlayer():SetBodyGroupData(0)
+end
+function UIClearSkin()
+	LocalPlayer().outfitter_skin = 1
+	RequestSkin(1)
 end
 
 function UIBroadcastMyOutfit()
@@ -404,7 +416,8 @@ function UIChangeModelToID(n,opengui)
 	dbg("UIChangeModelToID",n)
 	
 	UIClearBodyGroupData()
-	
+	UIClearSkin()
+
 	chosen_mdl = nil
 	
 	if not chosen_wsid then
@@ -736,7 +749,11 @@ function coDoAutowear()
 		dbg("SetBodyGroupData",setbodygroupdata)
 		LocalPlayer():SetBodyGroupData(setbodygroupdata)
 	end
-	
+	if skin then
+		skin = tonumber(skin or 1) or 1
+		LocalPlayer().outfitter_skin = skin
+		RequestSkin(skin)
+	end
 	BroadcastMyOutfit()
 
 	return true

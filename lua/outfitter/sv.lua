@@ -1,11 +1,13 @@
 local Tag='outfitter'
 local NTag = 'OF'
+local NTagSkin = 'OFSKin'
 
 
 module(Tag,package.seeall)
 
 util.AddNetworkString(Tag)
 util.AddNetworkString(NTag)
+util.AddNetworkString(NTagSkin)
 
 function RateLimitMessage(pl,rem)
 	local msg = "[Outfitter] you need to wait before sending a new outfit ("..math.ceil(rem).." s remaining)"
@@ -120,6 +122,12 @@ function NetData(pl,k,val)
 	
 	return true
 end
+
+net.Receive(NTagSkin,function(len,pl) 
+	local n = net.ReadUInt(32)
+	dbgn(7,"setskin",pl,n)
+	pl:SetSkin(n)
+end)
 
 if not game.IsDedicated() and not game.SinglePlayer() then
 	hook.Add("OnEntityCreated",Tag,function(e)

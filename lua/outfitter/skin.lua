@@ -9,6 +9,16 @@ SKIN.Author 		= "Python1320"
 SKIN.DermaVersion	= 1
 SKIN.GwenTexture	= Material( "gwenskin/GModDefault.png" )
 
+SKIN.Colours = setmetatable({},{__index=function(t,k)
+	setmetatable(t,{__index=error})
+	SKIN.Colours = nil
+	SKIN.Colours = table.Copy(SKIN.Colours)
+	SKIN.Colours.Window.TitleActive		= Color(0,0,0,255)
+	SKIN.Colours.Window.TitleInactive		= Color(0,0,0,255)
+	
+	return SKIN.Colours[k]
+end})
+
 pcall(require,'urlimage')
 local function URLImage(m)
 	local first=true
@@ -27,8 +37,6 @@ local function URLImage(m)
 end
 local xmashat = URLImage "https://metastruct.github.io/outfitter/xmashat.png"
 function SKIN:PaintFrame( panel, w, h )
-	
-
 	
 	if ( panel.m_bPaintShadow ) then
 	
