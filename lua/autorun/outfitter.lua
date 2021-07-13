@@ -11,7 +11,9 @@ OUTFITTER REJECTS
 	164449803 -- hip
 
 
+	[OF ERROR] @  lua/outfitter/cl_util.lua:792: GMAPlayerModels Disagreement C:\Program Files (x86)\Steam\steamapps\workshop\content\4000\2242241647/ena_pm13_2.gma models/player/ena/ch/ena_carm.mdl
 
+	
 	Strict mode?
 
 	(partially fixed) 1367741116 ragdoll lags to hell
@@ -169,7 +171,11 @@ function dbgelvl(lvl,...)
 		t[#t+1]=v
 	end
 	local traceback = debug.traceback
-	MsgC(redcolor, traceback(table.concat(t,' '), (lvl or 1))..'\n')
+	if outfitter_dbg_tosv:GetBool() or OUTFITTER_DEBUG_VERBOSE then
+		ErrorNoHalt(traceback(table.concat(t,' '), (lvl or 1))..'\n')
+	else
+		MsgC(redcolor, traceback(table.concat(t,' '), (lvl or 1))..'\n')
+	end
 end
 
 
