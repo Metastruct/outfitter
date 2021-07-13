@@ -5,24 +5,24 @@ module(Tag,package.seeall)
 	
 	
 -- Incoming new outfit
--- We dont' know if model or wsid exist
+-- We dont' know if model or download_info exist
 local function RESET(pl)
 	pl:EnforceModel(false)
 	pl.outfitter_mdl = nil
-	pl.outfitter_wsid = nil
+	pl.outfitter_download_info = nil
 	
 	hook.Run("OutfitApply",pl,"","")
 	
 end
 local function SET(pl)
 	
-	local mdl,wsid = pl:OutfitInfo()
+	local mdl,download_info = pl:OutfitInfo()
 	
 	if mdl and not IsEnabled() then return false,"disabled" end
-	if hook.Run("PreOutfitApply",pl,mdl,wsid)==false then return false,"hook" end
+	if hook.Run("PreOutfitApply",pl,mdl,download_info)==false then return false,"hook" end
 	
 	if DidCrash('setmdl',mdl) then
-		dbge("EnforceModel","CRASH",mdl,wsid)
+		dbge("EnforceModel","CRASH",mdl,download_info)
 		return false,"crash"
 	end
 	
@@ -31,13 +31,13 @@ local function SET(pl)
 	CRITICAL(false)
 	
 	pl.outfitter_mdl = mdl
-	pl.outfitter_wsid = wsid
+	pl.outfitter_download_info = download_info
 	if not ret then
-		dbge("SET FAIL?",ret,mdl,wsid)
+		dbge("SET FAIL?",ret,mdl,download_info)
 	end
 	UIOnEnforce(pl)
 	
-	hook.Run("OutfitApply",pl,mdl,wsid)
+	hook.Run("OutfitApply",pl,mdl,download_info)
 	
 	return ret
 end
@@ -71,19 +71,18 @@ local Player = FindMetaTable"Player"
 
 ------- player outfit changing --------
 
-function Player.SetWantOutfit(pl,mdl,wsid,skin,bodygroups)
-	dbg("SetWantOutfit",pl,not mdl and "unset" or ('%q'):format(tostring(mdl)),not wsid and "-" or ('%q'):format(tostring(wsid)))
+function Player.SetWantOutfit(pl,mdl,download_info,skin,bodygroups)
+	dbg("SetWantOutfit",pl,not mdl and "unset" or ('%q'):format(tostring(mdl)),not download_info and "-" or ('%q'):format(tostring(download_info)))
 	
 	assert(pl and pl:IsValid())
 	pl:GetModel()
-	assert((mdl and wsid) or (not mdl and not wsid))
+	assert((mdl and download_info~=nil) or (not mdl and download_info==nil))
 	assert(mdl~="")
-	assert(wsid~=0)
-	assert(wsid~=0)
+	assert(tonumber(download_info)~=0)
 	
-	mdl = mdl and (mdl:gsub("%.mdl$","")..'.mdl') or false
+	mdl = mdl or false
 	
-	pl:OutfitSetInfo(mdl,wsid,skin,bodygroups)
+	pl:OutfitSetInfo(mdl,download_info,skin,bodygroups)
 
 	local thread = pl.outfitter_co_thread
 	
@@ -162,10 +161,10 @@ function ChangeOutfitThreadWorker(pl,hash)
 	assert(pl:OutfitCheckHash(hash))
 	assert(not HBAD(pl,hash))
 	
-	local mdl,wsid,skin,bodygroups = pl:OutfitInfo()
+	local mdl,download_info,skin,bodygroups = pl:OutfitInfo()
 	mdl = mdl or false
 
-	dbg("ChangeOutfit","BEGIN",pl,mdl or "unset",wsid)
+	dbg("ChangeOutfit","BEGIN",pl,mdl or "unset",download_info)
 	
 	-- 1. Check whether we just want to reset
 	if not mdl then RESET(pl) return true end
@@ -181,7 +180,7 @@ function ChangeOutfitThreadWorker(pl,hash)
 		
 		if HBAD(pl,hash) then return false,"outdated" end
 		
-		local ok,err = SET(pl,mdl,wsid,skin,bodygroups)
+		local ok,err = SET(pl,mdl,download_info,skin,bodygroups)
 		if not ok and IsEnabled() then
 			dbge("DoChangeOutfit","Setting model failed, but file.Existed",err,mdl)
 		end
@@ -190,11 +189,11 @@ function ChangeOutfitThreadWorker(pl,hash)
 	end
 	
 	------------ TIME PASSES ONLY HERE -------------
-	local ok, err = NeedWS(wsid,pl,mdl)
+	local ok, err = AcquireAssets(download_info,pl,mdl)
 	if not ok then
-		dbg("DoChangeOutfit","NeedWS failed",err,"continuing...",pl,mdl,wsid)
+		dbg("DoChangeOutfit","NeedWS failed",err,"continuing...",pl,mdl,download_info)
 		if err == 'oversize' then
-			coUIOversizeMsg(pl,wsid)				
+			coUIOversizeMsg(pl,download_info)				
 		end
 	end
 	
@@ -210,7 +209,7 @@ function ChangeOutfitThreadWorker(pl,hash)
 	
 	-- 4. if model doesnt exist then screw it
 	if not HasMDL(mdl) then
-		dbg("DoChangeOutfit","HasMDL()=false",pl,mdl,wsid)
+		dbg("DoChangeOutfit","HasMDL()=false",pl,mdl,download_info)
 		RESET(pl)
 		return false,"mdl"
 	end
@@ -225,11 +224,25 @@ function ChangeOutfitThreadWorker(pl,hash)
 	if HBAD(pl,hash) then return false,"outdated" end
 	
 	-- 7. Actually set the outfit!
-	SET(pl,mdl,wsid,skin,bodygroups)
+	SET(pl,mdl,download_info,skin,bodygroups)
 	
-	dbg("ChangeOutfit","FINISHED",pl,mdl or "unset",wsid)
+	dbg("ChangeOutfit","FINISHED",pl,mdl or "unset",download_info)
 	
 	return true
+end
+
+function AcquireAssets(download_info,pl,mdl)
+	if download_info and tonumber(download_info) then
+		return NeedWS(download_info,pl,mdl)
+	end
+	if IsHTTPURL(download_info) then
+		if AllowedHTTPURL(download_info) then
+			return NeedHTTPGMA(download_info,pl,mdl)
+		else
+			return nil,'URL not allowed: '..tostring(download_info)
+		end
+	end	
+	return nil,'invalid download_info'
 end
 
 function RemoveOutfit()
@@ -239,12 +252,12 @@ end
 
 function BroadcastMyOutfit(a)
 	assert(not a)
-	local mdl,wsid,s,bg = LocalPlayer():OutfitInfo()
-	dbg("BroadcastMyOutfit",mdl,wsid,s,bg)
+	local mdl,download_info,s,bg = LocalPlayer():OutfitInfo()
+	dbg("BroadcastMyOutfit",mdl,download_info,s,bg)
 	
-	NetworkOutfit(mdl,wsid)
+	NetworkOutfit(mdl,download_info)
 	
-	return mdl,wsid
+	return mdl,download_info
 	
 end
 

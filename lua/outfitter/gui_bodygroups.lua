@@ -269,7 +269,7 @@ function GUIOpenBodyGroupOverlay(owner,mdl)
 	end
 	
 
-	frame:SetSize(210,210)
+	frame:SetSize(250,400)
 	frame:SetPos(gui.MousePos())
 	timer.Simple(60,function() 
 		if IsValid(frame) then frame:Remove() end

@@ -48,6 +48,28 @@ do
 	end
 end
 
+do
+	local outfitter_download_notifications = CreateClientConVar("outfitter_download_notifications","0",true,false)
+	function CanDownloadNotification()
+		return outfitter_download_notifications:GetBool()
+	end
+end
+
+
+--TODO: Make outfitter mount all after enabling?
+outfitter_fix_error_players = CreateClientConVar("outfitter_fix_error_players","1",true,true)
+cvars.AddChangeCallback("outfitter_fix_error_players",function(cvar,old,new)
+	
+end)
+
+do
+	local outfitter_fix_error_players = outfitter_fix_error_players
+	function ShouldFixErrorPlayers()
+		return outfitter_fix_error_players:GetBool()
+	end
+end
+
+
 local function AutoWearTimer()
 	if co.make() then return end
 	if OUTFITTER_NO_UI then return end
@@ -176,6 +198,68 @@ do
 	local outfitter_use_autoblacklist = CreateClientConVar("outfitter_use_autoblacklist","0",true)
 	function AutoblacklistEnabled()
 		return outfitter_use_autoblacklist:GetBool()
+	end
+end
+
+--TODO
+do
+	local function proc(data)
+		
+		if istable(data) then data=table.concat(data,"\n") end
+
+		local t= {}
+		for l in data:gmatch'[^\r\n]+' do
+			if #string.Trim(l)>0 then
+				table.insert(t,string.Trim(l):lower())
+			end
+		end
+		return t,table.concat(t,"\n")
+	end
+	local blocklist = proc(file.Read("outfitter_blocklist.txt") or "") or {}
+	function SetTitleBlocklist(str)
+		local thelist,data = proc(str)
+		blocklist = thelist
+		file.Write("outfitter_blocklist.txt",data)
+	end
+	function GetTitleBlocklist()
+		return blocklist
+	end
+	function IsTitleBlocked(title)
+		for _,l in pairs(blocklist) do
+			if title:lower():find(l,1,true) then
+				return l
+			end
+		end
+		return false
+	end
+end
+
+
+do
+	local outfitter_allow_http = CreateClientConVar("outfitter_allow_http","1",true)
+	function CanDownloadViaHTTP()
+		return outfitter_allow_http:GetBool()
+	end
+end
+do
+	local outfitter_allow_unsafe_http = CreateClientConVar("outfitter_allow_unsafe_http","1",true)
+	local whitelist = {}
+	-- TODO: https://github.com/thegrb93/StarfallEx/blob/68527049b110af75ee08020255318099ddda58d5/lua/starfall/permissions/providers_sh/url_whitelist.lua
+	function AllowedHTTPURL(url,bypass_can_download)
+		if not CanDownloadViaHTTP() and bypass_can_download~=true then return false end
+		if outfitter_allow_unsafe_http:GetBool() then return true end
+		return true -- TODO
+	end
+	function AddHTTPWhitelist(str,strtype)
+		if not strtype or strtype=="url" then
+			if not str:find"^https?://" then
+				error("Invalid URL: "..str)
+			end
+		elseif strtype=="pattern" then
+			-- TODO
+		else
+			error("Invalid type: "..tostring(strtype))
+		end
 	end
 end
 
@@ -787,9 +871,9 @@ function GMAPlayerModels(fpath)
 			isplr = false
 		end
 		if not ((ishands and not isplr) or (isplr and not ishands) or (not ishands and not isplr)) then
+			dbg("GMAPlayerModels","unable to categorize",fpath,path,"isHands=",ishands,"isPlayer=",isplr)
 			ishands = false
 			isplr = false
-			dbge("GMAPlayerModels","Disagreement",fpath,path)
 		end
 		dbgn(2,"CategorizeModel",cat,isplr and "player" or ishands and "hands" or "unkn",path)
 		

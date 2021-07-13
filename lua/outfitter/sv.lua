@@ -77,7 +77,7 @@ function NetData(pl,k,val)
 		return false
 	end
 	
-	local mdl,wsid
+	local mdl,download_info
 	if val then
 		
 		if #val>2048*2 or #val==0 then
@@ -85,20 +85,20 @@ function NetData(pl,k,val)
 			return false
 		end
 		
-		mdl,wsid = DecodeOW(val)
+		mdl,download_info = DecodeOutfitterPayload(val)
 		
 	end
 	
-	local ret = hook.Run("CanOutfit",pl,mdl,wsid)
+	local ret = hook.Run("CanOutfit",pl,mdl,download_info)
 	if ret == false then return false end
 	
-	pl:OutfitSetInfo(mdl,wsid)
+	pl:OutfitSetInfo(mdl,download_info)
 	
-	dbg("NetData",pl,"outfit",mdl,wsid)
+	dbg("NetData",pl,"outfit",mdl,download_info)
 	
 	if not val then return true end
 		
-	local ret = SanityCheckNData(mdl,wsid)
+	local ret = SanityCheckNData(mdl,download_info)
 	
 	if ret~=nil then
 		dbg("NetData",pl,"sanity check fail",tostring(val):sub(1,256))
@@ -129,14 +129,14 @@ if not game.IsDedicated() and not game.SinglePlayer() then
 	end)
 end
 
-CreateConVar("_outfitter_version","0.9.9",FCVAR_NOTIFY)
+CreateConVar("_outfitter_version","0.10.1",FCVAR_NOTIFY)
 resource.AddSingleFile "materials/icon64/outfitter.png"
 
 
 function TestOutfitsOnBots()
 	local t = {
+		{ "models/player/gunfirereborn/bandithermit.mdl","https://www.dropbox.com/s/o9skpl86d502yps/new_item_via_crowbar.gma?dl=0"},
 		{ "models/player/fillipuster/fillipuster.mdl",1982247237},
-		{ "models/player/mikier/renamon.mdl",599541401},
 		{ "models/epangelmatikes/revan/revan.mdl",2018997751},
 		{ "models/pechenko_121/deadpool/chr_deadpool2.mdl",200700693},
 		{ "models/pechenko_121/deadpool/chr_deadpoolclassic.mdl",200700693},
@@ -161,9 +161,9 @@ concommand.Add("outfitter_testmode",function(pl)
 	timer.Simple(3,function()
 		if not player.GetBots()[1] then
 			RunConsoleCommand"bot"
-			RunConsoleCommand"bot"
-			RunConsoleCommand"bot"
-			RunConsoleCommand"bot"
+			--RunConsoleCommand"bot"
+			--RunConsoleCommand"bot"
+			--RunConsoleCommand"bot"
 			RunConsoleCommand("bot_zombie",'1')
 		end
 		timer.Simple(1,function()

@@ -82,15 +82,18 @@ function UIOnEnforce(pl)
 end
 
 local fstatus = {}
-function SetUIFetching(wsid,is,FR)
+function SetUIFetching(wsid,is,FR,force)
 	local ID=Tag..wsid
+	local canDlNotify = force or CanDownloadNotification()
 	
 	if is then
 		local title = fstatus[wsid]
 		if title then return end
 		title = true
 		fstatus[wsid] = title
-		notification.AddProgress( ID, "Downloading "..wsid )
+		if canDlNotify then
+			notification.AddProgress( ID, "Downloading "..wsid )
+		end
 		SOUND( 'ui/hint.wav' )
 
 		co(function()
@@ -106,7 +109,9 @@ function SetUIFetching(wsid,is,FR)
 			
 			if not title2 or title2~=title then return end
 			fstatus[wsid] = name
-			notification.AddProgress( ID, name..' (Downloading)' )
+			if canDlNotify then
+				notification.AddProgress( ID, name..' (Downloading)' )
+			end
 			--TODO: Timeout?
 		end)
 
@@ -115,9 +120,9 @@ function SetUIFetching(wsid,is,FR)
 		if not title then return end
 		local _title = title
 		title = title~=true and title or wsid
-		
-		notification.AddProgress( ID, title.." ("..(FR and tostring(FR) or "Finished")..")" )
-		
+		if canDlNotify then
+			notification.AddProgress( ID, title.." ("..(FR and tostring(FR) or "Finished")..")" )
+		end
 		co(function()
 			co.sleep(FR and 4 or 1.5)
 			

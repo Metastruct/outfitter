@@ -277,6 +277,9 @@ function PANEL:Init()
 	local settingspnl = self:Add( "DScrollPanel" )
 		self.settingspnl=settingspnl
 		sheet:AddSheet( "#spawnmenu.utilities.settings", settingspnl, "icon16/cog.png" )
+	local blocklistPanel = self:Add( "EditablePanel" )
+		self.blocklistPanel=blocklistPanel
+		sheet:AddSheet( "#Blocklist", blocklistPanel, "icon16/stop.png" )
 	local infopanel = self:Add( "EditablePanel" )
 		self.infopanel=infopanel
 		infopanel.Think=function()
@@ -300,25 +303,38 @@ function PANEL:Init()
 		end
 		
 		
-		--local settingspnl2 = settingspnl:Add( "DPanel" )
-		--	self.settingspnl2=settingspnl2
-		--	
-		--	local function AddS2(itm,b)
-		--		
-		--		local c= vgui.Create(itm,settingspnl2,b)
-		--		--settingslist:AddItem(c)
-		--		c:Dock(TOP)
-		--		return c
-		--	end
-			
-		mdlhistpanel:DockPadding( 2,1,2,1 )
+	
+	
+	----------------------------------------------------
 
-		--local lbl = controls:Add( "DLabel" )
-		--lbl:SetText( "Player color" )
-		--lbl:SetTextColor( Color( 0, 0, 0, 255 ) )
-		--lbl:Dock( TOP )
-		
-		
+
+	blocklistPanel:DockPadding( 2,1,2,1 )
+
+
+	local txt = blocklistPanel:Add('DLabel','infomsg')
+	txt:Dock(TOP)
+	txt:SetText"Title blocklist"
+	txt:SetWrap(true)
+	txt:SetTextColor(Color(0,0,0,255))
+
+	local TextEntry = blocklistPanel:Add("DTextEntry", "blocklist" )
+	TextEntry:SetSize(100,200)
+	TextEntry:Dock( FILL )
+	TextEntry:SetValue(table.concat(GetTitleBlocklist(),"\n"))
+	TextEntry:SetMultiline(true)
+	TextEntry:SetVerticalScrollbarEnabled(true)
+	TextEntry:SetAllowNonAsciiCharacters(true)
+	TextEntry:SetEditable(true)
+	TextEntry:SetTooltip"Add a banned sentence per line.\n An outfit's title matching any of the sentences will be blocked."
+	TextEntry:SetPlaceholderText"Add a banned sentence per line.\n An outfit's title matching any of the sentences will be blocked."
+	function TextEntry.OnLoseFocus()
+		SetTitleBlocklist(TextEntry:GetValue())
+		TextEntry:SetValue(table.concat(GetTitleBlocklist(),"\n"))
+	end
+	----------------------------------------------------
+
+	mdlhistpanel:DockPadding( 2,1,2,1 )
+
 	local scroll = mdlhistpanel:Add( "DScrollPanel",'mdlhistscroll' )
 	scroll:Dock(FILL)
 	local mdlhist = scroll:Add( "DIconLayout",'mdlhist' )
@@ -366,14 +382,39 @@ function PANEL:Init()
 		local btn_en = check
 		
 	local check = AddS( "DCheckBoxLabel" )
-	 	check:SetConVar(Tag.."_friendsonly")
+		check:SetConVar(Tag.."_friendsonly")
 		check:SetText( "Load only outfits of friends")
 		check:SetTooltip[[When non friend wears an outfit it gets blocked]]
 		check:SizeToContents()
 
 		check:DockMargin(1,4,1,1)
 	local d_5 = check
-	
+
+
+
+	local check = AddS( "DCheckBoxLabel" )
+		check:SetConVar(Tag.."_allow_http")
+		check:SetText( "Load outfits from HTTP")
+		check:SetTooltip[[Outfitter by default does not allow HTTP downloads, but can be set to allow them for local testing]]
+		check:SizeToContents()
+
+		check:DockMargin(1,4,1,1)
+
+
+
+
+	local check = AddS( "DCheckBoxLabel" )
+		check:SetConVar(Tag.."_allow_unsafe_http")
+		check:SetText( "Load outfits from untrusted URLs (UNSAFE, may leak IP!!!)")
+		check:SetTooltip[[Outfitter by default does not allow HTTP downloads from everywhere, but can be set to allow them for local testing]]
+		check:SizeToContents()
+
+		check:DockMargin(1,4,1,1)
+
+
+
+
+
 	local check = AddS( "DCheckBoxLabel" )
 	 	check:SetConVar(Tag.."_hands")
 		check:SetText( "Use hands")
@@ -503,7 +544,6 @@ function PANEL:Init()
 		check:SetText( "Autoblacklist")
 		check:SizeToContents()
 		check:SetTooltip[[Blacklists outfits that crashed you automatically]]
-
 		check:DockMargin(1,4,1,1)
 		local d_2 = check
 		
@@ -515,6 +555,14 @@ function PANEL:Init()
 
 		check:DockMargin(1,4,1,1)
 		
+	local check = AddS( "DCheckBoxLabel" )
+		check:SetConVar(Tag.."_download_notifications")
+		check:SetText( "Legacy: Show downloading notifications")
+		check:SizeToContents()
+		check:SetTooltip[[Show downloading notifications when downloading models from the workshop]]
+
+		check:DockMargin(1,4,1,1)
+
 	local check = AddS( "DButton" )
 	 	check:SetText( "FIX: Clear models blacklist") 
 		check:DockMargin(1,4,1,1)
@@ -714,6 +762,8 @@ function PANEL:Init()
 	div:SetLeftMin( 150 )	 --set the minimun width of left side
 	div:SetRightMin( 0 )
 	div:SetLeftWidth( 300 )
+
+	--------------------------------------------------
 	
 end
 

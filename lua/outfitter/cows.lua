@@ -238,6 +238,9 @@ function coFetchWS(wsid,skip_maxsize)
 	if not fileinfo or not fileinfo.title then
 		return SYNC(dat,cantmount(wsid,"fileinfo"))
 	end
+	if IsTitleBlocked(fileinfo.title) then
+		return SYNC(dat,cantmount(wsid,"blocked title"))
+	end
 
 	if fileinfo.error and fileinfo.error ~="" then
 		return SYNC(dat,cantmount(wsid,"fileinfo: "..tostring(fileinfo.error)))
@@ -389,6 +392,10 @@ function coDecompress(path)
 	if ok then return ok,ret end
 
 	local safepath = path:gsub("%.cache$",".dat")
+	if safepath==path then
+		safepath = path..'.d.dat'
+	end
+	--assert(safepath~=path,"path change failed")
 	if not file.Exists(safepath,'DATA') then
 
 		file.CreateDir("cache",'DATA')
@@ -533,6 +540,173 @@ function GetQueryUGCChildren(workshopid)
 		t[#t+1]=id
 	end
 	return t
+end
+
+-- TODO: move
+
+
+local function http_wrap(ok,err,okerr,...)
+	if okerr==ok then
+		return true,...
+	elseif okerr==err then
+		return false,...
+	else
+		error"Invalid fetch callback called"
+	end
+end
+
+
+function co_head(url,data,hdr)
+	hdr=hdr or {}
+	--hdr["Accept-Encoding"] = hdr["Accept-Encoding"] or "none"
+
+	local ok,err = co.newcb(),co.newcb()
+	HTTP({
+		method = "HEAD",
+		url = url,
+		headers = hdr,
+		success = function(code, data, headers,...)
+			ok(data, #data, headers,code,...)
+		end,
+		failed = function(...)
+			err(...)
+		end
+	})
+	return http_wrap(ok,err,co.waitone())
+end
+
+-- TODO: MOVE
+-- TODO: cache
+
+
+local function checkhttp(ok,ret,len,hdrs,retcode)
+	if retcode==404 then return nil,'not found' end
+	if retcode~=200 then return nil,"http error",retcode end
+	local size = hdrs["Content-Length"] and tonumber(hdrs["Content-Length"])
+	
+
+	local maxsz = outfitter_maxsize:GetFloat()
+	maxsz = maxsz*1000*1000
+
+	if size and maxsz>=1 and size > math.min(maxsz,1024*1024*1024) then
+		skip_maxsize = skip_maxsize or skip_maxsizes[wsid]
+
+		dbg("NeedHTTPGMA","MAXSIZE",skip_maxsize and "OVERRIDE" or "",wsid,string.NiceSize(size))
+
+		if not skip_maxsize then
+			return nil,"oversize"
+		end
+	end
+	return true
+end
+
+function NeedHTTPGMA(download_info,pl,mdl)
+	if co.make(download_info,pl,mdl) then return end
+	local download_info_actual = MakeURLDownloadable(download_info)
+	-- 1. first try getting header info
+	local filename = download_info:match( "([^/]+)$" )
+
+	local ok,ret,len,hdrs,retcode = co_head(download_info_actual)
+	if ok then
+		local size = hdrs["Content-Length"] and tonumber(hdrs["Content-Length"])
+		local ETag = hdrs["ETag"]
+		local can_range = hdrs["Accept-Ranges"] and hdrs["Accept-Ranges"]:find"bytes" and true or false
+		dbg("NeedHTTPGMA Header",download_info,"ETag=",ETag,"Size=",size,"can_range=",can_range,table.ToString(hdrs))
+
+		local ok,err,err2 = checkhttp(ok,ret,len,hdrs,retcode)
+		if not ok then
+			return ok,err,err2
+		end
+	end
+
+	
+	co.sleep(.1)
+	-- 2. then actually download the thing
+	SetUIFetching(filename,true,nil,true)
+	--dbgn(2,'NeedHTTPGMA','minimized garbage for download',coMinimizeGarbage())
+	local ok,data,len,hdrs,retcode = co.fetch( download_info_actual )	
+	SetUIFetching(filename,false,not ok and ddata or retcode~=200 and "server returned an error" or nil,true)
+	if not ok then return nil,data or 'download failed' end
+
+	-- TODO: lower memory usage instantly rather than this?
+	--dbgn(2,'NeedHTTPGMA','minimized garbage after download',coMinimizeGarbage())
+
+	local ETag = hdrs["ETag"]
+	local ETag = hdrs["Last-Modified"]
+	local can_range = hdrs["Accept-Ranges"] and hdrs["Accept-Ranges"]:find"bytes" and true or false
+	dbg("NeedHTTPGMA Downloaded",download_info,"ETag=",ETag,"Size=",string.NiceSize(len),"can_range=",can_range,table.ToString(hdrs))
+
+	local ok,err,err2 = checkhttp(ok,data,len,hdrs,retcode)
+	if not ok then
+		return ok,err,err2
+	end
+	file.CreateDir("cache",'DATA')
+	file.CreateDir("cache/httpgma",'DATA')
+
+	local sha1 = util.SHA1(data)
+	
+	local path = ("cache/httpgma/%s.dat"):format(sha1)
+	file.Write(path,data)
+	data=nil
+	dbgn(2,'NeedHTTPGMA','minimized garbage after data discard',coMinimizeGarbage())
+	path="data/"..path
+	
+	local ok,err = GMABlacklist(path)
+	if not ok and err=='notgma' and TestLZMA(path) then
+		local newpath,err = coDecompress(path)
+		if not newpath then
+			dbge("NeedWS",download_info,"fail",err)
+			return nil,err or "decompress"
+		end
+		path = newpath
+
+		-- retry --
+		ok,err = GMABlacklist(path)
+		-----------
+	end
+
+	if not ok then
+		dbge("NeedHTTPGMA","GMABlacklist",download_info,"->",err)
+		return
+	end
+
+	local mdls,extra,errlist = GMAPlayerModels(path)
+
+	if not mdls then
+		dbge("NeedHTTPGMA","GMAPlayerModels",download_info,"fail",extra)
+		return false,"mdlparse",extra
+	end
+
+	if not mdls[1] then
+		dbge("NeedHTTPGMA","GMAPlayerModels",download_info,"has no models")
+		return false,"nomdls"
+	end
+
+	local has = not mdl
+	if not has then
+		has = extra.playermodels[mdl] or extra.hands[mdl]
+		if not has then
+			-- TODO: Make enforced
+			local bad = extra.potential[mdl] or extra.discards[mdl]
+			if bad then
+				dbge("NeedHTTPGMA",download_info,path,"requested mdl was discarded",mdl)
+--			elseif GMAHasFile()
+			else
+				dbge("NeedHTTPGMA",download_info,path,"missing requested mdl",mdl)
+			end
+
+		end
+	end
+
+	local ok,err = coMountWS( path )
+
+	if not ok then
+		dbg("NeedHTTPGMA",download_info,"mount fail",err)
+		return nil,err or "mount"
+	end
+
+	return true
+
 end
 
 --[[

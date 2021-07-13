@@ -5,13 +5,13 @@ module(Tag,package.seeall)
 
 hook.Add("NetData",Tag,function(...) return NetData(...) end)
 
-function SHNetworkOutfit(pl,mdl,wsid)
-	assert(not wsid or tonumber(wsid),('ASSERT: mdl=%q wsid=%q'):format(tostring(mdl),tostring(wsid)))
+function SHNetworkOutfit(pl,mdl,download_info)
+	--assert(not download_info or tonumber(download_info),('NetworkOutfit INVALID: mdl=%q download_info=%q'):format(tostring(mdl),tostring(download_info)))
 	
-	if not mdl then mdl=nil wsid=nil end
+	if not mdl then mdl=nil download_info=nil end
 	
-	local encoded = mdl and EncodeOW(mdl and mdl:gsub("%.mdl$",""),wsid)
-	dbg("NetworkOutfit",pl,mdl,wsid,('%q'):format(tostring(encoded)))
+	local encoded,err = mdl and EncodeOutfitterPayload(mdl,download_info)
+	dbg("NetworkOutfit",pl,mdl,download_info,('%q'):format(tostring(encoded)),err)
 	if not encoded then encoded=nil end
 	
 	pl:SetNetData(NTag,encoded)
@@ -42,7 +42,8 @@ function NetData(plid,k,val)
 	OnPlayerVisible(pl,net.IsPlayerVarsBurst())
 	
 end
-	
+
+-- Repeatedly called on all visible players and sometimes invisible players due to dormant player state updates
 function OnPlayerVisible(pl,initial_sendings)
 	
 	-- check for changed outfit data
@@ -61,7 +62,8 @@ function OnPlayerVisible(pl,initial_sendings)
 			--CyclePlayerModel(pl)
 		end)
 	end
-	-- local player is special snowflake
+	
+	-- local player is special snowflake due to engine
 	if pl~=me and new then
 		
 		if not IsEnabled() then
@@ -84,11 +86,11 @@ function OnPlayerVisible(pl,initial_sendings)
 	
 	--if old == true then return end
 	
-	local mdl,wsid
+	local mdl,download_info
 	if new then
-		mdl,wsid = DecodeOW(new)
+		mdl,download_info = DecodeOutfitterPayload(new)
 	
-		local ret = hook.Run("CanOutfit",pl,mdl,wsid)
+		local ret = hook.Run("CanOutfit",pl,mdl,download_info)
 		if ret == false then return end
 		if ret ~= true then
 			if not IsFriendly(pl) then
@@ -101,17 +103,16 @@ function OnPlayerVisible(pl,initial_sendings)
 	
 	pl.outfitter_nvar = new
 	
-	hook.Run("CouldOutfit",pl,mdl,wsid)
+	hook.Run("CouldOutfit",pl,mdl,download_info)
 	
-	dbgn(2,"OnPlayerVisible",pl==me and "SKIP" or pl,mdl or "UNSET?",wsid)
+	dbgn(2,"OnPlayerVisible",pl==me and "SKIP" or pl,mdl or "UNSET?",download_info)
 	
 	if pl==me then
 		dbg("OnPlayerVisible","SKIP","LocalPlayer")
 		return
 	end
 	
-	OnChangeOutfit(pl,mdl,wsid)
-	
+	OnChangeOutfit(pl,mdl,download_info)
 	
 end
 
