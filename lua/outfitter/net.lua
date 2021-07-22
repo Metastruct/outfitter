@@ -153,6 +153,10 @@ end
 
 
 function RequestSkin(n)
+
+	--TODO: don't overwrite client's preferences
+	RunConsoleCommand("cl_playerskin",tostring(n or 1))
+
 	net.Start(NTagSkin)
 		net.WriteUInt(n or 1,32)
 	net.SendToServer()
