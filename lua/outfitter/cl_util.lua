@@ -1324,15 +1324,21 @@ function MountGMA(fpath,opt)
 		else
 			if err then
 				if res~=false then
-					dbg("MountGMA",(("AlreadyMounted(%q) -> %s\n"):format(fpath,err)))
+					dbg("MountGMA",(("AlreadyMounted(%q) returning error, mounting anyway, info: %s\n"):format(fpath,err)))
 				end
 			else
 				-- not mounted, all ok
 			end
 		end
 	end
-	dbg("game.MountGMA","REAL",fpath)
-	return game_MountGMA(fpath,opt)
+	dbg("Running game.MountGMA",fpath)
+	local files,err = game_MountGMA(fpath,opt)
+	dbg("Finished game.MountGMA:",istable(files) and table.Count(files) or files,err)
+	if cache[fpath] ~= nil then
+		dbg("Stuffing AlreadyMounted cache with", fpath, files, err)
+		cache[fpath] = files or err
+	end
+	return files,err
 end
 
 
