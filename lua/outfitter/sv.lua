@@ -116,7 +116,10 @@ function NetData(pl,k,val)
 		dbg("NetData",pl,"ratelimiting",string.NiceTime(math.ceil(math.abs(remaining))))
 		return -- TODO
 	end
-	
+
+	if pl.outfitter_skin then
+		pl:SetSkin(pl.outfitter_skin)
+	end
 	PrecacheModel(mdl)
 	-- CyclePlayerModel(pl) -- it needs to happen after networking
 	
@@ -125,7 +128,10 @@ end
 
 net.Receive(NTagSkin,function(len,pl) 
 	local n = net.ReadUInt(32)
-	dbgn(7,"setskin",pl,n)
+	local has_outfit = pl:OutfitInfo()
+	dbgn(7,"setskin",pl,n,has_outfit and "" or "NO OUTFIT?")
+	pl.outfitter_skin = n
+	if not has_outfit then return end
 	pl:SetSkin(n)
 end)
 
@@ -143,7 +149,6 @@ resource.AddSingleFile "materials/icon64/outfitter.png"
 
 function TestOutfitsOnBots()
 	local t = {
-		{ "models/player/gunfirereborn/bandithermit.mdl","https://www.dropbox.com/s/o9skpl86d502yps/new_item_via_crowbar.gma?dl=0"},
 		{ "models/player/fillipuster/fillipuster.mdl",1982247237},
 		{ "models/epangelmatikes/revan/revan.mdl",2018997751},
 		{ "models/pechenko_121/deadpool/chr_deadpool2.mdl",200700693},
