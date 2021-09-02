@@ -171,9 +171,9 @@ function PANEL:CreatePanels()
 
 	-- skin
 	local r = self:Add("OFRadioBatton")
-	r.OnSelected=function(r,n) 
-		RunConsoleCommand("outfitter_skin_set",tostring(n))
-		LocalPlayer().outfitter_skin = n
+	r.OnSelected=function(r,setskin_id) 
+		RunConsoleCommand("outfitter_skin_set",tostring(setskin_id))
+		LocalPlayer().outfitter_skin = setskin_id
 	end
 	
 	r:SetText("Skin")
@@ -181,7 +181,7 @@ function PANEL:CreatePanels()
 	r:SizeToContents()
 
 	for id,skindata in pairs(self.skins) do
-		r:AddOption(skindata[1][1],tostring(id))
+		r:AddOption(skindata[1][1],tostring(id-1))
 	end
 	
 	r:SetChecked(LocalPlayer().outfitter_skin or 1)
