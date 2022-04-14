@@ -69,6 +69,11 @@ net.Receive(Tag,function(len,pl)
 	
 end)
 
+local function SetSkin(pl, skinid)
+	local skinid = math.Clamp(skinid or 0, 0, 32)
+	if skinid ~= skinid then return end -- nan
+	pl:SetSkin(skinid)
+end
 
 function NetData(pl,k,val)
 	if k~=NTag then return end
@@ -118,7 +123,7 @@ function NetData(pl,k,val)
 	end
 
 	if pl.outfitter_skin then
-		pl:SetSkin(pl.outfitter_skin)
+		SetSkin(pl,pl.outfitter_skin)
 	end
 	PrecacheModel(mdl)
 	-- CyclePlayerModel(pl) -- it needs to happen after networking
@@ -132,7 +137,7 @@ net.Receive(NTagSkin,function(len,pl)
 	dbgn(7,"setskin",pl,n,has_outfit and "" or "NO OUTFIT?")
 	pl.outfitter_skin = n
 	if not has_outfit then return end
-	pl:SetSkin(n)
+	SetSkin(pl,n)
 end)
 
 if not game.IsDedicated() and not game.SinglePlayer() then
