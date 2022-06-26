@@ -46,10 +46,6 @@ end
 local radiobtn=vgui.RegisterTable(PANEL,"EditablePanel")
 
 
- 
-
-
-
 
 
 local PANEL={}
@@ -299,7 +295,7 @@ function GUIOpenBodyGroupOverlay(owner,mdl)
 	end
 	
 
-	local W,H=250,400
+	local W,H=250*2,400 -- TODO: Autoscale GUI
 	frame:SetSize(W,H)
 	frame:SetPos(gui.MousePos())
 	timer.Simple(60,function() 

@@ -285,7 +285,7 @@ concommand.Add("outfitter_bodygroups_set",function(pl,cmd,args,line)
 	
 	local t={}
 	for entry in line:gmatch'[^%,]+' do
-		local k,v = entry:match'([^%="]+)%=(%d)'
+		local k,v = entry:match'([^%="]+)%=(%d%d?)' --TODO: parse a-z
 		if k then
 			t[k]=tonumber(v)
 		end
