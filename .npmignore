@@ -8,3 +8,6 @@ ci.sh
 package-lock.json
 dist
 *.gma
+*.code-workspace
+*.md
+*.json

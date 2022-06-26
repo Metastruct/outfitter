@@ -1,6 +1,6 @@
 {
   "name": "gmod-outfitter",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Garry's Mod Outfitter Addon",
   "peerDependencies": {
     "gmod-imageutils": "git+https://github.com/Metastruct/gmod-imageutils.git",
