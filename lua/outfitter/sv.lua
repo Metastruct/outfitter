@@ -69,12 +69,6 @@ net.Receive(Tag,function(len,pl)
 	
 end)
 
-local function SetSkin(pl, skinid)
-	local skinid = math.Clamp(skinid or 0, 0, 32)
-	if skinid ~= skinid then return end -- nan
-	pl:SetSkin(skinid)
-end
-
 function NetData(pl,k,val)
 	if k~=NTag then return end
 	dbgn(2,"NetData","receiving outfit from",pl)
@@ -132,12 +126,12 @@ function NetData(pl,k,val)
 end
 
 net.Receive(NTagSkin,function(len,pl) 
-	local n = net.ReadUInt(32)
+	local n = net.ReadUInt(10)
 	local has_outfit = pl:OutfitInfo()
 	dbgn(7,"setskin",pl,n,has_outfit and "" or "NO OUTFIT?")
 	pl.outfitter_skin = n
 	if not has_outfit then return end
-	SetSkin(pl,n)
+	pl:SetSkin(n)
 end)
 
 if not game.IsDedicated() and not game.SinglePlayer() then
