@@ -158,6 +158,6 @@ function RequestSkin(n)
 	RunConsoleCommand("cl_playerskin",tostring(n or 1))
 
 	net.Start(NTagSkin)
-		net.WriteUInt(n or 1,32)
+		net.WriteUInt(n or 1, 10)
 	net.SendToServer()
 end
