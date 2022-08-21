@@ -8,8 +8,8 @@ module(Tag,package.seeall)
 
 local PANEL={}
 function PANEL:Init()
-	self:SetSize(16,16)
-	self:Dock(RIGHT)
+	self:SetSize(24,24)
+	--self:Dock(RIGHT)
 end
 
 local CCHECKED = Color(111,255,111,255)
@@ -40,7 +40,8 @@ function PANEL:SetChecked(checked)
 end
 
 function PANEL:PerformLayout()
-	self:SetWide(self:GetTall())
+	--self:SetSize(16,16)
+	--self:SetWide(self:GetTall())
 end
 
 local radiobtn=vgui.RegisterTable(PANEL,"EditablePanel")
@@ -51,10 +52,15 @@ local radiobtn=vgui.RegisterTable(PANEL,"EditablePanel")
 local PANEL={}
 function PANEL:Init()
 	self.lbl = vgui.Create('DLabel',self,'description')
-	self.lbl:Dock(FILL)
-	self.lbl:SetTextColor(Color(0,0,0,255))
+	--self.lbl:Dock(FILL)
+	self.lbl:SetTextColor(Color(255,255,255,255))
+	self.lbl:SetFont("BudgetLabel")	
+	self:SetSpaceX( 2 )
+	self:SetSpaceY( 2 )
+	self:SetBorder( 2 )
+	
 	self.lbl:SetText"Radio buttons tester"
-
+	--self:SetLayoutDir( LEFT )
 	self.lbl.Paint=function(self,w,h)
 		self:NoClipping(false)
 	end
@@ -67,6 +73,8 @@ end
 function PANEL:SetText(t)
 	self.lbl:SetText(t)
 	self.lbl:SizeToContents()
+	self.lbl:SetContentAlignment(5)
+	self.lbl:SetWide(8+self.lbl:GetWide())
 	self.lbl:SetTooltip(t)
 	
 	self:InvalidateLayout()
@@ -92,8 +100,8 @@ function PANEL:AddOption(description,letter)
 end
 
 
-function PANEL:Think()
-end
+--function PANEL:Think()
+--end
 
 function PANEL:SetChecked(n)
 	for k,v in next,self.radios do
@@ -102,13 +110,13 @@ function PANEL:SetChecked(n)
 	self:OnSelected(n)
 end
 
-function PANEL:PerformLayout()
-	self:SizeToChildren(true,true)
-end
+--function PANEL:PerformLayout()
+--	self:SizeToChildren(true,true)
+--end
 
 
 
-vgui.Register('OFRadioBatton',PANEL,"EditablePanel")
+vgui.Register('OFRadioBatton',PANEL,"DIconLayout")
 
 
  
@@ -172,7 +180,7 @@ function PANEL:CreatePanels()
 		LocalPlayer().outfitter_skin = setskin_id
 	end
 	
-	r:SetText("Skin")
+	r:SetText("#skin")
 	r:Dock(TOP)
 	r:SizeToContents()
 
@@ -182,9 +190,9 @@ function PANEL:CreatePanels()
 	
 	r:SetChecked(LocalPlayer().outfitter_skin or 1)
 
-	local r = self:Add("EditablePanel")
-	r:SetSize(1,16)
-	r:Dock(TOP)
+	local divider = self:Add("EditablePanel")
+	divider:SetSize(1,16)
+	divider:Dock(TOP)
 	-- bodygroups
 	local activeBodyGroups = LocalPlayer().outfitter_bodygroups or {}
 	
@@ -204,7 +212,7 @@ function PANEL:CreatePanels()
 							:gsub("[_%.%-]"," ")
 							:gsub("(%s)%s*","%1"))
 		r:Dock(TOP)
-		r:SizeToContents()
+		--r:SizeToContents()
 		local n=0
 		for k,partmdl in next,part.models do
 			local name = partmdl.name
@@ -295,21 +303,22 @@ function GUIOpenBodyGroupOverlay(owner,mdl)
 	end
 	
 
-	local W,H=250*2,400 -- TODO: Autoscale GUI
+	local W,H=250,400 -- TODO: Autoscale GUI
 	frame:SetSize(W,H)
 	frame:SetPos(gui.MousePos())
 	timer.Simple(60,function() 
 		if IsValid(frame) then frame:Remove() end
 	end)
 	 
-	local s=vgui.Create('DScrollPanel',frame)
-	s:Dock(FILL)
+	local scrollpanel=vgui.Create('DScrollPanel',frame)
+	scrollpanel:Dock(FILL)
 	
-	local a=vgui.CreateFromTable(bodygroups_factor,s)
-	a:Dock(TOP)
-	a:SetModel(mdl)
+	local bodygrouper=vgui.CreateFromTable(bodygroups_factor,scrollpanel)
+	bodygrouper:Dock(TOP)
+	bodygrouper:SetModel(mdl)
 	return true
 end
 
 
  
+--GUIOpenBodyGroupOverlay()
