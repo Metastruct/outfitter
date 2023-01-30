@@ -834,7 +834,7 @@ function GUIChooseMDL(n)
 	
 	if choosing then return false end
 	local mdllist = UIGetMDLList()
-	local mdl = mdllist[n]
+	local mdl = mdllist and mdllist[n]
 	if not mdl then return false end
 	
 	co(function()
@@ -1010,6 +1010,7 @@ function PANEL:DoRefresh(trychoose_mdl)
 				m:Open()
 				return
 			elseif mc==MOUSE_LEFT then
+				-- TODO: unblacklist model
 				self:WantOutfitMDL(unpack(v))
 			end
 			
