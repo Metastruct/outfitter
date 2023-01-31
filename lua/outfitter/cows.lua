@@ -4,7 +4,16 @@ local Tag='outfitter'
 module(Tag,package.seeall)
 
 function IsUGCFilePath(path)
-	return path:find("^.:") or path:find("^[%\\%/]") or false
+	if path:find("^.:") or path:find("^[%\\%/]") then
+		return true
+	else
+		if path:find("[\\/]content[\\/]4000[\\/]") then
+			ErrorNoHalt("fixme\n")
+			return true
+		end
+		
+		return false
+	end
 end
 
 -- External decompression helper (nerfed by http.Fetch)
@@ -165,16 +174,20 @@ function coFetchWS(wsid,skip_maxsize)
 		skip_maxsizes[wsid] = true
 	end
 
+	-- fetch cache ("promise/future") (no double-fetching)
 	local dat = fetching[wsid]
 
 	if dat then
 		if dat==true then
+			-- true: already fetched
 			return res[wsid] or true
 		elseif istable(dat) then
+			-- become a waiter
 			local cb = co.newcb()
 			dat[#dat+1] = cb
 			return co.waitcb()
 		elseif dat==false then
+			-- already failed, retry or cancel if because of size (TODO: retry at most every N seconds?)
 			local res = res[wsid]
 			local canskip = res=="oversize" and skip_maxsize
 			if not canskip then
@@ -225,6 +238,9 @@ function coFetchWS(wsid,skip_maxsize)
 			
 			if created<60*60*24*7 then
 				dbg(wsid,"WARNING: ONE WEEK OLD ADDON. NOT ENOUGH TIME FOR WORKSHOP MODERATORS.")
+				if IsParanoidMode(1) then
+					return SYNC(dat,cantmount(wsid,"new_addon"))
+				end
 			end
 			if disabled then
 				dbgn(3,"FileInfo",wsid,"Disabled?")
@@ -277,10 +293,11 @@ function coFetchWS(wsid,skip_maxsize)
 		return SYNC(dat,cantmount(wsid,"download"))
 	end
 
-	if not IsUGCFilePath(path) and not file.Exists(path,'MOD') then
+	if not IsUGCFilePath(path) and file.Size(path,'MOD')<=512 then
 		return SYNC(dat,cantmount(wsid,"file"))
 	end
 
+	-- Decompress manually
 	if not decomp_in_steamworks then
 		local err
 		path,err = coDecompress(path)
@@ -294,7 +311,34 @@ function coFetchWS(wsid,skip_maxsize)
 		end
 	end
 
+	-- Strip lua files for exploit protection
+	-- TODO: decompression
+	if ShouldStripLuaFromDownloads() and fd then
+		local accu=0
+		collectgarbage('step',40000)
+		local ret,err,err2 = gma.rebuild_nolua(fd,wsid,false,function(sz)
+			if sz==true or sz==false then
+				collectgarbage('step',40000)
+			end
+			accu=accu+(tonumber(sz) or 0)
+			if accu>1024*1024 then
+				accu=0
+				collectgarbage('step',20000)
+			end
+		end)
+		dbg("gma.rebuild_nolua",ret,err,err2)
+		if isstring(ret) then
+			path=ret
+		elseif ret==true then
+			dbg("gma.rebuild_nolua","No rebuild necessary or possible")
+		else
+			dbge("gma.rebuild_nolua",err,err2)
+		end
+	end
+
 	local result = path
+
+	-- mark as fetched
 	fetching[wsid] = true
 	res[wsid] = result
 
@@ -599,6 +643,7 @@ local function checkhttp(ok,ret,len,hdrs,retcode)
 	end
 	return true
 end
+
 
 function NeedHTTPGMA(download_info,pl,mdl)
 	if co.make(download_info,pl,mdl) then return end

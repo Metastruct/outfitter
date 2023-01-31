@@ -236,6 +236,20 @@ end
 
 
 do
+	local outfitter_extra_safe_downloading = CreateClientConVar("outfitter_extra_safe_downloading","0",true)
+	function IsParanoidMode()
+		return outfitter_extra_safe_downloading:GetBool()
+	end
+end
+
+do
+	local outfitter_download_strip_lua = CreateClientConVar("outfitter_download_strip_lua","1",true)
+	function ShouldStripLuaFromDownloads()
+		return outfitter_download_strip_lua:GetBool()
+	end
+end
+
+do
 	local outfitter_allow_http = CreateClientConVar("outfitter_allow_http","1",true)
 	function CanDownloadViaHTTP()
 		return outfitter_allow_http:GetBool()

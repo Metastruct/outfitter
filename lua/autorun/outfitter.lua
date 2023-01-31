@@ -201,6 +201,7 @@ end
 _M.json = inc 'json'		'sh'
 
 inc 'cl_util'	'cl'
+inc 'gma'		'sh'
 inc 'cl_hacks'	'cl'
 inc 'sh'		'sh'
 inc 'sv'		'sv'
@@ -216,3 +217,6 @@ inc 'gui'		'cl'
 
 inc 'net'		'sh'
 
+gma.rebuild_nolua_cache_purge(function(path)
+	dbgn(4,"purging: "..tostring(path))
+end)
