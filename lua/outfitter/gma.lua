@@ -71,7 +71,7 @@ local function build(meta, gma, collect)
 	assert(meta.requested_content == "", "TODO")
 	gma:Write(meta.requested_content .. '\0') -- Required content
 	gma:Write((meta.name or "") .. '\0') -- Name
-	gma:Write(util.TableToJSON(meta.description) .. '\0') -- Description
+	gma:Write((meta.description and util.TableToJSON(meta.description) or '{"type":"model","tags":["fun"],"description":"description"}') .. '\0') -- Description
 	gma:Write((meta.author or "") .. '\0') -- Author
 	gma:Write(meta.addon_version) -- Addon version
 	local idx = 0
