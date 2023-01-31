@@ -68,7 +68,6 @@ local function build(meta, gma, collect)
 	gma:Write(string.char(meta.gma_version)) -- GMA version
 	gma:Write(meta.steamid) -- SteamID
 	gma:Write(meta.timestamp) -- Timestamp
-	assert(meta.requested_content == "", "TODO")
 	gma:Write(meta.requested_content .. '\0') -- Required content
 	gma:Write((meta.name or "") .. '\0') -- Name
 	gma:Write((meta.description and util.TableToJSON(meta.description) or '{"type":"model","tags":["fun"],"description":"description"}') .. '\0') -- Description

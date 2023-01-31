@@ -349,7 +349,9 @@ function PANEL:Init()
 		mdlhist.OnRowSelected = function(mdlhist,n,itm)
 			local dat = GUIGetHistory()[n]
 			if not dat then return end
-			self:WantOutfitMDL(unpack(dat))
+			if not self:WantOutfitMDL(unpack(dat)) then
+				surface.PlaySound"common/warning.wav"
+			end
 		end
 
 		function mdlhist:Clear()
@@ -834,7 +836,7 @@ function GUIChooseMDL(n)
 	
 	if choosing then return false end
 	local mdllist = UIGetMDLList()
-	local mdl = mdllist and mdllist[n]
+	local mdl = mdllist[n]
 	if not mdl then return false end
 	
 	co(function()
@@ -1010,8 +1012,9 @@ function PANEL:DoRefresh(trychoose_mdl)
 				m:Open()
 				return
 			elseif mc==MOUSE_LEFT then
-				-- TODO: unblacklist model
-				self:WantOutfitMDL(unpack(v))
+				if not self:WantOutfitMDL(unpack(v))then
+					surface.PlaySound"common/warning.wav"
+				end
 			end
 			
 		end
