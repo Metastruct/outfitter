@@ -4,6 +4,17 @@
   "description": "Garry's Mod Outfitter Addon",
   "peerDependencies": {
     "gmod-imageutils": "git+https://github.com/Metastruct/gmod-imageutils.git",
+    "gmod-sqliteext": "git+https://github.com/Metastruct/sqliteext.git",
+    "co": "git+https://github.com/Metastruct/glua_utilities.git#co",
+    "coext": "git+https://github.com/Metastruct/glua_utilities.git#coext",
+    "helpers": "git+https://github.com/Metastruct/glua_utilities.git#helpers",
+    "gmod-clientchatcommand": "git+https://github.com/Metastruct/glua_utilities.git#clientchatcommand",
+    "netext": "git+https://github.com/Metastruct/glua_utilities.git#netext",
+    "webbrowser": "git+https://github.com/Metastruct/glua_utilities.git#webbrowser"
+  },
+  "dependencies": {
+    "gmod-imageutils": "git+https://github.com/Metastruct/gmod-imageutils.git",
+    "gmod-sqliteext": "git+https://github.com/Metastruct/sqliteext.git",
     "co": "git+https://github.com/Metastruct/glua_utilities.git#co",
     "coext": "git+https://github.com/Metastruct/glua_utilities.git#coext",
     "helpers": "git+https://github.com/Metastruct/glua_utilities.git#helpers",
@@ -13,6 +24,7 @@
   },
   "bundledDependencies": {
     "gmod-imageutils": "git+https://github.com/Metastruct/gmod-imageutils.git",
+    "gmod-sqliteext": "git+https://github.com/Metastruct/sqliteext.git",
     "co": "git+https://github.com/Metastruct/glua_utilities.git#co",
     "coext": "git+https://github.com/Metastruct/glua_utilities.git#coext",
     "helpers": "git+https://github.com/Metastruct/glua_utilities.git#helpers",
@@ -38,14 +50,5 @@
   "bugs": {
     "url": "https://github.com/Metastruct/outfitter/issues"
   },
-  "homepage": "https://github.com/Metastruct/outfitter#readme",
-  "dependencies": {
-    "co": "git+https://github.com/Metastruct/glua_utilities.git#co",
-    "coext": "git+https://github.com/Metastruct/glua_utilities.git#coext",
-    "gmod-clientchatcommand": "git+https://github.com/Metastruct/glua_utilities.git#clientchatcommand",
-    "gmod-imageutils": "git+https://github.com/Metastruct/gmod-imageutils.git",
-    "helpers": "git+https://github.com/Metastruct/glua_utilities.git#helpers",
-    "netext": "git+https://github.com/Metastruct/glua_utilities.git#netext",
-    "webbrowser": "git+https://github.com/Metastruct/glua_utilities.git#webbrowser"
-  }
+  "homepage": "https://github.com/Metastruct/outfitter#readme"
 }
