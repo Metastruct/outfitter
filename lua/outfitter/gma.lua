@@ -164,7 +164,7 @@ end
 
 file.CreateDir("cache")
 file.CreateDir("cache/workshop")
-function rebuild_nolua_cache_purge(cb)
+local function rebuild_nolua_cache_purge(cb)
     local files = file.Find("cache/workshop/*.nolua.gma.dat","DATA")
     for k,v in pairs(files or {}) do
         local path = ("cache/workshop/%s"):format(v)
@@ -225,6 +225,7 @@ _M.build = build
 _M.parse = parse
 _M.process = process
 _M.rebuild_nolua = rebuild_nolua
+_M.rebuild_nolua_cache_purge = rebuild_nolua_cache_purge
 
 local TEST = false
 

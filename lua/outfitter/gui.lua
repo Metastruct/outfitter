@@ -196,33 +196,72 @@ function PANEL:Init()
 		return c
 	end
 	
-	
-	local b = functions:Add('DButton','choose button')
-		self.btn_choose = b
+	do
+		local b = functions:Add('DButton','choose button')
+			self.btn_choose = b
 
-		b:Dock(TOP)
-		b:SetText("#open_workshop")
-		b:SetTooltip[[Choose a workshop addon which contains an outfit]]
+			b:Dock(TOP)
+			b:SetText("#open_workshop")
+			b:SetTooltip[[Choose a workshop addon which contains an outfit]]
 
-		b.DoClick= function()
-			
-			GUIWantChangeModel(nil,true)
-			
-			self:GetParent():Hide()
-		end
-		b:DockMargin(0,4,1,8)
-		b:SetImage'icon16/folder_user.png'
-		b.PaintOver = function(b,w,h)
-			if not next(self.mdllist:GetLines()) then
-				b:NoClipping(false)
-				surface.SetDrawColor(140,255,140,255*.5 + 255*.3 * math.sin(RealTime()*4))
-
-				surface.DrawOutlinedRect(-1,-1,w+2,h+2)
-				surface.DrawOutlinedRect(0,0,w,h)
-				b:NoClipping(true)
+			b.DoClick= function()
+				
+				GUIWantChangeModel(nil,true)
+				
+				self:GetParent():Hide()
 			end
-		end
-	
+			b:DockMargin(0,4,1,8)
+			b:SetImage'icon16/folder_user.png'
+			b.PaintOver = function(b,w,h)
+				if not next(self.mdllist:GetLines()) then
+					b:NoClipping(false)
+					surface.SetDrawColor(140,255,140,255*.5 + 255*.3 * math.sin(RealTime()*4))
+
+					surface.DrawOutlinedRect(-1,-1,w+2,h+2)
+					surface.DrawOutlinedRect(0,0,w,h)
+					b:NoClipping(true)
+				end
+			end
+	end
+	do
+		local b = functions:Add('DTextEntry','url input')
+			self.input_mdlsource = b
+
+			b:Dock(TOP)
+			b:SetText("")
+			b:SetPlaceholderText("https://steamcommunity.com/sharedfiles/filedetails/?id=1234")
+
+			b.OnEnter= function()
+				
+				local url = b:GetValue():Trim()
+				if url =="puze" then 
+					url="https://g2cf.metastruct.net/delme/puze.gma"
+				end
+				local wsid = UrlToWorkshopID(url)
+				dbg("GUI","UrlToWorkshopID",url,wsid)
+				if wsid then
+
+					surface.PlaySound"npc/vort/claw_swing1.wav"
+					UIChoseWorkshop(wsid,true)
+					self:GetParent():Hide()
+				else
+					if IsHTTPURL(url) then
+						if AllowedHTTPURL(url) then
+							self:GetParent():Hide()
+							UIChoseHTTPGMA(url,true)
+						else
+							chat.AddText("This HTTP URL is not in allowlist")					
+							surface.PlaySound"common/warning.wav"
+						end
+					else
+						dbg("Not HTTP URL",url)
+						surface.PlaySound"common/warning.wav"
+					end
+				end
+			end
+			b:DockMargin(0,4,1,8)
+	end
+
 	local l = functions:Add( "DLabel",'chosen' )
 		self.lbl_chosen = l
 		l:Dock(TOP)
@@ -395,9 +434,9 @@ function PANEL:Init()
 
 
 	local check = AddS( "DCheckBoxLabel" )
-		check:SetConVar(Tag.."_allow_http")
-		check:SetText( "Load outfits from HTTP")
-		check:SetTooltip[[Outfitter by default does not allow HTTP downloads, but can be set to allow them for local testing]]
+		check:SetConVar(Tag.."_allow_http_test")
+		check:SetText( "Allow outfits from outside workshop")
+		check:SetTooltip[[Allow HTTP downloads from outside workshop. Unsafe potentially!!!]]
 		check:SizeToContents()
 
 		check:DockMargin(1,4,1,1)
@@ -649,6 +688,7 @@ function PANEL:Init()
 			end)
 		end
 		
+		
 		self.btn_bg= b
 		b:Dock(NODOCK)
 		b:SetText("")
@@ -784,16 +824,21 @@ function PANEL:WantOutfitMDL(wsid,mdl,title)
 	want_wsid = wsid
 	want_mdl = mdl
 	
-	co(function()
+	local worker=co(function()
 		if wanting then return end
 		wanting = true
 		self:GetParent():Hide()
 		dbg("WantOutfitMDL",wanting and "ALREADY WANTING" or "",wsid,mdl,title)
-		UIChoseWorkshop(wsid)
+		local ok,err = xpcall(UIChoseWorkshop,debug.traceback,wsid)
+		if not ok then ErrorNoHalt(err..'\n') wanting=false return end
 		GUIOpen(nil,want_mdl)
 		wanting = false
 	end)
+	
+	return worker
+
 end
+
 
 function PANEL:WSChoose()
 	self:Hide()
@@ -913,7 +958,7 @@ function GUICheckTransmit()
 	local self = gui.content
 	if not self then return end
 	
-	local cansend = UIGetChosenMDL() and UIGetWSID() and UIGetMDLList()
+	local cansend = UIGetChosenMDL() and UIGetDownloadInfoX() and UIGetMDLList()
 	self.btnSendOutfit:SetEnabled2(cansend)
 	self.btn_bg:Refresh()
 end
@@ -928,8 +973,10 @@ function PANEL:DoRefresh(trychoose_mdl)
 
 	local wsid = UIGetWSID()
 	
-	if wsid then
-		co(function()
+	co(function()
+		self.lbl_chosen:SetText("-")
+
+		if wsid and tonumber(wsid) then
 			self.lbl_chosen:SetText( "Loading info..." )
 			local info = co_steamworks_FileInfo(wsid)
 			if not self:IsValid() then return end
@@ -944,10 +991,18 @@ function PANEL:DoRefresh(trychoose_mdl)
 				local str = ("%s (%s)"):format(info.title,string.NiceSize(info.size or 0))
 				self.lbl_chosen:SetText(str)
 			end
-			
-			
-		end)
-	end
+		
+		elseif wsid and #wsid:find"http" then -- it's a gma download
+			local ok,body,len,hdrs,code = co_head(wsid)
+			if ok then
+				self.lbl_chosen:SetText("GMA: Not OK?")
+			else
+				local size = hdrs and hdrs["Content-Length"] and tonumber(hdrs["Content-Length"])
+				self.lbl_chosen:SetText(("GMA HEAD OK (%s)"):format(size and string.NiceSize(size) or "Size Unknown!"))
+			end
+		end
+	end)
+
 	
 	local tm = UITriedMounting()
 	local mdllist = UIGetMDLList()

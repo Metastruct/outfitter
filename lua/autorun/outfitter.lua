@@ -218,5 +218,5 @@ inc 'gui'		'cl'
 inc 'net'		'sh'
 
 gma.rebuild_nolua_cache_purge(function(path)
-	dbgn(4,"purging: "..tostring(path))
+	dbgn(4,"Attempting cleaning cache: "..tostring(path))
 end)

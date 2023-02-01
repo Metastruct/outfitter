@@ -241,7 +241,7 @@ function AcquireAssets(download_info,pl,mdl)
 		else
 			return nil,'URL not allowed: '..tostring(download_info)
 		end
-	end	
+	end
 	return nil,'invalid download_info'
 end
 

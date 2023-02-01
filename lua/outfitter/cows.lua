@@ -473,6 +473,7 @@ end
 
 --TODO: own cache
 function NeedWS(wsid,pl,mdl)
+	assert(tonumber(wsid),"NeedWS invalid wsid: "..tostring(wsid))
 	if co.make(wsid,pl,mdl) then return end
 
 	-- already mounted, don't mount again
@@ -645,12 +646,21 @@ local function checkhttp(ok,ret,len,hdrs,retcode)
 end
 
 
-function NeedHTTPGMA(download_info,pl,mdl)
-	if co.make(download_info,pl,mdl) then return end
-	local download_info_actual = MakeURLDownloadable(download_info)
-	-- 1. first try getting header info
-	local filename = download_info:match( "([^/]+)$" )
+function URLFilename(url)
+	return url:match( "([^/]+)$" )
+end
 
+local http_downloaded={}
+function coFetchGMA(download_info,pl,mdl)
+	if http_downloaded[download_info] then
+		return http_downloaded[download_info]
+	end
+
+
+	local download_info_actual = MakeURLDownloadable(download_info)
+	local filename = URLFilename(download_info) or "noname"..util.CRC(download_info)
+
+	-- 1. first try getting header info to see if we are downloading insanity
 	local ok,ret,len,hdrs,retcode = co_head(download_info_actual)
 	if ok then
 		local size = hdrs["Content-Length"] and tonumber(hdrs["Content-Length"])
@@ -666,6 +676,7 @@ function NeedHTTPGMA(download_info,pl,mdl)
 
 	
 	co.sleep(.1)
+
 	-- 2. then actually download the thing
 	SetUIFetching(filename,true,nil,true)
 	--dbgn(2,'NeedHTTPGMA','minimized garbage for download',coMinimizeGarbage())
@@ -676,10 +687,11 @@ function NeedHTTPGMA(download_info,pl,mdl)
 	-- TODO: lower memory usage instantly rather than this?
 	--dbgn(2,'NeedHTTPGMA','minimized garbage after download',coMinimizeGarbage())
 
+	-- TODO: cache
 	local ETag = hdrs["ETag"]
-	local ETag = hdrs["Last-Modified"]
+	local LastModified = hdrs["Last-Modified"]
 	local can_range = hdrs["Accept-Ranges"] and hdrs["Accept-Ranges"]:find"bytes" and true or false
-	dbg("NeedHTTPGMA Downloaded",download_info,"ETag=",ETag,"Size=",string.NiceSize(len),"can_range=",can_range,table.ToString(hdrs))
+	dbg("NeedHTTPGMA Downloaded",download_info,"ETag=",ETag,"LastModified=",LastModified,"Size=",string.NiceSize(len),"can_range=",can_range,table.ToString(hdrs))
 
 	local ok,err,err2 = checkhttp(ok,data,len,hdrs,retcode)
 	if not ok then
@@ -690,11 +702,11 @@ function NeedHTTPGMA(download_info,pl,mdl)
 
 	local sha1 = util.SHA1(data)
 	
-	local path = ("cache/httpgma/%s.dat"):format(sha1)
-	file.Write(path,data)
+	local path_DATA = ("cache/httpgma/%s.dat"):format(sha1)
+	file.Write(path_DATA,data)
 	data=nil
 	dbgn(2,'NeedHTTPGMA','minimized garbage after data discard',coMinimizeGarbage())
-	path="data/"..path
+	local path="data/"..path_DATA
 	
 	local ok,err = GMABlacklist(path)
 	if not ok and err=='notgma' and TestLZMA(path) then
@@ -743,7 +755,58 @@ function NeedHTTPGMA(download_info,pl,mdl)
 		end
 	end
 
-	local ok,err = coMountWS( path )
+	if ShouldStripLuaFromDownloads() then
+		local accu=0
+		collectgarbage('step',20000)
+		local target_id=sha1:sub(1,32)
+		local fd = file.Open(path_DATA,'rb','DATA')
+		if not fd then
+			return false,"no file"
+		end
+		local ret,err,err2 = gma.rebuild_nolua(fd,target_id,false,function(sz)
+			if sz==true or sz==false then
+				co.waittick()
+				collectgarbage('step',40000)
+				co.waittick()
+			end
+			accu=accu+(tonumber(sz) or 0)
+			if accu>1024*1024 then
+				accu=0
+				collectgarbage('step',20000)
+				co.waittick()
+			end
+		end)
+		
+		fd:Close()
+
+		dbg("gma.rebuild_nolua",ret,err,err2)
+		if isstring(ret) then
+			path=ret
+		elseif ret==true then
+			dbg("gma.rebuild_nolua","No rebuild necessary or possible")
+		else
+			dbge("gma.rebuild_nolua",err,err2)
+			return
+		end
+	end
+	
+	if not path or path==true then return path end
+
+	local ret={path=path,sha1=sha1}
+	http_downloaded[download_info]=ret
+	return ret
+
+end
+
+function NeedHTTPGMA(download_info,pl,mdl)
+	if co.make(download_info,pl,mdl) then return end
+	
+	local data,err,err2,ok = coFetchGMA(download_info,pl,mdl)
+	
+	if not data then return data,err,err2 end
+	if not data.path then return nil,'nopath' end
+
+	ok,err = coMountWS( data.path )
 
 	if not ok then
 		dbg("NeedHTTPGMA",download_info,"mount fail",err)

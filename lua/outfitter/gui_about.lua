@@ -93,7 +93,7 @@ local credits = {
 	{
 		"Willox",
 		"76561197998909316",
-		[[Facepunch dude who made this possible]],
+		[[Ex-Facepunch who gave us the tools to make outfitter]],
 	},{
 		"CapsAdmin",
 		"76561197978977007",
@@ -120,7 +120,7 @@ local credits = {
 		[[The guy who wrote this madness]],
 	},{
 		"Meta Construct",
-		{'76561198047188411',"http://metastruct.net"},
+		{'76561198047188411',"http://metastruct.eu"},
 		[[The programming community that made outfitter possible]],
 	},
 }

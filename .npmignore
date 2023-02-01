@@ -11,3 +11,4 @@ dist
 *.code-workspace
 *.md
 *.json
+node_modules_

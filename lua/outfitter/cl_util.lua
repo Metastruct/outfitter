@@ -250,13 +250,13 @@ do
 end
 
 do
-	local outfitter_allow_http = CreateClientConVar("outfitter_allow_http","1",true)
+	local outfitter_allow_http = CreateClientConVar("outfitter_allow_http_test","0",true)
 	function CanDownloadViaHTTP()
 		return outfitter_allow_http:GetBool()
 	end
 end
 do
-	local outfitter_allow_unsafe_http = CreateClientConVar("outfitter_allow_unsafe_http","1",true)
+	local outfitter_allow_unsafe_http = CreateClientConVar("outfitter_allow_unsafe_http","0",true)
 	local whitelist = {}
 	-- TODO: https://github.com/thegrb93/StarfallEx/blob/68527049b110af75ee08020255318099ddda58d5/lua/starfall/permissions/providers_sh/url_whitelist.lua
 	function AllowedHTTPURL(url,bypass_can_download)
@@ -1024,6 +1024,7 @@ function InThirdperson()
 	return viewing
 end
 
+local off
 function ToggleThirdperson(want)
 	if want==false or (viewing and want==nil) then
 		hook.Remove("CalcView",Tag)
@@ -1031,13 +1032,13 @@ function ToggleThirdperson(want)
 		viewing = false
 	elseif not viewing and want~=false then
 		viewing = true
+		off=nil
 		hook.Add("CalcView",Tag,CalcView)
 		hook.Add("ShouldDrawLocalPlayer",Tag,ShouldDrawLocalPlayer)
 	end
 
 end
 
-local off
 function GetGUIInteractionOffset()
 	return off
 end
@@ -1055,7 +1056,9 @@ end
 hook.Add( "Think", Tag..'mintoff', GUIMousePressedThink )
 
 local function GUIMouseReleased()
-	off=nil
+	if false --[[todo]] then
+		off=nil
+	end
 	mstartx=nil
 end
 

@@ -350,7 +350,7 @@ end
 
 local mdllist
 local handslist
-local chosen_wsid
+local chosen_download_info
 local tried_mounting
 local mount_path
 local chosen_mdl
@@ -370,7 +370,14 @@ function UIGetChosenMDL()
 	return chosen_mdl
 end
 function UIGetWSID()
-	return chosen_wsid
+	return tonumber(chosen_download_info)
+end
+function UIGetDownloadInfo()
+	return not tonumber(chosen_download_info) and chosen_download_info
+end
+
+function UIGetDownloadInfoX()
+	return chosen_download_info
 end
 
 function UICancelAll()
@@ -378,7 +385,7 @@ function UICancelAll()
 	
 	mdllist = nil
 	mdllist_extra = nil
-	chosen_wsid = nil
+	chosen_download_info = nil
 	mount_path = nil
 	tried_mounting = nil
 	chosen_mdl = nil
@@ -420,7 +427,7 @@ function UIChangeModelToID(n,opengui)
 
 	chosen_mdl = nil
 	
-	if not chosen_wsid then
+	if not chosen_download_info then
 		if opengui then GUIOpen() end
 		return UIError"Type only !outfit first to choose workshop addon"
 	end
@@ -434,7 +441,7 @@ function UIChangeModelToID(n,opengui)
 		return UIError"Invalid model index"
 	end
 	
-	assert(mount_path,"mount_path missing for "..tostring(chosen_wsid))
+	assert(mount_path,"mount_path missing for "..tostring(chosen_download_info))
 	local ok,err = coMountWS( mount_path )
 
 	if not ok then
@@ -448,7 +455,7 @@ function UIChangeModelToID(n,opengui)
 	relay_opengui = opengui
 	
 	-- returns instantly, but should be instant anyway
-	OnChangeOutfit(LocalPlayer(),mdl.Name,chosen_wsid)
+	OnChangeOutfit(LocalPlayer(),mdl.Name,chosen_download_info)
 	dbg("EnforceHands?",ShouldHands(),n,mdllist[2]==nil,handslist,handslist and handslist[1])
 	if n==1 and nil==mdllist[2] and handslist and next(handslist)~=nil and ShouldHands() then
 		local _,entry = next(handslist)
@@ -485,10 +492,12 @@ hook.Add("OutfitApply",Tag,function(pl,mdl)
 end)
 
 function UIChoseWorkshop(wsid,opengui)
+	assert(tonumber(wsid))
+	
 	if co.make(wsid,opengui) then return end
 	
 	mdllist = nil
-	chosen_wsid = nil
+	chosen_download_info = nil
 	mount_path = nil
 	tried_mounting = nil
 	chosen_mdl = nil
@@ -569,7 +578,111 @@ function UIChoseWorkshop(wsid,opengui)
 		UIMsg("Got model: "..tostring(MDLToUI(mdls[1].Name)))
 	end
 	
-	chosen_wsid = wsid
+	chosen_download_info = wsid
+	mdllist = mdls
+	mdllist_extra = extramodelinfos
+	handslist = extramodelinfos.hands
+	mount_path = path
+	
+	if mdls[2] then
+		UIMsg"Write !outfit <model number> to choose a model"
+		if opengui then GUIOpen() end
+	else
+		UIChangeModelToID(1,opengui)
+	end
+	
+
+end
+
+function UIChoseHTTPGMA(download_info,opengui)
+	if co.make(download_info,opengui) then return end
+	assert(not tonumber(download_info))
+
+	mdllist = nil
+	chosen_download_info = nil
+	mount_path = nil
+	tried_mounting = nil
+	chosen_mdl = nil
+	
+	local id = URLFilename(download_info) or "httpgma:"..util.CRC(download_info)
+
+	SetUIFetching(id,true)
+		co.sleep(.1)
+			local data,err,err2 = coFetchGMA( download_info )
+		co.sleep(.1)
+	SetUIFetching(id,false,not data and (err and tostring(err) or "FAILED?"))
+	if not data then
+		dbg("UIChoseHTTPGMA",id,"FetchWS failed:",err,err2)
+		if opengui then GUIOpen() end
+		return UIError("Download failed for workshop "..id..": "..tostring(err~=nil and tostring(err) or GetLastMountErr and GetLastMountErr()))
+	end
+	co.sleep(.2)
+	
+	local path = data.path
+	local mdls,extramodelinfos,err = GMAPlayerModels( path )
+	--PrintTable(mdls)
+	
+	if not mdls and extramodelinfos=='notgma' then
+		dbgn(2," TestLZMA(",path,") ==", ("%q"):format(file.Read(path,'GAME'):sub(1,14)),TestLZMA(path) )
+	end
+	if not mdls and extramodelinfos=='notgma' and TestLZMA(path) then
+		local newpath,extramodelinfos = coDecompress(path)
+		if not newpath then
+			if opengui then GUIOpen() end
+			return UIError("Download failed for workshop "..id..": "..tostring(extramodelinfos~=nil and tostring(extramodelinfos) or GetLastMountErr and GetLastMountErr())) 
+		end
+		path = newpath
+		
+		-- retry --
+		mdls,extramodelinfos,err = GMAPlayerModels( path )
+		-----------
+	end
+	
+	
+	if not mdls then
+		dbge("UIChoseHTTPGMA",id,"GMAPlayerModels failed for:",extramodelinfos,err)
+		notification.AddLegacy( '[Outfitter] '..tostring(extramodelinfos=="nomdls" and "no valid models found" or extramodelinfos), NOTIFY_ERROR, 2 )
+		if opengui then GUIOpen() end
+		return UIError("Parsing addon "..id.." failed: "..tostring(extramodelinfos=="nomdls" and "no valid models found" or extramodelinfos))
+	end
+	
+	local ok,err = GMABlacklist(path)
+	if not ok then
+		if opengui then GUIOpen() end
+		return UIError("OUTFIT BLOCKED: "..tostring(err=="oversize vtf" and "Contains too big textures" or err))
+	end
+	
+	if not mdls[1] then
+		dbg("UIChoseHTTPGMA","GMAPlayerModels",id,"no valid models!?")
+		
+		if opengui then GUIOpen() end
+		
+		UIError("Workshop addon "..id.." has no valid playermodels")
+		if extramodelinfos and istable(extramodelinfos) and extramodelinfos.discards and next(extramodelinfos.discards) then
+			for mdl,dat in next,extramodelinfos.discards or {} do
+				mdl = MDLToUI(mdl)
+				if dat.error_vvd then
+					UIError(mdl,":",tostring(TranslateError(dat.error_vvd)))
+				elseif dat.error_player then
+					UIError(mdl,":",tostring(TranslateError(dat.error_player)))
+				end
+			end
+		end
+		
+	end
+	
+	co.sleep(.2)
+	
+	if mdls[2] then
+		UIMsg("Models:")
+		for k,mdl in next,mdls do
+			UIMsg(" "..k..". "..tostring(mdl and MDLToUI(mdl.Name)))
+		end
+	elseif mdls[1] then
+		UIMsg("Got model: "..tostring(MDLToUI(mdls[1].Name)))
+	end
+	
+	chosen_download_info = download_info
 	mdllist = mdls
 	mdllist_extra = extramodelinfos
 	handslist = extramodelinfos.hands
@@ -714,12 +827,12 @@ function coDoAutowear()
 	
 	co.sleep(.2)
 	
-	local chosen_wsid = wsid
+	local chosen_download_info = wsid
 	local handslist = extramodelinfos and extramodelinfos.hands
 	local mount_path = path
 	
 	if not skip_additional_checks then
-		assert(mount_path,"mount_path missing for "..tostring(chosen_wsid))
+		assert(mount_path,"mount_path missing for "..tostring(chosen_download_info))
 		local ok,err = coMountWS( mount_path )
 
 		if not ok then
@@ -732,7 +845,7 @@ function coDoAutowear()
 	UISetSilentApplyModel(mdl)
 	
 	-- returns instantly, but should be instant anyway
-	OnChangeOutfit(LocalPlayer(),mdl,chosen_wsid)
+	OnChangeOutfit(LocalPlayer(),mdl,chosen_download_info)
 	
 	-- cannot enforce hands without crashing at the moment
 	dbg("coDoAutowear","EnforceHands",ShouldHands(),next(handslist or {}))
