@@ -27,18 +27,44 @@ local function parse(gma)
 		fd = gma
 	}
 
-	meta.gma_version = gma:Read(1):byte() -- TODO: GMA version
-	meta.steamid = gma:Read(8) -- TODO: steamid
-	meta.timestamp = gma:Read(8) -- TODO: timestamp
-	meta.requested_content = gma:ReadString() or "" -- TODO: required content
+	meta.gma_version = gma:ReadByte() -- TODO: GMA version
+	if (meta.gma_version or math.huge) > 3 then
+		return nil,'Unsupported gma version: '..(meta.gma_version or -1)
+	end
+	meta.steamid = {gma:ReadULong(),gma:ReadULong()} -- TODO: steamid
+	meta.timestamp = {gma:ReadULong(),gma:ReadULong()} -- TODO: timestamp
+	if meta.gma_version > 1 then
+		meta.required_content = {}
+		for i=1,2 ^ 14 do
+			if i==2^14-1 then
+				return nil,"corrupted file"
+			end
+			str = gma:ReadString()
+			if str=="" then break end
+			if not str then
+				return nil,'corrupted file'
+			end
+			table.insert(meta.required_content,str)
+		end
+	end
+
 	meta.name = gma:ReadString()
 	meta.description = util.JSONToTable(gma:ReadString())
 	meta.author = gma:ReadString()
-	meta.addon_version = gma:Read(4) -- TODO: addon version
+	meta.addon_version = gma:ReadULong() -- TODO: addon version
+	if not meta.addon_version then
+		return nil,'corrupted file'
+	end
 
 	for n = 1, 2 ^ 14 do
 		if n == 2 ^ 14 - 1 then return nil, 'too many files' end
-		if gma:ReadLong() == 0 then break end
+		
+		-- filenum, can ignore
+		local filenum= gma:ReadULong()
+		if filenum == 0 then break end
+		if filenum~=n then
+			return nil,'corrupted filenum'
+		end
 		local filename = gma:ReadString()
 		local file_meta = {}
 		file_meta.filename = filename
@@ -56,6 +82,8 @@ local function parse(gma)
 		file_meta.offset = gma:Tell()
 		gma:Skip(file_meta.size)
 	end
+	--meta.unknown = gma:Read(4)
+
 	--for k, v in pairs(meta.files) do
 	--	print(string.NiceSize(v.size), v.filename)
 	--end
@@ -63,16 +91,63 @@ local function parse(gma)
 	return meta
 end
 
-local function build(meta, gma, collect)
+local function verify_files(meta,collect)
+	if collect then
+		collect(true)
+	end
+	for _, file_meta in pairs(meta.files) do
+		local fd = file_meta.fd or meta.fd
+		fd:Seek(file_meta.offset)
+
+		local data = fd:Read(file_meta.size)
+		if not data or #data ~= file_meta.size then
+			return nil,'read failed'
+		end
+		
+		if file_meta.crc and file_meta.crc~=0 and tostring(util.CRC(data))~=tostring(file_meta.crc) then return false,file_meta end
+		
+		if collect then
+			local datalen = #data
+			data = nil
+			collect(datalen)
+		end
+	end
+	return meta
+end
+
+local function build(meta, gma, collect, no_crc)
+	local pos=0
+	local function add(n)
+		pos=pos+n
+		--assert(pos==gma:Tell())
+		return pos
+	end
 	gma:Write"GMAD" -- GMA Ident 
+	add(4)
 	gma:Write(string.char(meta.gma_version)) -- GMA version
-	gma:Write(meta.steamid) -- SteamID
-	gma:Write(meta.timestamp) -- Timestamp
-	gma:Write(meta.requested_content .. '\0') -- Required content
-	gma:Write((meta.name or "") .. '\0') -- Name
-	gma:Write((meta.description and util.TableToJSON(meta.description) or '{"type":"model","tags":["fun"],"description":"description"}') .. '\0') -- Description
-	gma:Write((meta.author or "") .. '\0') -- Author
-	gma:Write(meta.addon_version) -- Addon version
+	add(1)
+	gma:WriteULong(meta.steamid[1]) -- SteamID
+	gma:WriteULong(meta.steamid[2]) -- SteamID
+	add(8)
+	gma:WriteULong(meta.timestamp[1]) -- Timestamp
+	gma:WriteULong(meta.timestamp[2]) -- Timestamp
+	add(8)
+	if meta.gma_version>1 then
+		--TODO: dummy
+		gma:Write('\0') -- Required content
+		add(1)
+	end
+	local name = (meta.name or "") .. '\0'
+	gma:Write(name) -- Name
+	add(#name)
+	local desc = (meta.description and util.TableToJSON(meta.description) or '{"type":"model","tags":["fun"],"description":"description"}') .. '\0'
+	gma:Write(desc) -- Description
+	add(#desc)
+	local author = (meta.author or "") .. '\0'
+	gma:Write(author) -- Author
+	add(#author)
+	gma:WriteULong(meta.addon_version) -- Addon version
+	add(4)
 	local idx = 0
 
 	if collect then
@@ -81,22 +156,39 @@ local function build(meta, gma, collect)
 
 	for i, file_meta in pairs(meta.files) do
 		idx = idx + 1
+	
 		gma:WriteLong(idx) -- file number
+		add(4)
 		assert(idx == i)
+	
 		gma:Write(file_meta.filename .. "\0") -- filename 
+		add(#file_meta.filename+1)
+
 		assert(file_meta.size < 2 ^ 30)
+	
 		gma:WriteULong(file_meta.size) -- file size 1
 		gma:WriteULong(0) -- file size 2
-		gma:WriteLong(file_meta.crc or 0)
+		add(8)
+	
+		gma:WriteULong(file_meta.crc or 0)
+		add(4)
 	end
 
 	gma:WriteLong(0) -- file number 0 (ends listing)
+	add(4)
 
 	for _, file_meta in pairs(meta.files) do
 		local fd = file_meta.fd or meta.fd
 		fd:Seek(file_meta.offset)
 		local data = fd:Read(file_meta.size)
+		if not data or #data ~= file_meta.size then
+			return nil,'read failed'
+		end
+		
+		if no_crc ~= true and file_meta.crc and file_meta.crc~=0 and tostring(util.CRC(data))~=tostring(file_meta.crc) then return nil,"file corrupted" end
+		file_meta.offset = gma:Tell()
 		gma:Write(data)
+		add(#data)
 
 		if collect then
 			local datalen = #data
@@ -137,19 +229,19 @@ end
 --  - processors: { function(gma_metadata) gma_metadata.name="name changed" return gma_metadata end, ... }
 --  - collect (optional): garbage collection callback (cannot be async if using DownloadUGC)
 local function process(in_fd, out_fd, processors, collect)
-	local meta, err, err2
+	local meta, meta_new, ret, err, err2
 
 	if istable(in_fd) then
 		meta = in_fd
 	else
 		meta, err, err2 = parse(in_fd)
-		if not meta then return meta, err end
+		if not meta then return nil, err end
 	end
 
 	meta.eof = in_fd:EndOfFile()
 
-	for _, process in pairs(processors) do
-		local meta_new, err, err2 = process(meta)
+	for _, processor in pairs(processors) do
+		meta_new, err, err2 = processor(meta)
 		if not meta_new then return nil, err, err2 end
 		if meta_new == true then break end
 		meta = meta_new
@@ -157,7 +249,14 @@ local function process(in_fd, out_fd, processors, collect)
 
 	if meta.error then return nil, meta.error, meta end
 	if meta.ret then return meta end
-	meta.write_size = assert(build(meta, out_fd, collect))
+	
+	ret,err = build(meta, out_fd, collect)
+	
+	if not ret then
+		return nil,err
+	end	
+
+	meta.write_size = ret
 
 	return meta
 end
@@ -197,25 +296,35 @@ local function rebuild_nolua(in_fd, id, always_overwrite, collect)
 		if always_overwrite then return nil, 'not writable' end
 
 		if file.Size(write_path, 'DATA') > 10 then
-			-- likely already mounted!
+			-- likely already mounted!f
 			return mount_path, new_file
 		else
 			return nil, 'not writable'
 		end
 	end
 
-	--TODO: verify! local meta, err = process(in_fd, out_fd, {skip_if_no_lua,strip_lua})
-	local meta, err = process(in_fd, out_fd, {strip_lua}, collect)
+	--TODO:  {skip_if_no_lua,strip_lua}
+	local ok, meta, err = xpcall(process,debug.traceback,in_fd, out_fd, {strip_lua}, collect)
+	if not ok then 
+		err=meta
+		meta=nil
+	end
 
 	out_fd:Close()
 
-	if meta.no_lua then
+	if not meta then 
 		file.Delete(write_path)
-
-		return true
+		return nil,err
 	end
 
-	if not meta then return nil, err end
+	if meta.no_lua then
+		-- TODO: add support back, for now we want to copy every file even if they have no lua in outfitter
+
+		--dbgn(6,"no lua, deleting",write_path)
+		--file.Delete(write_path)
+		--return true
+	end
+
 	new_file = true
 
 	return mount_path, new_file
@@ -231,25 +340,62 @@ local TEST = false
 
 if TEST then
 	local process = process
-	local workshop_id = "1135026995"
+	print("\n")for _,workshop_id in pairs{2570101454,1135026995} do
+		
+		steamworks.DownloadUGC(workshop_id, function(path, gma_fd)
+			print("\n\n=========",workshop_id,"==========")--local out_fd = file.Open("test_nolua.dat", 'wb', 'DATA')
 
-	steamworks.DownloadUGC(workshop_id, function(path, gma_fd)
-		print(path)
-		local out_fd = file.Open("test_nolua.dat", 'wb', 'DATA')
+			--print("process", process(gma_fd, out_fd, {strip_lua}))
+			local parsed = _M.parse(gma_fd)			
+			assert(verify_files(parsed))
+			local q=table.Copy(parsed)
+			q.files=nil
+			print("=======parsed=========\n")
+			PrintTable(q)
+			print("================\n")
 
-		print("process", process(gma_fd, out_fd, {strip_lua}))
 
-		gma_fd:Seek(0)
+			print("DownloadUGC pre-parse",parsed,parsed.eof,not gma_fd:EndOfFile() and "NOT END OF FILE!!!!!!!!" or "",-(gma_fd:Tell()-gma_fd:Size())) 
+			print(("%q"):format(gma_fd:Read(4)))
+			gma_fd:Seek(0)
+			local output_id = nil -- we want a new file every time
+			local nolua_path,err = _M.rebuild_nolua(gma_fd, output_id, true, function(sz)
+				if sz == true then
+					--print("collect start")
+				end
 
-		print("rebuild_nolua", rebuild_nolua(gma_fd, workshop_id, false, function(sz)
-			if sz == true then
-				print("collect start")
+				--local _ = isnumber(sz) and sz > 1000 * 900 and print(string.NiceSize(sz))
+			end)
+			print("rebuild_nolua:",path,err)
+			
+			--out_fd:Seek(0)
+			--out_fd:Close()
+
+			print("gma.parse",nolua_path)
+			local testfd = file.Open(nolua_path,'rb','MOD')
+			print("result=")
+			local parsed = _M.parse(testfd)
+			assert(verify_files(parsed))
+			parsed.files=nil
+			print("========postparsed========\n")
+			PrintTable(parsed)
+			print("================\n")
+
+			print("EOF",testfd:EndOfFile())
+			testfd:Seek(0)
+			local parser = gmaparse.Parser(testfd)
+			parser:ParseHeader()
+			print("========gmaparse========\n")
+			PrintTable(parser)
+			print("================\n")
+			for i=1,1234 do
+				local fd,err = parser:EnumFiles()
+				if fd==false then
+				break
+				end
 			end
+			testfd:Close()
 
-			local _ = isnumber(sz) and sz > 1000 * 900 and print(string.NiceSize(sz))
-		end))
-
-		out_fd:Seek(0)
-		out_fd:Close()
-	end)
+		end)
+	end
 end
