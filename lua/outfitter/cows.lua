@@ -205,49 +205,47 @@ function coFetchWS(wsid,skip_maxsize)
 
 	local fileinfo = co_steamworks_FileInfo(wsid)
 
-	if isdbg then
-		dbg("steamworks.FileInfo",wsid,"->",fileinfo)
-		if istable(fileinfo) then
-			dbg("","title",fileinfo.title)
-			if fileinfo.error then
-				dbg("","error",fileinfo.error)
-			end
-			dbg("","owner",fileinfo.owner)
-			dbg("","tags",fileinfo.tags)
-			dbg("","size",string.NiceSize(fileinfo.size or 0))
-			dbg("","fileid",fileinfo.fileid)
-			local created = os.time() - (fileinfo.created or 0)
+	dbg("steamworks.FileInfo",wsid,"->",fileinfo)
+	if istable(fileinfo) then
+		dbg("","title",fileinfo.title)
+		if fileinfo.error then
+			dbg("","error",fileinfo.error)
+		end
+		dbg("","owner",fileinfo.owner)
+		dbg("","tags",fileinfo.tags)
+		dbg("","size",string.NiceSize(fileinfo.size or 0))
+		dbg("","fileid",fileinfo.fileid)
+		local created = os.time() - (fileinfo.created or 0)
 
-			dbg("","created ago",string.NiceTime(created))
+		dbg("","created ago",string.NiceTime(created))
 
-			--TODO: Check banned
-			--TODO: Check popularity before mounting
+		--TODO: Check banned
+		--TODO: Check popularity before mounting
 
-			local installed = fileinfo.installed
-			local disabled = fileinfo.disabled
-			
-			if fileinfo.banned then
-				dbge(wsid,"BANNED!?")
-				return SYNC(dat,cantmount(wsid,"banned"))
+		local installed = fileinfo.installed
+		local disabled = fileinfo.disabled
+		
+		if fileinfo.banned then
+			dbge(wsid,"BANNED!?")
+			return SYNC(dat,cantmount(wsid,"banned"))
+		end
+		
+		if next(fileinfo.children or {}) then
+			dbg(wsid,"has dependencies, these will not be mounted")
+			--return SYNC(dat,cantmount(wsid,"dependencies"))
+		end
+		
+		if created<60*60*24*7 then
+			dbg(wsid,"WARNING: ONE WEEK OLD ADDON. NOT ENOUGH TIME FOR WORKSHOP MODERATORS.")
+			if IsParanoidMode(1) then
+				return SYNC(dat,cantmount(wsid,"new_addon"))
 			end
-			
-			if next(fileinfo.children or {}) then
-				dbg(wsid,"has dependencies, these will not be mounted")
-				--return SYNC(dat,cantmount(wsid,"dependencies"))
-			end
-			
-			if created<60*60*24*7 then
-				dbg(wsid,"WARNING: ONE WEEK OLD ADDON. NOT ENOUGH TIME FOR WORKSHOP MODERATORS.")
-				if IsParanoidMode(1) then
-					return SYNC(dat,cantmount(wsid,"new_addon"))
-				end
-			end
-			if disabled then
-				dbgn(3,"FileInfo",wsid,"Disabled?")
-			end
-			if installed then
-				dbgn(3,"FileInfo",wsid,"installed?")
-			end
+		end
+		if disabled then
+			dbgn(3,"FileInfo",wsid,"Disabled?")
+		end
+		if installed then
+			dbgn(3,"FileInfo",wsid,"installed? We shouldn't get this far if not disabled")
 		end
 	end
 

@@ -130,7 +130,11 @@ net.Receive(NTagSkin,function(len,pl)
 	local has_outfit = pl:OutfitInfo()
 	dbgn(7,"setskin",pl,n,has_outfit and "" or "NO OUTFIT?")
 	pl.outfitter_skin = n
-	if not has_outfit then return end
+	if hook.Run("OutfitterCanSkin",pl,n,has_outfit)==false then return end
+	if not has_outfit then
+		pl:ChatPrint("[Outfitter] You must have submitted an outfit before changing skin")
+		return
+	end
 	pl:SetSkin(n)
 end)
 
@@ -142,7 +146,7 @@ if not game.IsDedicated() and not game.SinglePlayer() then
 	end)
 end
 
-CreateConVar("_outfitter_version","0.10.1",FCVAR_NOTIFY)
+CreateConVar("_outfitter_version","0.11.0",FCVAR_NOTIFY)
 resource.AddSingleFile "materials/icon64/outfitter.png"
 
 

@@ -225,6 +225,11 @@ do
 		return blocklist
 	end
 	function IsTitleBlocked(title)
+		
+		if not AllowNSFW() and title:lower():find"nsfw" then
+			return true
+		end 
+
 		for _,l in pairs(blocklist) do
 			if title:lower():find(l,1,true) then
 				return l
@@ -239,6 +244,43 @@ do
 	local outfitter_extra_safe_downloading = CreateClientConVar("outfitter_extra_safe_downloading","0",true)
 	function IsParanoidMode()
 		return outfitter_extra_safe_downloading:GetBool()
+	end
+end
+
+do
+
+
+	-- Censorship depends on steam language
+	-- shortest racial slur from every language from steam api in 2021
+	local racial_slur_testers = util.Base64Decode("bmlnZ2VyCmhvbW8KYmliYQpwaWNoa3UKbmVncgpsZXNiYQpwZApqaWQKz4DOv8+Nz4PPhM63CmphcMOzCmNoZWNjCuyVoOyekAptYXJpY2EKY2lwCmZ1ZmEKbXVpc3QKZmF4YQpvw6cK0LPQtdC5CsSRxKk="):Split("\n")
+	local is_steam_filtering_chat = nil
+
+	function IsSteamFilteringChat()
+		if is_steam_filtering_chat ~= nil then return is_steam_filtering_chat end
+
+		-- we can only loosen restrictions so this should catch most cases
+		-- BUG: We cannot catch custom filtered words, but the player then likely has filtering on regardless
+		for filter_mode = TEXT_FILTER_UNKNOWN, TEXT_FILTER_NAME do
+			for _, racial_slur_test in pairs(racial_slur_testers) do
+				local filtered = util.FilterText(racial_slur_test, filter_mode)
+
+				if filtered ~= racial_slur_test then
+					is_steam_filtering_chat = true
+
+					return true
+				end
+			end
+		end
+
+		is_steam_filtering_chat = false
+
+		return false
+	end
+
+	--global nsfw?
+	local nsfw = CreateClientConVar("nsfw","1",true,true,"Allow NSFW content (Steam can still block with text filter)")
+	function AllowNSFW()
+		return not IsSteamFilteringChat() and nsfw:GetBool()
 	end
 end
 

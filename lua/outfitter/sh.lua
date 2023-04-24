@@ -7,10 +7,16 @@ function ServerSuggestDistance()
 end
 
 -- Shared Utils
-function UrlToWorkshopID(url)
+function UrlToWorkshopID(url,numok)
 	if not url or not isstring(url) then return end
+	
 
-	return url:match'://steamcommunity.com/sharedfiles/filedetails/.*[%?%&]id=(%d+)' or url:match'://steamcommunity.com/workshop/filedetails/.*[%?%&]id=(%d+)'
+	local ret = url:match'://steamcommunity.com/sharedfiles/filedetails/.*[%?%&]id=(%d+)' or url:match'://steamcommunity.com/workshop/filedetails/.*[%?%&]id=(%d+)'
+	if ret then return ret end
+	if numok and tonumber(url:Trim()) then
+		local num = tonumber(url:Trim())
+		if num and num>1337 then return num end
+	end
 end
 
 function HasMDL(mdl)

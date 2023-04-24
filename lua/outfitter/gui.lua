@@ -237,7 +237,7 @@ function PANEL:Init()
 				if url =="puze" then 
 					url="https://g2cf.metastruct.net/delme/puze.gma"
 				end
-				local wsid = UrlToWorkshopID(url)
+				local wsid = UrlToWorkshopID(url,true)
 				dbg("GUI","UrlToWorkshopID",url,wsid)
 				if wsid then
 
@@ -356,6 +356,16 @@ function PANEL:Init()
 	txt:SetWrap(true)
 	txt:SetTextColor(Color(0,0,0,255))
 
+
+	
+	local check = blocklistPanel:Add( "DCheckBoxLabel",'nsfwtoggle' )
+	 	check:SetConVar("nsfw")
+		check:SetText( "Allow NSFW")
+		check:SizeToContents()
+		check:SetTooltip[[Allow NSFW content in title]]
+		check:DockMargin(1,0,1,1)
+		check:Dock(TOP)
+
 	local TextEntry = blocklistPanel:Add("DTextEntry", "blocklist" )
 	TextEntry:SetSize(100,200)
 	TextEntry:Dock( FILL )
@@ -373,6 +383,17 @@ function PANEL:Init()
 	----------------------------------------------------
 
 	mdlhistpanel:DockPadding( 2,1,2,1 )
+
+	local function hr()
+		local b = AddS('EditablePanel')
+		b:SetTall(2)
+		b:DockMargin(1,24,1,2)
+		b.Paint = function(b,w,h)
+			surface.SetDrawColor(240,240,240,200)
+			surface.DrawRect(0,0,w,h)
+		end
+		local hr_line1 = b
+	end
 
 	local scroll = mdlhistpanel:Add( "DScrollPanel",'mdlhistscroll' )
 	scroll:Dock(FILL)
@@ -431,56 +452,8 @@ function PANEL:Init()
 		check:DockMargin(1,4,1,1)
 	local d_5 = check
 
+	hr()
 
-
-	local check = AddS( "DCheckBoxLabel" )
-		check:SetConVar(Tag.."_allow_http_test")
-		check:SetText( "Allow outfits from outside workshop")
-		check:SetTooltip[[Allow HTTP downloads from outside workshop. Unsafe potentially!!!]]
-		check:SizeToContents()
-
-		check:DockMargin(1,4,1,1)
-
-
-
-
-	local check = AddS( "DCheckBoxLabel" )
-		check:SetConVar(Tag.."_allow_unsafe_http")
-		check:SetText( "Load outfits from untrusted URLs (UNSAFE, may leak IP!!!)")
-		check:SetTooltip[[Outfitter by default does not allow HTTP downloads from everywhere, but can be set to allow them for local testing]]
-		check:SizeToContents()
-
-		check:DockMargin(1,4,1,1)
-
-
-
-
-
-	local check = AddS( "DCheckBoxLabel" )
-	 	check:SetConVar(Tag.."_hands")
-		check:SetText( "Use hands")
-		check:SetTooltip[[Should we guess hands for the playermodels]]
-		check:SizeToContents() 
-
-		check:DockMargin(1,4,1,1)
-	local d_6 = check
-	
-	local check = AddS( "DCheckBoxLabel" )
-	 	check:SetConVar(Tag.."_sounds")
-		check:SetText( "UI sounds")
-		check:SetTooltip[[Should we play informational sounds]]
-		check:SizeToContents() 
-
-		check:DockMargin(1,4,1,1)
-	local d_7 = check
-	
-	local check = AddS( "DCheckBoxLabel" )
-	 	check:SetConVar(Tag.."_gui_focusdim")
-		check:SetText( "Dim GUI")
-		check:SetTooltip[[When mouse leaves the UI should we dim it?]]
-		check:SizeToContents()
-		check:DockMargin(1,4,1,1)
-		
 	local slider = AddS( "DNumSlider" )
 		slider:SetText( "Outfit download distance" )
 		slider:SizeToContents()
@@ -520,6 +493,7 @@ function PANEL:Init()
 	c:DockMargin(0,12,0,0)
 	
 	
+	hr()
 
 	local slider = AddS( "DNumSlider" )
 		slider:SetText( "Maximum download size (in MB)" )
@@ -545,15 +519,55 @@ function PANEL:Init()
 	--	check:DockMargin(1,4,1,1)
 	
 	
-	local b = AddS('EditablePanel')
-	b:SetTall(2)
-	b:DockMargin(1,24,1,2)
-	b.Paint = function(b,w,h)
-		surface.SetDrawColor(240,240,240,200)
-		surface.DrawRect(0,0,w,h)
-	end
-	local hr_line1 = b
+	hr()
+
+	local check = AddS( "DCheckBoxLabel" )
+	 	check:SetConVar(Tag.."_hands")
+		check:SetText( "Use hands")
+		check:SetTooltip[[Should we guess hands for the playermodels]]
+		check:SizeToContents() 
+
+		check:DockMargin(1,4,1,1)
+	local d_6 = check
 	
+	local check = AddS( "DCheckBoxLabel" )
+	 	check:SetConVar(Tag.."_sounds")
+		check:SetText( "UI sounds")
+		check:SetTooltip[[Should we play informational sounds]]
+		check:SizeToContents() 
+
+		check:DockMargin(1,4,1,1)
+	local d_7 = check
+	
+	local check = AddS( "DCheckBoxLabel" )
+	 	check:SetConVar(Tag.."_gui_focusdim")
+		check:SetText( "Dim GUI")
+		check:SetTooltip[[When mouse leaves the UI should we dim it?]]
+		check:SizeToContents()
+		check:DockMargin(1,4,1,1)
+		
+	hr()
+	local check = AddS( "DCheckBoxLabel" )
+		check:SetConVar(Tag.."_allow_http_test")
+		check:SetText( "Allow outfits from outside workshop")
+		check:SetTooltip[[Allow HTTP downloads from outside workshop. Unsafe potentially!!!]]
+		check:SizeToContents()
+
+		check:DockMargin(1,4,1,1)
+
+
+
+
+	local check = AddS( "DCheckBoxLabel" )
+		check:SetConVar(Tag.."_allow_unsafe_http")
+		check:SetText( "Load outfits from untrusted URLs (UNSAFE, may leak IP!!!)")
+		check:SetTooltip[[Outfitter by default does not allow HTTP downloads from everywhere, but can be set to allow them for local testing]]
+		check:SizeToContents()
+
+		check:DockMargin(1,4,1,1)
+
+	hr()
+
 	local debug = AddS( "DCheckBoxLabel" )
 	 	debug:SetConVar(Tag.."_dbg")
 		debug:SetText( "#debug")
@@ -587,7 +601,7 @@ function PANEL:Init()
 		check:SetTooltip[[Blacklists outfits that crashed you automatically]]
 		check:DockMargin(1,4,1,1)
 		local d_2 = check
-		
+	hr()
 	local check = AddS( "DCheckBoxLabel" )
 	 	check:SetConVar(Tag.."_animfix_oldmethod")
 		check:SetText( "Legacy: Use fullupdate for local player animations")

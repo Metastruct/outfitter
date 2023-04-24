@@ -806,7 +806,6 @@ function coDoAutowear()
 		end
 		
 	
-	
 		if not mdls then
 			dbge("coDoAutowear",wsid,"GMAPlayerModels failed for:",extramodelinfos,err)
 			notification.AddLegacy( '[Outfitter] '..tostring(extramodelinfos=="nomdls" and "no valid models found" or extramodelinfos), NOTIFY_ERROR, 2 )
