@@ -369,7 +369,8 @@ function InitCrashSys()
 	local function LOAD()
 		local s = util.GetPData("0", Tag, false)
 		if not s or s == "" or s == "nil" then return {} end
-		local t = json.decode(s)
+		local ok,t = pcall(json.decode,s)
+		if not ok or not t then return {} end
 
 		return t
 	end
