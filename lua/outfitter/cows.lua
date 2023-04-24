@@ -316,7 +316,7 @@ function coFetchWS(wsid,skip_maxsize)
 	if ShouldStripLuaFromDownloads() and fd then
 		local accu=0
 		collectgarbage('step',40000)
-		local ret,err,err2 = gma.rebuild_nolua(fd,wsid,false,function(sz)
+		local ok,ret,err,err2 = xpcall(gma.rebuild_nolua,debug.traceback,fd,wsid,false,function(sz)
 			if sz==true or sz==false then
 				collectgarbage('step',40000)
 			end
@@ -326,13 +326,18 @@ function coFetchWS(wsid,skip_maxsize)
 				collectgarbage('step',20000)
 			end
 		end)
-		dbg("gma.rebuild_nolua",ret,err,err2)
+		dbg("gma.rebuild_nolua",ok,ret,err,err2)
+		if not ok then
+			err=ret
+			ret=nil
+		end
 		if isstring(ret) then
 			path=ret
 		elseif ret==true then
-			dbg("gma.rebuild_nolua","No rebuild necessary or possible")
+			dbg("coFetchWS","gma.rebuild_nolua","No rebuild necessary or possible")
 		else
-			dbge("gma.rebuild_nolua",err,err2)
+			dbge("coFetchWS","gma.rebuild_nolua",wsid,err,err2)
+			return SYNC(dat,cantmount(wsid,"gmarebuild"))
 		end
 	end
 

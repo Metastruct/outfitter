@@ -881,7 +881,7 @@ function GUIChooseMDL(n)
 	
 	if choosing then return false end
 	local mdllist = UIGetMDLList()
-	local mdl = mdllist[n]
+	local mdl = mdllist and mdllist[n]
 	if not mdl then return false end
 	
 	co(function()
