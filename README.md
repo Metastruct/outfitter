@@ -1,6 +1,4 @@
-**Coming straight from the Meta Construct Labs, 8 months in the making**
-
-Dev: [![Build Status](https://travis-ci.org/Metastruct/outfitter.svg?branch=dev)](https://travis-ci.org/Metastruct/outfitter)
+**Coming straight from the Meta Construct Labs**
 
 
 Now you can wear workshop playermodels also in multiplayer! (Yes, others will see what you wear too!)
@@ -10,8 +8,6 @@ Now you can wear workshop playermodels also in multiplayer! (Yes, others will se
 You can test the addon on [Meta Construct](http://metastruct.net) servers.
 
 ### Download
-
- - [**Scriptfodder**](https://scriptfodder.com/scripts/view/3794)
 
  - [**Workshop**](http://steamcommunity.com/sharedfiles/filedetails/?id=882463775)
 
