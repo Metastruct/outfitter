@@ -79,8 +79,8 @@ do
 		if pl==LocalPlayer() then return end
 		
 		if mdl == pl:GetModel() then return end
-		if TTTFIX then return end
-		dbn(11,'fixEnforce',pl,pl:GetModel(),'->',mdl)
+		if not TTTFIX then return end
+		dbgn(11,'fixEnforce',pl,pl:GetModel(),'->',mdl)
 		pl:EnforceModel(mdl)
 	end)
 end
