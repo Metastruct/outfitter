@@ -1,3 +1,5 @@
+*.md
+gma_gen.sh
 package.json
 .travis.yml
 addon.json
@@ -7,8 +9,10 @@ addon.json
 ci.sh
 package-lock.json
 dist
+*.vdf
 *.gma
 *.code-workspace
-*.md
 *.json
 node_modules_
+*.bak
+outfitter_publish.jpg

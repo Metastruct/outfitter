@@ -515,7 +515,11 @@ outfitter_maxsize = CreateClientConVar("outfitter_maxsize","60",true)
 		local origmdl = pl.original_model
 		
 		if not origmdl then
-			pl.original_model = pl:GetModel()
+			if not curmdl or curmdl=="" or curmdl == "models/error.mdl" or curmdl == "models/player.mdl" then
+				dbg("EnforceModel","invalid GetModel",curmdl)
+				curmdl=nil
+			end
+			pl.original_model = curmdl
 		end
 		
 		pl.enforce_model = mdl

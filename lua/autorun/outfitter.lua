@@ -33,6 +33,7 @@ ent:SnatchModelInstance()
 TODO
 ====================
 	BodyGroups testing 	471628201
+	NSFW test crashes: 2806932615 (huge addon, crashes outside outfitter?)
 	list favorited from workshop (playermodels heuristic?)
 	Add icons to history list
 	PAC part for outfitter

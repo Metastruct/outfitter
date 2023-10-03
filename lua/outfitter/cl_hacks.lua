@@ -66,3 +66,21 @@ do
 
 	hook.Add("CreateMove", Tag, CreateMove)
 end
+
+-- Fix TTT and other gamemodes setting playermodel
+do
+	
+	TTTFIX = engine.ActiveGamemode() == "terrortown"
+	--TODO: exponential backoff
+	local Tag='outfitter_tttfix'
+	hook.Add('PrePlayerDraw',Tag,function(pl)
+		local mdl = pl:GetEnforceModel()
+		if not mdl or mdl=='' then return end
+		if pl==LocalPlayer() then return end
+		
+		if mdl == pl:GetModel() then return end
+		if TTTFIX then return end
+		dbn(11,'fixEnforce',pl,pl:GetModel(),'->',mdl)
+		pl:EnforceModel(mdl)
+	end)
+end

@@ -6,6 +6,7 @@
 	[
 		"*.zip",
 		"*.out",
+		"*.sh",
 		"*.yml",
 		"*.psd",
 		"*.vcproj",
