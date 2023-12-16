@@ -32,6 +32,9 @@ ent:SnatchModelInstance()
 
 TODO
 ====================
+	Check for spectators and do nothing for "models/player.mdl" 
+	Perfmode only disable downloading, allow enforcing
+	
 	BodyGroups testing 	471628201
 	NSFW test crashes: 2806932615 (huge addon, crashes outside outfitter?)
 	list favorited from workshop (playermodels heuristic?)
@@ -74,7 +77,11 @@ TODO
 
 		Great scott
 		vo/trainyard/kl_morewarn01.wav
-
+	TTT
+		Spectators force localplayer hands
+		TTTFIX may be crashing people
+		PAC may be overriding clientside also, add exp. backoff
+		mdls appear valid but become errors after mapchange. OBBMins on player is invalid. 		
 ]]
 
 
