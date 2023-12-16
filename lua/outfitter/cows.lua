@@ -5,15 +5,15 @@ module(Tag,package.seeall)
 
 function IsUGCFilePath(path)
 	if path:find("^.:") or path:find("^[%\\%/]") then
+		-- TODO: REMOVE? update removed absolute path
 		return true
-	else
-		if path:find("[\\/]content[\\/]4000[\\/]") then
-			ErrorNoHalt("fixme\n")
-			return true
-		end
-		
-		return false
 	end
+	if path:find("content[\\/]4000[\\/]") then
+		-- TODO: better way to check for UGC?
+		return true
+	end
+	
+	return false
 end
 
 -- External decompression helper (nerfed by http.Fetch)
