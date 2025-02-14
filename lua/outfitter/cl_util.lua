@@ -1161,8 +1161,16 @@ function ValidateVVDVerts(f)
 	if not dat then return RETURN(nil,err) end
 	
 	local num = dat.numLODVertexes[1]
-	if num > 64534 --[[magic]] then return RETURN(false,'maxverts',num) end
-	return RETURN(true,num)
+
+	if BRANCH ~= "x86-64"
+		if num > 64534 --[[magic]] then return RETURN(false,'maxverts',num) end
+		return RETURN(true,num)
+	else
+		-- dmx models can easily exceed 64K but we're not sure of the impact of increasing limits on 32-bit
+		-- so for now expanded limits are 64-bit only
+		if num > 131072 then return RETURN(false, 'maxverts', num) end
+		return RETURN(true,num)
+	end
 end
 
 local r_drawdecals = GetConVar"r_drawdecals"
