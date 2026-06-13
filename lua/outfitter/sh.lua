@@ -1,21 +1,22 @@
 local Tag = 'outfitter'
 module(Tag, package.seeall)
-local outfitter_sv_distance = CreateConVar("outfitter_sv_distance", "1", {FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY})
+local outfitter_sv_distance = CreateConVar("outfitter_sv_distance", "1", { FCVAR_REPLICATED, FCVAR_ARCHIVE, FCVAR_NOTIFY })
 
 function ServerSuggestDistance()
 	return outfitter_sv_distance:GetBool()
 end
 
 -- Shared Utils
-function UrlToWorkshopID(url,numok)
+function UrlToWorkshopID(url, numok)
 	if not url or not isstring(url) then return end
-	
 
-	local ret = url:match'://steamcommunity.com/sharedfiles/filedetails/.*[%?%&]id=(%d+)' or url:match'://steamcommunity.com/workshop/filedetails/.*[%?%&]id=(%d+)'
+
+	local ret = url:match '://steamcommunity.com/sharedfiles/filedetails/.*[%?%&]id=(%d+)' or
+	url:match '://steamcommunity.com/workshop/filedetails/.*[%?%&]id=(%d+)'
 	if ret then return ret end
 	if numok and tonumber(url:Trim()) then
 		local num = tonumber(url:Trim())
-		if num and num>1337 then return num end
+		if num and num > 1337 then return num end
 	end
 end
 
@@ -49,13 +50,15 @@ end
 
 -- Encodes the shared payload to be sent to everyone: {model_path,25293523 or "https://example.com/asd.gma" or false}
 function EncodeOutfitterPayload(model_path, download_path)
-	local encoded = model_path and download_path and util.TableToJSON({assert(model_path:find(".mdl", 2, true) and model_path, 'invalid path: ' .. tostring(model_path)), tostring(download_path) or false}) or nil
+	local encoded = model_path and download_path and
+	util.TableToJSON({ assert(model_path:find(".mdl", 2, true) and model_path, 'invalid path: ' .. tostring(model_path)),
+		tostring(download_path) or false }) or nil
 
 	return encoded and #encoded < 32000 and encoded
 end
 
 function IsHTTPURL(str)
-	return tostring(str or ""):find"^https?://.*/" and true or false
+	return tostring(str or ""):find "^https?://.*/" and true or false
 end
 
 -- Decodes the shared payload
@@ -68,10 +71,11 @@ function DecodeOutfitterPayload(encoded)
 	if not model_path then return nil, 'empty' end
 	model_path = tostring(model_path)
 	if not model_path:find("%.mdl$") and not model_path:lower():find("%.mdl$") then return nil, 'not a .mdl' end
-	
+
 	-- either workshop id or a http url
 	if download_path == nil then return nil, 'empty' end
-	if not tonumber(download_path) and not download_path:find"^https?://.*/" and download_path ~= false then return nil, 'invalid' end
+	if not tonumber(download_path) and not download_path:find "^https?://.*/" and download_path ~= false then return nil,
+			'invalid' end
 
 	return model_path, download_path
 end
@@ -108,24 +112,24 @@ function MDLIsPlayermodel(f, sz)
 	--print(mdl,mdl.bodypart_count,mdl.skinreference_count)
 	local found = false
 	local imdls = mdl:IncludedModels()
-	
+
 	if mdl.bonecontroller_count ~= mdl.bone_count then
 		--dbg("bonecontroller_count differs?!",mdl.bonecontroller_count,mdl.bone_count)
 	end
-	
+
 	local found
 	local found_anm
-	for k,v in next,imdls do
-		v=v[2]
-		
-		if v and v:find("_arms_",1,true) then
-			return false,"arms"
+	for k, v in next, imdls do
+		v = v[2]
+
+		if v and v:find("_arms_", 1, true) then
+			return false, "arms"
 		end
-		
-		if v and not v:find"%.mdl$" then
-			return false,"badinclude",v
+
+		if v and not v:find "%.mdl$" then
+			return false, "badinclude", v
 		end
-		if v=="models/m_anm.mdl" or v=="models/f_anm.mdl" or v=="models/z_anm.mdl" then
+		if v == "models/m_anm.mdl" or v == "models/f_anm.mdl" or v == "models/z_anm.mdl" then
 			found_anm = true
 		end
 		--if v
@@ -140,36 +144,38 @@ function MDLIsPlayermodel(f, sz)
 		--	break
 		--end
 	end
-	
+
 	local attachments = mdl:Attachments()
 	if not attachments or not next(attachments) then
 		if not found_anm then
 			--PrintTable(mdl:Attachments())
 			if not IsUnsafe() then
-				return false,"noattachments"
+				return false, "noattachments"
 			end
 		else
-			dbg("MDLIsPlayermodel",mdl.name,"no attachments but included")
+			dbg("MDLIsPlayermodel", mdl.name, "no attachments but included")
 		end
 	else
 		--PrintTable("ASD",mdl:BoneNames())
 		local found
-		for k,v in next,attachments do
+		for k, v in next, attachments do
 			local name = v[1]
 			--print(name)
-			if name=="eyes" or name=="anim_attachment_head" or name=="mouth" or name=="anim_attachment_RH" or name=="anim_attachment_LH" then found=true break end
+			if name == "eyes" or name == "anim_attachment_head" or name == "mouth" or name == "anim_attachment_RH" or name == "anim_attachment_LH" then
+				found = true
+				break
+			end
 		end
 		if not found then
 			if not found_anm then
 				--PrintTable(mdl:Attachments())
 				if not IsUnsafe() then
-					return false,"attachments"
+					return false, "attachments"
 				end
 			else
-				dbg("MDLIsPlayermodel",mdl.name,"no attachments but included")
+				dbg("MDLIsPlayermodel", mdl.name, "no attachments but included")
 			end
 		end
-		
 	end
 	-- UNDONE: guess why
 	--if not found then
@@ -239,7 +245,7 @@ function MDLIsHands(f, sz)
 		v = v[2]
 		if v == "models/m_anm.mdl" then return false, "player" end
 		--print("----------------",v)
-		if v and not v:find"%.mdl$" then return false, "badinclude", v end
+		if v and not v:find "%.mdl$" then return false, "badinclude", v end
 
 		if v:find("/c_arms_", 1, true) then
 			found_anm = true
@@ -255,14 +261,14 @@ function MDLIsHands(f, sz)
 		--print(name)
 		local isspine = spines[name]
 
-		if isspine then 
+		if isspine then
 			if hadspine then
 				--return false,'bones',name
-			end 
+			end
 			hadspine = true
 		end
 
-		
+
 		gotone = gotone or findone[name]
 		if badbones[name] then return false, 'bones', name end
 	end
@@ -294,7 +300,7 @@ for _,fn in next,flist do
 	f:Close()
 	
 end--]]
-local t = {"", "", "", ""}
+local t = { "", "", "", "" }
 
 local function GenID(_1, _2, _3, _4, _5)
 	if not _1 then return end
@@ -307,7 +313,7 @@ local function GenID(_1, _2, _3, _4, _5)
 	return table.concat(t, "|")
 end
 
-local Player = FindMetaTable"Player"
+local Player = FindMetaTable "Player"
 
 function Player.OutfitHash(pl)
 	return pl.outfitter_latest
@@ -369,7 +375,7 @@ function InitCrashSys()
 	local function LOAD()
 		local s = util.GetPData("0", Tag, false)
 		if not s or s == "" or s == "nil" then return {} end
-		local ok,t = pcall(json.decode,s)
+		local ok, t = pcall(json.decode, s)
 		if not ok or not t then return {} end
 
 		return t
@@ -448,7 +454,8 @@ function MakeURLDownloadable(url)
 	end
 
 	if url:find("drive.google.com", 4, true) and not url:find("export=download", 4, true) then
-		local id = url:match("https://drive.google.com/file/d/(.-)/") or url:match("https://drive.google.com/file/d/(.-)$") or url:match("https://drive.google.com/open%?id=(.-)$")
+		local id = url:match("https://drive.google.com/file/d/(.-)/") or
+		url:match("https://drive.google.com/file/d/(.-)$") or url:match("https://drive.google.com/open%?id=(.-)$")
 		if id then return "https://drive.google.com/uc?export=download&id=" .. id end
 	end
 
