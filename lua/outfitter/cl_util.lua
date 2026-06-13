@@ -1162,7 +1162,7 @@ function ValidateVVDVerts(f)
 	
 	local num = dat.numLODVertexes[1]
 
-	if BRANCH ~= "x86-64"
+	if BRANCH ~= "x86-64" then
 		if num > 64534 --[[magic]] then return RETURN(false,'maxverts',num) end
 		return RETURN(true,num)
 	else
