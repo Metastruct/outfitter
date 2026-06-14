@@ -58,6 +58,26 @@ function RefreshPlayers()
 	end
 end
 
+function RefreshDependencies()
+	local players = {}
+	for _, pl in next, player.GetAll() do
+		local _, _, _, _, dependency_manifest = pl:OutfitInfo()
+		if pl ~= LocalPlayer() and dependency_manifest and #dependency_manifest.dependencies > 0 then
+			players[#players + 1] = pl
+		end
+	end
+
+	return co(function()
+		for _, pl in next, players do
+			if pl:IsValid() then
+				pl.outfitter_nvar = nil
+				OnPlayerVisible(pl)
+			end
+			co.sleep(.25)
+		end
+	end)
+end
+
 function EnableEverything()
 	dbg("EnableEverything")
 	RefreshPlayers()
@@ -270,6 +290,7 @@ end
 function BroadcastMyOutfit(a)
 	assert(not a)
 	local mdl, download_info, s, bg, dependency_manifest = LocalPlayer():OutfitInfo()
+	if not ShouldMountChildren() then dependency_manifest = nil end
 	dbg("BroadcastMyOutfit", mdl, download_info, s, bg, DependencyManifestID(dependency_manifest))
 
 	NetworkOutfit(mdl, download_info, dependency_manifest)

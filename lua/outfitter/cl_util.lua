@@ -202,6 +202,27 @@ do
 	local outfitter_mount_children = CreateClientConVar("outfitter_mount_children_test", "0", true)
 	outfitter_dependency_maxsize = CreateClientConVar("outfitter_dependency_maxsize", "60", true)
 
+	local function refresh_dependencies()
+		timer.Create(Tag .. "_dependency_refresh", .5, 1, function()
+			if RefreshDependencies then RefreshDependencies() end
+		end)
+	end
+
+	cvars.AddChangeCallback("outfitter_mount_children_test", function(cvar, old, new)
+		if tonumber(old) == 0 and tonumber(new) ~= 0 then
+			refresh_dependencies()
+		end
+	end)
+
+	cvars.AddChangeCallback("outfitter_dependency_maxsize", function(cvar, old, new)
+		old = tonumber(old) or 0
+		new = tonumber(new) or 0
+
+		if outfitter_mount_children:GetBool() and (new == 0 or old > 0 and new > old) then
+			refresh_dependencies()
+		end
+	end)
+
 	function ShouldMountChildren()
 		return outfitter_mount_children:GetBool()
 	end

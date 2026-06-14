@@ -355,6 +355,7 @@ local tried_mounting
 local mount_path
 local chosen_mdl
 local mdllist_extra
+local chosen_dependency_manifest
 function UIGetMDLList()
 	return mdllist
 end
@@ -383,6 +384,35 @@ function UIGetDownloadInfoX()
 	return chosen_download_info
 end
 
+function UIGetDependencyManifest()
+	return chosen_dependency_manifest
+end
+
+function UISetDependencyManifest(dependency_manifest)
+	chosen_dependency_manifest = NormalizeDependencyManifest(dependency_manifest)
+end
+
+function UIApplyDependencyManifest(dependency_manifest)
+	UISetDependencyManifest(dependency_manifest)
+
+	local pl = LocalPlayer()
+	local mdl, download_info, skin, bodygroups = pl:OutfitInfo()
+	if mdl and download_info == chosen_download_info then
+		OnChangeOutfit(pl, mdl, download_info, skin, bodygroups, chosen_dependency_manifest)
+	end
+end
+
+function coUIReviewDependencies(wsid, dependency_manifest)
+	local graph, err = coResolveWSDependencies(wsid)
+	if not graph then return nil, err end
+	if graph.count == 0 then return DependencyManifestFromGraph(graph) end
+	if not GUIReviewDependencies then return nil, "no dependency review gui" end
+
+	local cb = co.newcb()
+	GUIReviewDependencies(graph, dependency_manifest, cb)
+	return co.waitcb(cb)
+end
+
 function UICancelAll()
 	UIMsg "Unsetting everything"
 
@@ -392,6 +422,7 @@ function UICancelAll()
 	mount_path = nil
 	tried_mounting = nil
 	chosen_mdl = nil
+	chosen_dependency_manifest = nil
 
 	RemoveOutfit()
 	EnforceHands()
@@ -457,7 +488,7 @@ function UIChangeModelToID(n, opengui)
 	relay_opengui = opengui
 
 	-- returns instantly, but should be instant anyway
-	OnChangeOutfit(LocalPlayer(), mdl.Name, chosen_download_info)
+	OnChangeOutfit(LocalPlayer(), mdl.Name, chosen_download_info, nil, nil, chosen_dependency_manifest)
 	dbg("EnforceHands?", ShouldHands(), n, mdllist[2] == nil, handslist, handslist and handslist[1])
 	if n == 1 and nil == mdllist[2] and handslist and next(handslist) ~= nil and ShouldHands() then
 		local _, entry = next(handslist)
@@ -491,16 +522,17 @@ hook.Add("OutfitApply", Tag, function(pl, mdl)
 	end
 end)
 
-function UIChoseWorkshop(wsid, opengui)
+function UIChoseWorkshop(wsid, opengui, review_dependencies)
 	assert(tonumber(wsid))
 
-	if co.make(wsid, opengui) then return end
+	if co.make(wsid, opengui, review_dependencies) then return end
 
 	mdllist = nil
 	chosen_download_info = nil
 	mount_path = nil
 	tried_mounting = nil
 	chosen_mdl = nil
+	chosen_dependency_manifest = nil
 
 	SetUIFetching(wsid, true)
 	co.sleep(.5)
@@ -573,6 +605,18 @@ function UIChoseWorkshop(wsid, opengui)
 		end
 	end
 
+	if review_dependencies and ShouldMountChildren() then
+		local dependency_manifest, err = coUIReviewDependencies(wsid)
+		if dependency_manifest == false then
+			if opengui then GUIOpen() end
+			return
+		elseif dependency_manifest then
+			chosen_dependency_manifest = dependency_manifest
+		elseif err then
+			UIError("Dependency review failed: " .. tostring(err))
+		end
+	end
+
 	co.sleep(.2)
 
 	if mdls[2] then
@@ -607,6 +651,7 @@ function UIChoseHTTPGMA(download_info, opengui)
 	mount_path = nil
 	tried_mounting = nil
 	chosen_mdl = nil
+	chosen_dependency_manifest = nil
 
 	local id = URLFilename(download_info) or "httpgma:" .. util.CRC(download_info)
 
@@ -713,10 +758,17 @@ end
 function SetAutowear()
 	local pl = LocalPlayer()
 
-	local mdl, wsid, skin, bodygroup = pl:OutfitInfo()
+	local mdl, wsid, skin, bodygroup, dependency_manifest = pl:OutfitInfo()
 
-	local t = { mdl = mdl, wsid = wsid, skin = skin, bodygroup = bodygroup, setbodygroupdata = pl:GetBodyGroupData(), hands =
-	pl.outfitter_hands }
+	local t = {
+		mdl = mdl,
+		wsid = wsid,
+		skin = skin,
+		bodygroup = bodygroup,
+		setbodygroupdata = pl:GetBodyGroupData(),
+		hands = pl.outfitter_hands,
+		dependency_manifest = dependency_manifest
+	}
 
 
 	if mdl then
@@ -774,6 +826,7 @@ function coDoAutowear()
 
 	local mdl, wsid, skin, bodygroup, setbodygroupdata = t.mdl, t.wsid, t.skin, t.bodygroup, t.setbodygroupdata
 	local hands = t.hands
+	local dependency_manifest = NormalizeDependencyManifest(t.dependency_manifest)
 
 	if not mdl then return end
 
@@ -864,7 +917,7 @@ function coDoAutowear()
 	UISetSilentApplyModel(mdl)
 
 	-- returns instantly, but should be instant anyway
-	OnChangeOutfit(LocalPlayer(), mdl, chosen_download_info)
+	OnChangeOutfit(LocalPlayer(), mdl, chosen_download_info, nil, nil, dependency_manifest)
 
 	-- cannot enforce hands without crashing at the moment
 	dbg("coDoAutowear", "EnforceHands", ShouldHands(), next(handslist or {}))
