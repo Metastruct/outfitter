@@ -210,7 +210,7 @@ function ChangeOutfitThreadWorker(pl, hash)
 			if HBAD(pl, hash) then return false, "outdated" end
 		end
 
-		local ret = hook.Run("CanOutfit", pl, pl:OutfitInfo())
+		local ret = hook.Run("CanOutfit", pl, mdl, download_info, skin, bodygroups)
 		if ret == false then
 			return false, "canoutfit"
 		end
@@ -252,7 +252,7 @@ function ChangeOutfitThreadWorker(pl, hash)
 	end
 
 	-- 5. Check CanOutfit
-	local ret = hook.Run("CanOutfit", pl, pl:OutfitInfo())
+	local ret = hook.Run("CanOutfit", pl, mdl, download_info, skin, bodygroups)
 	if ret == false then
 		return false, "canoutfit"
 	end

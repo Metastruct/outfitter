@@ -527,6 +527,20 @@ function UIChoseWorkshop(wsid, opengui, review_dependencies)
 
 	if co.make(wsid, opengui, review_dependencies) then return end
 
+	local previous_dependency_manifest
+	if tostring(chosen_download_info) == tostring(wsid) then
+		previous_dependency_manifest = chosen_dependency_manifest
+	end
+	if not previous_dependency_manifest then
+		local pl = LocalPlayer()
+		if pl:IsValid() then
+			local _, current_wsid, _, _, current_dependency_manifest = pl:OutfitInfo()
+			if tostring(current_wsid) == tostring(wsid) then
+				previous_dependency_manifest = current_dependency_manifest
+			end
+		end
+	end
+
 	mdllist = nil
 	chosen_download_info = nil
 	mount_path = nil
@@ -606,7 +620,7 @@ function UIChoseWorkshop(wsid, opengui, review_dependencies)
 	end
 
 	if review_dependencies and ShouldMountChildren() then
-		local dependency_manifest, err = coUIReviewDependencies(wsid)
+		local dependency_manifest, err = coUIReviewDependencies(wsid, previous_dependency_manifest)
 		if dependency_manifest == false then
 			GUIOpen()
 			return
