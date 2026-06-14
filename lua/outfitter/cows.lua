@@ -39,7 +39,6 @@ end
 local fetching = {}
 
 local res = {}
-local skip_maxsizes = {}
 local function SYNC(cbs, ...)
 	for k, cb in next, cbs do
 		cb(...)
@@ -167,10 +166,6 @@ end
 
 
 function coFetchWS(wsid, skip_maxsize)
-	if skip_maxsize then
-		skip_maxsizes[wsid] = true
-	end
-
 	-- fetch cache ("promise/future") (no double-fetching)
 	local dat = fetching[wsid]
 
@@ -265,8 +260,6 @@ function coFetchWS(wsid, skip_maxsize)
 	maxsz = maxsz * 1000 * 1000
 
 	if maxsz > 0.1 and ((fileinfo.size or 0) - 1024 * 1024) > maxsz then
-		skip_maxsize = skip_maxsize or skip_maxsizes[wsid]
-
 		dbg("FetchWS", "MAXSIZE", skip_maxsize and "OVERRIDE" or "", wsid, string.NiceSize(fileinfo.size or 0))
 
 		if not skip_maxsize then
@@ -548,48 +541,77 @@ function coResolveWSDependencies(wsid)
 	return graph
 end
 
-local function coMountWSDependency(wsid, seen)
-	wsid = tostring(wsid)
-	if seen[wsid] then return true end
-	seen[wsid] = true
-
-	local fileinfo = co_steamworks_FileInfo(wsid)
-	if not fileinfo then return nil, "fileinfo" end
-
-	local child_error
-	for _, child in next, fileinfo.children or {} do
-		local ok, err = coMountWSDependency(child, seen)
-		if not ok then
-			child_error = child_error or (tostring(child) .. ": " .. tostring(err))
-		end
+function DependencyManifestFromGraph(graph)
+	local dependencies = {}
+	for _, id in next, graph.order do
+		dependencies[#dependencies + 1] = id
 	end
 
-	local path, err = coFetchWS(wsid)
-	if not path then return nil, err end
-
-	local ok, err = coMountWS(path)
-	if not ok then return nil, err end
-	if child_error then return nil, child_error end
-
-	return true
+	return NormalizeDependencyManifest({
+		version = 1,
+		dependencies = dependencies
+	})
 end
 
-local function _coMountWSChildren(wsid)
-	-- TODO: fix filesize limiter: https://steamcommunity.com/workshop/filedetails/?id=1640675931
-	
-	local fileinfo = co_steamworks_FileInfo(wsid)
-	if not fileinfo then return nil, "fileinfo" end
+function coPlanWSDependencies(wsid, dependency_manifest)
+	local manifest, err = NormalizeDependencyManifest(dependency_manifest)
+	if not manifest then return nil, err or "dependency manifest" end
 
-	local seen = {[tostring(wsid)] = true}
-	local child_error
-	for _, child in next, fileinfo.children or {} do
-		local ok, err = coMountWSDependency(child, seen)
-		if not ok then
-			child_error = child_error or (tostring(child) .. ": " .. tostring(err))
+	local plan = {
+		manifest = manifest,
+		order = {},
+		total_size = 0,
+		count = #manifest.dependencies
+	}
+	if plan.count == 0 then return plan end
+
+	local graph, err = coResolveWSDependencies(wsid)
+	if not graph then return nil, err end
+
+	local selected = {}
+	for _, id in next, manifest.dependencies do
+		local node = graph.nodes[id]
+		if not node or id == graph.root then
+			return nil, "invalid dependency"
+		end
+
+		selected[id] = true
+		plan.total_size = plan.total_size + node.size
+	end
+
+	local maxsize = DependencyMaxSize()
+	if maxsize > 0.1 and plan.total_size > maxsize then
+		return nil, "dependency oversize", plan.total_size
+	end
+
+	for _, id in next, graph.order do
+		if selected[id] then
+			plan.order[#plan.order + 1] = id
 		end
 	end
 
-	if child_error then return nil, child_error end
+	return plan
+end
+
+local function _coMountWSChildren(key, wsid, dependency_manifest)
+	local plan, err, err2 = coPlanWSDependencies(wsid, dependency_manifest)
+	if not plan then return nil, err, err2 end
+
+	local first_error
+	for _, id in next, plan.order do
+		local path, err = coFetchWS(id, true)
+		if path then
+			local ok
+			ok, err = coMountWS(path)
+			if not ok then
+				first_error = first_error or (id .. ": " .. tostring(err))
+			end
+		else
+			first_error = first_error or (id .. ": " .. tostring(err))
+		end
+	end
+
+	if first_error then return nil, "dependency failed", first_error end
 	return true
 end
 
@@ -599,12 +621,19 @@ local worker, cache = co.work_cacher_filter(
 	end,
 	co.work_cacher(_coMountWSChildren)
 )
-coMountWSChildren = co.worker(worker)
+local coMountWSDependencyManifest = co.worker(worker)
+
+function coMountWSChildren(wsid, dependency_manifest)
+	if not dependency_manifest then return true end
+
+	local key = tostring(wsid) .. "|" .. DependencyManifestID(dependency_manifest)
+	return coMountWSDependencyManifest(key, wsid, dependency_manifest)
+end
 
 --TODO: own cache
-function NeedWS(wsid, pl, mdl)
+function NeedWS(wsid, pl, mdl, dependency_manifest)
 	assert(tonumber(wsid), "NeedWS invalid wsid: " .. tostring(wsid))
-	if co.make(wsid, pl, mdl) then return end
+	if co.make(wsid, pl, mdl, dependency_manifest) then return end
 
 	-- already mounted, don't mount again
 	if steamworks.IsSubscribed(wsid) and file.Exists(mdl, 'GAME') then return true end
@@ -673,9 +702,10 @@ function NeedWS(wsid, pl, mdl)
 	end
 
 	if ShouldMountChildren() then
-		local children_ok, children_err = coMountWSChildren(wsid)
+		local children_ok, children_err, children_err2 = coMountWSChildren(wsid, dependency_manifest)
 		if not children_ok then
-			dbg("NeedWS", wsid, "child mount fail", children_err)
+			dbg("NeedWS", wsid, "child mount fail", children_err, children_err2)
+			coUIDependencyFailureMsg(pl, wsid, children_err, children_err2)
 		end
 	end
 
@@ -768,8 +798,6 @@ local function checkhttp(ok, ret, len, hdrs, retcode)
 	maxsz = maxsz * 1000 * 1000
 
 	if size and maxsz >= 1 and size > math.min(maxsz, 1024 * 1024 * 1024) then
-		skip_maxsize = skip_maxsize or skip_maxsizes[wsid]
-
 		dbg("NeedHTTPGMA", "MAXSIZE", skip_maxsize and "OVERRIDE" or "", wsid, string.NiceSize(size))
 
 		if not skip_maxsize then

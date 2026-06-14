@@ -747,6 +747,21 @@ function coUIOversizeMsg(pl, wsid)
 		(" is too big %saccording to your settings (%s) so it was not mounted!"):format(szstr, maxsz))
 end
 
+local dependency_failures = {}
+function coUIDependencyFailureMsg(pl, wsid, err, err2)
+	local key = tostring(wsid) .. "|" .. tostring(err)
+	if dependency_failures[key] then return end
+	dependency_failures[key] = true
+
+	local detail = err2 and " (" .. (err == "dependency oversize" and string.NiceSize(err2) or tostring(err2)) .. ")" or ""
+	local msg = ("Dependencies for the outfit of %s were not fully mounted: %s%s"):format(tostring(pl), tostring(err), detail)
+
+	Msg("[Outfitter] ")
+	print(msg)
+	UIMsg(msg)
+	notification.AddLegacy("[Outfitter] " .. msg, NOTIFY_ERROR, 4)
+end
+
 -- This is a horrible hack because of forethought was lacking when the rest of the code was made
 -- duplicated from two different functions, etc
 function coDoAutowear()

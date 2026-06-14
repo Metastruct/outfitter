@@ -200,8 +200,14 @@ end
 
 do
 	local outfitter_mount_children = CreateClientConVar("outfitter_mount_children_test", "0", true)
+	outfitter_dependency_maxsize = CreateClientConVar("outfitter_dependency_maxsize", "60", true)
+
 	function ShouldMountChildren()
 		return outfitter_mount_children:GetBool()
+	end
+
+	function DependencyMaxSize()
+		return outfitter_dependency_maxsize:GetFloat() * 1000 * 1000
 	end
 end
 

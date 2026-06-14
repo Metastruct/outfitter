@@ -67,9 +67,9 @@ local Player = FindMetaTable "Player"
 
 ------- player outfit changing --------
 
-function Player.SetWantOutfit(pl, mdl, download_info, skin, bodygroups)
+function Player.SetWantOutfit(pl, mdl, download_info, skin, bodygroups, dependency_manifest)
 	dbg("SetWantOutfit", pl, not mdl and "unset" or ('%q'):format(tostring(mdl)),
-		not download_info and "-" or ('%q'):format(tostring(download_info)))
+		not download_info and "-" or ('%q'):format(tostring(download_info)), DependencyManifestID(dependency_manifest))
 
 	assert(pl and pl:IsValid())
 	pl:GetModel()
@@ -79,7 +79,7 @@ function Player.SetWantOutfit(pl, mdl, download_info, skin, bodygroups)
 
 	mdl = mdl or false
 
-	pl:OutfitSetInfo(mdl, download_info, skin, bodygroups)
+	pl:OutfitSetInfo(mdl, download_info, skin, bodygroups, dependency_manifest)
 
 	local thread = pl.outfitter_co_thread
 
@@ -157,7 +157,7 @@ function ChangeOutfitThreadWorker(pl, hash)
 	assert(pl:OutfitCheckHash(hash))
 	assert(not HBAD(pl, hash))
 
-	local mdl, download_info, skin, bodygroups = pl:OutfitInfo()
+	local mdl, download_info, skin, bodygroups, dependency_manifest = pl:OutfitInfo()
 	mdl = mdl or false
 
 	dbg("ChangeOutfit", "BEGIN", pl, mdl or "unset", download_info)
@@ -174,9 +174,10 @@ function ChangeOutfitThreadWorker(pl, hash)
 		if tonumber(download_info) then
 			-- The model may have been mounted before its required items.
 			if ShouldMountChildren() then
-				local ok, err = coMountWSChildren(download_info)
+				local ok, err, err2 = coMountWSChildren(download_info, dependency_manifest)
 				if not ok then
-					dbg("ChangeOutfit", download_info, "child mount fail", err)
+					dbg("ChangeOutfit", download_info, "child mount fail", err, err2)
+					coUIDependencyFailureMsg(pl, download_info, err, err2)
 				end
 			end
 
@@ -205,7 +206,7 @@ function ChangeOutfitThreadWorker(pl, hash)
 	end
 
 	------------ TIME PASSES ONLY HERE -------------
-	local ok, err = AcquireAssets(download_info, pl, mdl)
+	local ok, err = AcquireAssets(download_info, pl, mdl, dependency_manifest)
 	if not ok then
 		dbg("DoChangeOutfit", "NeedWS failed", err, "continuing...", pl, mdl, download_info)
 		if err == 'oversize' then
@@ -247,9 +248,9 @@ function ChangeOutfitThreadWorker(pl, hash)
 	return true
 end
 
-function AcquireAssets(download_info, pl, mdl)
+function AcquireAssets(download_info, pl, mdl, dependency_manifest)
 	if download_info and tonumber(download_info) then
-		return NeedWS(download_info, pl, mdl)
+		return NeedWS(download_info, pl, mdl, dependency_manifest)
 	end
 	if IsHTTPURL(download_info) then
 		if AllowedHTTPURL(download_info) then
@@ -268,10 +269,10 @@ end
 
 function BroadcastMyOutfit(a)
 	assert(not a)
-	local mdl, download_info, s, bg = LocalPlayer():OutfitInfo()
-	dbg("BroadcastMyOutfit", mdl, download_info, s, bg)
+	local mdl, download_info, s, bg, dependency_manifest = LocalPlayer():OutfitInfo()
+	dbg("BroadcastMyOutfit", mdl, download_info, s, bg, DependencyManifestID(dependency_manifest))
 
-	NetworkOutfit(mdl, download_info)
+	NetworkOutfit(mdl, download_info, dependency_manifest)
 
 	return mdl, download_info
 end
