@@ -86,7 +86,7 @@ local function steamworks_Download_work(fileid)
 			timer.Simple(60 * 3, function()
 				if done then return end
 				dbg("DownloadUGC", fileid, "TIMEOUT (WIP)")
-				UIWarnDownloadFailures(wsid)
+				UIWarnDownloadFailures(fileid)
 
 				--cb2(false,false)
 				--done=true
@@ -228,7 +228,7 @@ function coFetchWS(wsid, skip_maxsize)
 		end
 
 		if next(fileinfo.children or {}) then
-			dbg(wsid, "has dependencies, these will not be mounted")
+			dbg(wsid, "has dependencies") --TODO: print if mounting children enabled/blocked by filesize limit
 			--return SYNC(dat,cantmount(wsid,"dependencies"))
 		end
 
@@ -393,9 +393,6 @@ local worker, cache = co.work_cacher_filter(
 )
 coMountWS = co.worker(worker)
 
-
-
-
 function _coDecompressExt(path)
 	if not HasDecompressHelper() then return nil, 'no helper' end
 	if not path then return nil, 'invalid parameter' end
@@ -482,6 +479,59 @@ function coDecompress(path)
 	return 'data/' .. safepath
 end
 
+local function coMountWSDependency(wsid, seen)
+	wsid = tostring(wsid)
+	if seen[wsid] then return true end
+	seen[wsid] = true
+
+	local fileinfo = co_steamworks_FileInfo(wsid)
+	if not fileinfo then return nil, "fileinfo" end
+
+	local child_error
+	for _, child in next, fileinfo.children or {} do
+		local ok, err = coMountWSDependency(child, seen)
+		if not ok then
+			child_error = child_error or (tostring(child) .. ": " .. tostring(err))
+		end
+	end
+
+	local path, err = coFetchWS(wsid)
+	if not path then return nil, err end
+
+	local ok, err = coMountWS(path)
+	if not ok then return nil, err end
+	if child_error then return nil, child_error end
+
+	return true
+end
+
+local function _coMountWSChildren(wsid)
+	-- TODO: fix filesize limiter: https://steamcommunity.com/workshop/filedetails/?id=1640675931
+	
+	local fileinfo = co_steamworks_FileInfo(wsid)
+	if not fileinfo then return nil, "fileinfo" end
+
+	local seen = {[tostring(wsid)] = true}
+	local child_error
+	for _, child in next, fileinfo.children or {} do
+		local ok, err = coMountWSDependency(child, seen)
+		if not ok then
+			child_error = child_error or (tostring(child) .. ": " .. tostring(err))
+		end
+	end
+
+	if child_error then return nil, child_error end
+	return true
+end
+
+local worker, cache = co.work_cacher_filter(
+	function(key, ok)
+		return (not key) or ok
+	end,
+	co.work_cacher(_coMountWSChildren)
+)
+coMountWSChildren = co.worker(worker)
+
 --TODO: own cache
 function NeedWS(wsid, pl, mdl)
 	assert(tonumber(wsid), "NeedWS invalid wsid: " .. tostring(wsid))
@@ -550,6 +600,13 @@ function NeedWS(wsid, pl, mdl)
 			else
 				dbge("NeedWS", wsid, path, "missing requested mdl", mdl)
 			end
+		end
+	end
+
+	if ShouldMountChildren() then
+		local children_ok, children_err = coMountWSChildren(wsid)
+		if not children_ok then
+			dbg("NeedWS", wsid, "child mount fail", children_err)
 		end
 	end
 
@@ -637,7 +694,7 @@ local function checkhttp(ok, ret, len, hdrs, retcode)
 	if retcode ~= 200 then return nil, "http error", retcode end
 	local size = hdrs["Content-Length"] and tonumber(hdrs["Content-Length"])
 
-
+	local wsid = 0 -- TODO FIXME
 	local maxsz = outfitter_maxsize:GetFloat()
 	maxsz = maxsz * 1000 * 1000
 
