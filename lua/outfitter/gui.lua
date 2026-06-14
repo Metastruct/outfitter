@@ -586,7 +586,7 @@ function PANEL:Init()
 	local d_2 = check
 
 	local check = AddS("DCheckBoxLabel")
-	check:SetConVar(Tag .. "_mount_children")
+	check:SetConVar(Tag .. "_mount_children_test")
 	check:SetText("Mount children dependencies")
 	check:SizeToContents()
 	check:SetTooltip [[Mounts the required workshop addon children/dependencies along with the outfit]]
