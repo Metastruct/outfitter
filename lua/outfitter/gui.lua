@@ -584,6 +584,14 @@ function PANEL:Init()
 	check:SetTooltip [[Blacklists outfits that crashed you automatically]]
 	check:DockMargin(1, 4, 1, 1)
 	local d_2 = check
+
+	local check = AddS("DCheckBoxLabel")
+	check:SetConVar(Tag .. "_mount_children")
+	check:SetText("Mount children dependencies")
+	check:SizeToContents()
+	check:SetTooltip [[Mounts the required workshop addon children/dependencies along with the outfit]]
+	check:DockMargin(1, 4, 1, 1)
+
 	hr()
 	local check = AddS("DCheckBoxLabel")
 	check:SetConVar(Tag .. "_animfix_oldmethod")

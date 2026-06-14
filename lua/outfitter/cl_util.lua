@@ -198,6 +198,13 @@ do
 	end
 end
 
+do
+	local outfitter_mount_children = CreateClientConVar("outfitter_mount_children_test", "0", true)
+	function ShouldMountChildren()
+		return outfitter_mount_children:GetBool()
+	end
+end
+
 --TODO
 do
 	local function proc(data)

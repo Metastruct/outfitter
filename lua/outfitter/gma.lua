@@ -1,7 +1,7 @@
 local Tag = 'outfitter'
 module(Tag .. '.gma', package.seeall)
 
--- Reads binary strings.
+-- Reads binary strings
 local function readInt(file_meta, count)
 	local bits = file_meta:Read(count)
 

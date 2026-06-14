@@ -171,6 +171,24 @@ function ChangeOutfitThreadWorker(pl, hash)
 	-- 2. If model exists then just apply it
 	local exists = HasMDL(mdl)
 	if exists then
+		if tonumber(download_info) then
+			-- The model may have been mounted before its required items.
+			if ShouldMountChildren() then
+				local ok, err = coMountWSChildren(download_info)
+				if not ok then
+					dbg("ChangeOutfit", download_info, "child mount fail", err)
+				end
+			end
+
+			local ok, err = co.wait_player(pl)
+			if not ok then
+				dbg("ChangeOutfit", "ABORT", pl, "VANISH", err)
+				return false, "noplayer"
+			end
+
+			if HBAD(pl, hash) then return false, "outdated" end
+		end
+
 		local ret = hook.Run("CanOutfit", pl, pl:OutfitInfo())
 		if ret == false then
 			return false, "canoutfit"
