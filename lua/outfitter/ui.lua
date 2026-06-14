@@ -608,7 +608,7 @@ function UIChoseWorkshop(wsid, opengui, review_dependencies)
 	if review_dependencies and ShouldMountChildren() then
 		local dependency_manifest, err = coUIReviewDependencies(wsid)
 		if dependency_manifest == false then
-			if opengui then GUIOpen() end
+			GUIOpen()
 			return
 		elseif dependency_manifest then
 			chosen_dependency_manifest = dependency_manifest

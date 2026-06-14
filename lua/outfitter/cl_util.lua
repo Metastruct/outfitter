@@ -218,7 +218,7 @@ do
 		old = tonumber(old) or 0
 		new = tonumber(new) or 0
 
-		if outfitter_mount_children:GetBool() and (new == 0 or old > 0 and new > old) then
+		if outfitter_mount_children:GetBool() and old > 0 and (new <= 0 or new > old) then
 			refresh_dependencies()
 		end
 	end)

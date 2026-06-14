@@ -173,7 +173,9 @@ function GUIReviewDependencies(graph, dependency_manifest, cb)
 	local normalized = NormalizeDependencyManifest(dependency_manifest)
 	if normalized then
 		for _, id in next, normalized.dependencies do
-			selected[id] = true
+			if graph.nodes[id] and id ~= graph.root then
+				selected[id] = true
+			end
 		end
 	else
 		for _, id in next, graph.order do
@@ -198,7 +200,7 @@ function GUIReviewDependencies(graph, dependency_manifest, cb)
 	info:DockMargin(8, 8, 8, 4)
 	info:SetWrap(true)
 	info:SetAutoStretchVertical(true)
-	info:SetText("This workshop outfit declares the following dependencies. Select the ones that should be mounted and sent with your outfit.")
+	info:SetText("This workshop outfit declares the following dependencies. Select the ones that should be mounted and sent with your outfit. Already-mounted items remain mounted until Garry's Mod restarts.")
 
 	local status = frame:Add("DLabel")
 	status:Dock(BOTTOM)

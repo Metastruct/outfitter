@@ -490,14 +490,14 @@ function coResolveWSDependencies(wsid)
 	local function resolve(id, depth)
 		id = tostring(id)
 
+		local node = graph.nodes[id]
+		if node then return true end
+
 		if depth > MAX_DEPENDENCY_DEPTH then
 			return nil, "dependency depth"
 		end
 
 		graph.max_depth = math.max(graph.max_depth, depth)
-
-		local node = graph.nodes[id]
-		if node then return true end
 
 		if depth > 0 and graph.count >= MAX_DEPENDENCY_COUNT then
 			return nil, "dependency count"
@@ -593,7 +593,7 @@ function coPlanWSDependencies(wsid, dependency_manifest)
 	return plan
 end
 
-local function _coMountWSChildren(key, wsid, dependency_manifest)
+local function _coMountWSChildren(_, wsid, dependency_manifest)
 	local plan, err, err2 = coPlanWSDependencies(wsid, dependency_manifest)
 	if not plan then return nil, err, err2 end
 
@@ -601,8 +601,12 @@ local function _coMountWSChildren(key, wsid, dependency_manifest)
 	for _, id in next, plan.order do
 		local path, err = coFetchWS(id, true)
 		if path then
-			local ok
-			ok, err = coMountWS(path)
+			local ok, blacklist_err = GMABlacklist(path, id)
+			if ok then
+				ok, err = coMountWS(path)
+			else
+				err = "blocked: " .. tostring(blacklist_err)
+			end
 			if not ok then
 				first_error = first_error or (id .. ": " .. tostring(err))
 			end
