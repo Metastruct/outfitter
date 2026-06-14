@@ -27,16 +27,18 @@ jobs:
 
       - name: Deploy dist to amalgamation branch
         run: |
-          git config --local user.name github-actions
-          git config --local user.email github-actions@github.com
-          echo "github.workspace = ${{ github.workspace }} pwd = $PWD"
+          cp -r "${{ github.workspace }}/dist" /tmp/amalgamation-dist
+
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+
           git fetch origin amalgamation
           git checkout amalgamation
           git rm -r --cached . 2>/dev/null || true
           rm -rf * 2>/dev/null || true
           find . -maxdepth 1 -name '.*' -not -name '.git' -not -name '.' -not -name '..' -exec rm -rf {} + 2>/dev/null || true
 
-          cp -r "${{ github.workspace }}/dist/"* .
+          cp -r /tmp/amalgamation-dist/* .
 
           git add -A
           git commit -m "Amalgamation build from ${{ github.sha }}"
