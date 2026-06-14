@@ -479,6 +479,75 @@ function coDecompress(path)
 	return 'data/' .. safepath
 end
 
+local MAX_DEPENDENCY_COUNT = 64
+local MAX_DEPENDENCY_DEPTH = 16
+
+function coResolveWSDependencies(wsid)
+	wsid = tostring(wsid)
+
+	local graph = {
+		root = wsid,
+		nodes = {},
+		order = {},
+		total_size = 0,
+		count = 0,
+		max_depth = 0
+	}
+
+	local function resolve(id, depth)
+		id = tostring(id)
+
+		if depth > MAX_DEPENDENCY_DEPTH then
+			return nil, "dependency depth"
+		end
+
+		graph.max_depth = math.max(graph.max_depth, depth)
+
+		local node = graph.nodes[id]
+		if node then return true end
+
+		if depth > 0 and graph.count >= MAX_DEPENDENCY_COUNT then
+			return nil, "dependency count"
+		end
+
+		local fileinfo = co_steamworks_FileInfo(id)
+		if not fileinfo then return nil, id .. ": fileinfo" end
+
+		local size = tonumber(fileinfo.size or 0) or 0
+		node = {
+			id = id,
+			size = size,
+			title = fileinfo.title,
+			children = {}
+		}
+		graph.nodes[id] = node
+
+		if depth > 0 then
+			graph.count = graph.count + 1
+			graph.total_size = graph.total_size + size
+		end
+
+		for _, child in next, fileinfo.children or {} do
+			child = tostring(child)
+			node.children[#node.children + 1] = child
+
+			local ok, err = resolve(child, depth + 1)
+			if not ok then return nil, err end
+		end
+
+		if depth > 0 then
+			graph.order[#graph.order + 1] = id
+		end
+
+		return true
+	end
+
+	local ok, err = resolve(wsid, 0)
+	if not ok then return nil, err end
+
+	return graph
+end
+
 local function coMountWSDependency(wsid, seen)
 	wsid = tostring(wsid)
 	if seen[wsid] then return true end
