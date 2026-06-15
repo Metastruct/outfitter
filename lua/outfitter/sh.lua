@@ -28,7 +28,6 @@ end
 
 local DEPENDENCY_MANIFEST_VERSION = 1
 local MAX_DEPENDENCY_COUNT = 64
-local MAX_WORKSHOP_ID = "18446744073709551615"
 
 function NormalizeDependencyManifest(manifest)
 	if manifest == nil then return nil end
@@ -44,8 +43,7 @@ function NormalizeDependencyManifest(manifest)
 		end
 
 		id = tostring(id)
-		local id_too_large = #id > #MAX_WORKSHOP_ID or #id == #MAX_WORKSHOP_ID and id > MAX_WORKSHOP_ID
-		if not id:find("^[1-9]%d*$") or id_too_large or seen[id] then
+		if not id:find("^[1-9]%d*$") or seen[id] then
 			return nil, "invalid dependency manifest"
 		end
 
