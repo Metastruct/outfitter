@@ -36,18 +36,12 @@ function NormalizeDependencyManifest(manifest)
 	end
 
 	local dependencies = {}
-	local seen = {}
 	for k, id in next, manifest.dependencies do
 		if not isnumber(k) or k < 1 or k % 1 ~= 0 then
 			return nil, "invalid dependency manifest"
 		end
 
 		id = tostring(id)
-		if not id:find("^[1-9]%d*$") or seen[id] then
-			return nil, "invalid dependency manifest"
-		end
-
-		seen[id] = true
 		dependencies[#dependencies + 1] = id
 		if #dependencies > MAX_DEPENDENCY_COUNT then
 			return nil, "dependency count"
