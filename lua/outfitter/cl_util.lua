@@ -198,10 +198,27 @@ do
 	end
 end
 
+local function refresh_dependencies()
+	timer.Create(Tag .. "_dependency_refresh", .5, 1, function()
+		if RefreshDependencies then RefreshDependencies() end
+	end)
+end
+
 do
-	local outfitter_mount_children = CreateClientConVar("outfitter_mount_children_test", "0", true)
+	local outfitter_allow_dependencies = CreateClientConVar("outfitter_allow_dependencies", "1", true)
+
+	cvars.AddChangeCallback("outfitter_allow_dependencies", function(cvar, old, new)
+		if tonumber(old) == 0 and tonumber(new) ~= 0 then
+			refresh_dependencies()
+		end
+	end)
+
 	function ShouldMountChildren()
-		return outfitter_mount_children:GetBool()
+		return outfitter_allow_dependencies:GetBool()
+	end
+
+	function OutfitMaxSize()
+		return outfitter_maxsize:GetFloat() * 1000 * 1000
 	end
 end
 
@@ -371,6 +388,14 @@ end
 
 --TODO
 outfitter_maxsize = CreateClientConVar("outfitter_maxsize", "60", true)
+cvars.AddChangeCallback("outfitter_maxsize", function(cvar, old, new)
+	old = tonumber(old) or 0
+	new = tonumber(new) or 0
+
+	if ShouldMountChildren and ShouldMountChildren() and old > 0 and (new <= 0 or new > old) then
+		refresh_dependencies()
+	end
+end)
 
 -- Model enforcing
 

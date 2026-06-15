@@ -8,16 +8,17 @@ _M.NTag = NTag
 
 hook.Add("NetData", Tag, function(...) return NetData(...) end)
 
-function SHNetworkOutfit(pl, mdl, download_info)
+function SHNetworkOutfit(pl, mdl, download_info, dependency_manifest)
 	--assert(not download_info or tonumber(download_info),('NetworkOutfit INVALID: mdl=%q download_info=%q'):format(tostring(mdl),tostring(download_info)))
 
 	if not mdl then
 		mdl = nil
 		download_info = nil
+		dependency_manifest = nil
 	end
 
-	local encoded, err = mdl and EncodeOutfitterPayload(mdl, download_info)
-	dbg("NetworkOutfit", pl, mdl, download_info, ('%q'):format(tostring(encoded)), err)
+	local encoded, err = mdl and EncodeOutfitterPayload(mdl, download_info, dependency_manifest)
+	dbg("NetworkOutfit", pl, mdl, download_info, DependencyManifestID(dependency_manifest), ('%q'):format(tostring(encoded)), err)
 	if not encoded then encoded = nil end
 
 	pl:SetNetData(NTag, encoded)
@@ -89,9 +90,9 @@ function OnPlayerVisible(pl, initial_sendings)
 
 	--if old == true then return end
 
-	local mdl, download_info
+	local mdl, download_info, dependency_manifest
 	if new then
-		mdl, download_info = DecodeOutfitterPayload(new)
+		mdl, download_info, dependency_manifest = DecodeOutfitterPayload(new)
 
 		local ret = hook.Run("CanOutfit", pl, mdl, download_info)
 		if ret == false then return end
@@ -114,7 +115,7 @@ function OnPlayerVisible(pl, initial_sendings)
 		return
 	end
 
-	OnChangeOutfit(pl, mdl, download_info)
+	OnChangeOutfit(pl, mdl, download_info, nil, nil, dependency_manifest)
 end
 
 hook.Add("NetworkEntityCreated", Tag, function(ent)
