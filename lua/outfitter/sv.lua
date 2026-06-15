@@ -75,26 +75,26 @@ function NetData(pl, k, val)
 		return false
 	end
 
-	local mdl, download_info
+	local mdl, download_info, dependency_manifest
 	if val then
 		if #val > 2048 * 2 or #val == 0 then
 			dbg("NetData", "badval", #val, pl)
 			return false
 		end
 
-		mdl, download_info = DecodeOutfitterPayload(val)
+		mdl, download_info, dependency_manifest = DecodeOutfitterPayload(val)
 	end
 
 	local ret = hook.Run("CanOutfit", pl, mdl, download_info)
 	if ret == false then return false end
 
-	pl:OutfitSetInfo(mdl, download_info)
+	pl:OutfitSetInfo(mdl, download_info, nil, nil, dependency_manifest)
 
-	dbg("NetData", pl, "outfit", mdl, download_info)
+	dbg("NetData", pl, "outfit", mdl, download_info, DependencyManifestID(dependency_manifest))
 
 	if not val then return true end
 
-	local ret = SanityCheckNData(mdl, download_info)
+	local ret = SanityCheckNData(mdl, download_info, dependency_manifest)
 
 	if ret ~= nil then
 		dbg("NetData", pl, "sanity check fail", tostring(val):sub(1, 256))

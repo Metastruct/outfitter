@@ -66,7 +66,7 @@ function PANEL:WSChoose()
 	self:Hide()
 	if self.chosen_id then
 		surface.PlaySound "npc/vort/claw_swing1.wav"
-		UIChoseWorkshop(self.chosen_id, self.returntoui)
+		UIChoseWorkshop(self.chosen_id, self.returntoui, true)
 	end
 end
 
@@ -160,6 +160,211 @@ function GUIWantChangeModel(str, returntoui)
 	return m_vModelDlg
 end
 
+function GUIReviewDependencies(graph, dependency_manifest, cb)
+	local text_color = Color(20, 20, 20)
+	local unavailable_color = Color(125, 35, 35)
+	local status_ok_color = Color(20, 95, 35)
+	local status_error_color = Color(135, 25, 25)
+
+	local function paint_frame(_, w, h)
+		surface.SetDrawColor(238, 238, 238, 255)
+		surface.DrawRect(0, 0, w, h)
+		surface.SetDrawColor(210, 210, 210, 255)
+		surface.DrawRect(0, 0, w, 24)
+		surface.SetDrawColor(70, 70, 70, 255)
+		surface.DrawOutlinedRect(0, 0, w, h)
+	end
+
+	local function set_check_text_color(check, color)
+		check:SetTextColor(color)
+		if check.Label then check.Label:SetTextColor(color) end
+	end
+
+	local frame = vgui.Create('DFrame', nil, 'dependency selector')
+	frame:SetDeleteOnClose(true)
+	frame:SetTitle("Outfitter dependencies")
+	frame:SetIcon('icon16/bricks.png')
+	frame:SetSize(math.min(ScrW() - 64, 720), math.min(ScrH() - 64, 560))
+	frame.Paint = paint_frame
+	frame:Center()
+	frame:MakePopup()
+
+	local selected = {}
+	local normalized = NormalizeDependencyManifest(dependency_manifest)
+	if normalized then
+		for _, id in next, normalized.dependencies do
+			if graph.nodes[id] and not graph.nodes[id].error and id ~= graph.root then
+				selected[id] = true
+			end
+		end
+	else
+		for _, id in next, graph.order do
+			if not graph.nodes[id].error then
+				selected[id] = true
+			end
+		end
+	end
+
+	local finished
+	local function finish(manifest)
+		if finished then return end
+		finished = true
+		cb(manifest)
+		frame:Remove()
+	end
+
+	frame.OnClose = function()
+		finish(false)
+	end
+
+	local info = frame:Add("DLabel")
+	info:Dock(TOP)
+	info:DockMargin(8, 8, 8, 4)
+	info:SetWrap(true)
+	info:SetAutoStretchVertical(true)
+	info:SetTextColor(text_color)
+	info:SetText("This workshop outfit declares the following dependencies. Select the ones that should be mounted and sent with your outfit. Unavailable items cannot be selected. Already-mounted items remain mounted until Garry's Mod restarts.")
+
+	local status = frame:Add("DLabel")
+	status:Dock(BOTTOM)
+	status:DockMargin(8, 4, 8, 4)
+	status:SetTall(22)
+
+	local buttons = frame:Add("EditablePanel")
+	buttons:Dock(BOTTOM)
+	buttons:DockMargin(8, 4, 8, 8)
+	buttons:SetTall(28)
+
+	local cancel = buttons:Add("DButton")
+	cancel:Dock(LEFT)
+	cancel:SetWide(80)
+	cancel:SetText("#gameui_cancel")
+	cancel:SetImage("icon16/cancel.png")
+	cancel.DoClick = function()
+		finish(false)
+	end
+
+	local none = buttons:Add("DButton")
+	none:Dock(RIGHT)
+	none:SetWide(190)
+	none:SetText("Continue without dependencies")
+	none:SetImage("icon16/delete.png")
+	none.DoClick = function()
+		finish(MakeDependencyManifest())
+	end
+
+	local accept = buttons:Add("DButton")
+	accept:Dock(RIGHT)
+	accept:DockMargin(0, 0, 4, 0)
+	accept:SetWide(190)
+	accept:SetImage("icon16/accept.png")
+
+	local scroll = frame:Add("DScrollPanel")
+	scroll:Dock(FILL)
+	scroll:DockMargin(8, 4, 8, 4)
+
+	local list = scroll:Add("DListLayout")
+	list:Dock(TOP)
+
+	local function selected_manifest()
+		local dependencies = {}
+		for _, id in next, graph.order do
+			if selected[id] then
+				dependencies[#dependencies + 1] = id
+			end
+		end
+
+		return MakeDependencyManifest(dependencies)
+	end
+
+	local function selected_size()
+		local root = graph.nodes[graph.root]
+		local size = root and root.size or 0
+		local dependency_size = 0
+		local count = 0
+		for id in next, selected do
+			if selected[id] then
+				local node = graph.nodes[id]
+				local node_size = node and node.size or 0
+				dependency_size = dependency_size + node_size
+				size = size + node_size
+				count = count + 1
+			end
+		end
+		return size, dependency_size, count
+	end
+
+	local function refresh()
+		local size, dependency_size, count = selected_size()
+		local maxsize = OutfitMaxSize()
+		local oversize = maxsize > 0.1 and size > maxsize
+
+		status:SetText(("%d selected, %s dependencies, %s with outfit, %s limit"):format(count,
+			string.NiceSize(dependency_size), string.NiceSize(size),
+			maxsize > 0.1 and string.NiceSize(maxsize) or "no"))
+		status:SetTextColor(oversize and status_error_color or status_ok_color)
+		accept:SetText(oversize and "Increase limit and accept" or "Use selected dependencies")
+	end
+
+	local seen = {}
+	local function add_dependency(id, depth)
+		if seen[id] then return end
+		seen[id] = true
+
+		local node = graph.nodes[id]
+		if not node or id == graph.root then return end
+
+		local row = list:Add("EditablePanel")
+		row:SetTall(28)
+
+		local open = row:Add("DButton")
+		open:Dock(RIGHT)
+		open:SetWide(34)
+		open:SetText("")
+		open:SetImage("icon16/world.png")
+		open:SetTooltip("Open workshop page")
+		open.DoClick = function()
+			gui.OpenURL("https://steamcommunity.com/sharedfiles/filedetails/?id=" .. id)
+		end
+
+		local check = row:Add("DCheckBoxLabel")
+		check:Dock(FILL)
+		check:DockMargin(math.max(0, depth - 1) * 16, 2, 4, 2)
+		local text = ("%s [%s] (%s)"):format(node.title or "Unknown workshop item", id, string.NiceSize(node.size))
+		if node.error then
+			text = text .. " - unavailable: " .. node.error
+		end
+		check:SetText(text)
+		check:SetTooltip(node.error and ("Unavailable: " .. node.error) or ("Workshop " .. id))
+		check:SetChecked(selected[id] and true or false)
+		check:SetEnabled(not node.error)
+		set_check_text_color(check, node.error and unavailable_color or text_color)
+		check.OnChange = function(_, value)
+			selected[id] = value and true or nil
+			refresh()
+		end
+
+		for _, child in next, node.children do
+			add_dependency(child, depth + 1)
+		end
+	end
+
+	for _, child in next, graph.nodes[graph.root].children do
+		add_dependency(child, 1)
+	end
+
+	accept.DoClick = function()
+		local size = selected_size()
+		local maxsize = OutfitMaxSize()
+		if maxsize > 0.1 and size > maxsize then
+			outfitter_maxsize:SetInt(math.ceil(size / 1000 / 1000))
+		end
+		finish(selected_manifest())
+	end
+
+	refresh()
+end
+
 -- GUIOpen
 
 
@@ -225,7 +430,7 @@ function PANEL:Init()
 			dbg("GUI", "UrlToWorkshopID", url, wsid)
 			if wsid then
 				surface.PlaySound "npc/vort/claw_swing1.wav"
-				UIChoseWorkshop(wsid, true)
+				UIChoseWorkshop(wsid, true, true)
 				self:GetParent():Hide()
 			else
 				if IsHTTPURL(url) then
@@ -255,6 +460,30 @@ function PANEL:Init()
 	l:SetTall(44)
 	l:SetFont "BudgetLabel"
 	l:SetTextColor(Color(255, 255, 255, 255))
+
+	local dependencies = functions:Add("DButton", 'dependencies')
+	self.btn_dependencies = dependencies
+	dependencies:Dock(TOP)
+	dependencies:DockMargin(0, 1, 1, 4)
+	dependencies:SetText("Dependencies...")
+	dependencies:SetImage("icon16/bricks.png")
+	dependencies:SetTooltip("Review the dependencies sent with this outfit")
+	dependencies:SetVisible(false)
+	dependencies.DoClick = function()
+		local wsid = UIGetWSID()
+		if not wsid then return end
+
+		co(function()
+			local dependency_manifest, err = coUIReviewDependencies(wsid, UIGetDependencyManifest())
+			if dependency_manifest == false then return end
+			if not dependency_manifest then
+				return UIError("Dependency review failed: " .. tostring(err))
+			end
+
+			UIApplyDependencyManifest(dependency_manifest)
+			GUIRefresh()
+		end)
+	end
 
 
 
@@ -485,7 +714,7 @@ function PANEL:Init()
 	slider.Label:Dock(TOP)
 	slider.Label:DockMargin(0, -16, 0, 0)
 
-	slider:SetTooltip [[This is how big an outfit you can receive without it being blocked]]
+	slider:SetTooltip [[This is how big an outfit and its selected dependencies can be before being blocked]]
 
 	slider:DockMargin(1, 4, 1, 1)
 	slider:SetMin(0)
@@ -493,6 +722,14 @@ function PANEL:Init()
 	slider:SetDecimals(0)
 	slider:SetConVar(Tag .. '_maxsize')
 	local sld_dl = slider
+
+	local check = AddS("DCheckBoxLabel")
+	check:SetConVar(Tag .. "_allow_dependencies")
+	check:SetText("Allow workshop dependencies")
+	check:SizeToContents()
+	check:SetTooltip [[Mounts selected workshop dependencies along with outfits]]
+	check:DockMargin(1, 12, 1, 1)
+
 	--TODO
 	--local check = functions:Add( "DCheckBoxLabel" )
 	-- 	check:SetConVar(Tag.."_ask")
@@ -584,13 +821,6 @@ function PANEL:Init()
 	check:SetTooltip [[Blacklists outfits that crashed you automatically]]
 	check:DockMargin(1, 4, 1, 1)
 	local d_2 = check
-
-	local check = AddS("DCheckBoxLabel")
-	check:SetConVar(Tag .. "_mount_children_test")
-	check:SetText("Mount children dependencies")
-	check:SizeToContents()
-	check:SetTooltip [[Mounts the required workshop addon children/dependencies along with the outfit]]
-	check:DockMargin(1, 4, 1, 1)
 
 	hr()
 	local check = AddS("DCheckBoxLabel")
@@ -833,7 +1063,7 @@ function PANEL:WantOutfitMDL(wsid, mdl, title)
 		wanting = true
 		self:GetParent():Hide()
 		dbg("WantOutfitMDL", wanting and "ALREADY WANTING" or "", wsid, mdl, title)
-		local ok, err = xpcall(UIChoseWorkshop, debug.traceback, wsid)
+		local ok, err = xpcall(UIChoseWorkshop, debug.traceback, wsid, false, true)
 		if not ok then
 			ErrorNoHalt(err .. '\n')
 			wanting = false
@@ -850,7 +1080,7 @@ function PANEL:WSChoose()
 	self:Hide()
 	if self.chosen_id then
 		surface.PlaySound "npc/vort/claw_swing1.wav"
-		UIChoseWorkshop(self.chosen_id)
+		UIChoseWorkshop(self.chosen_id, false, true)
 	end
 end
 
@@ -964,6 +1194,41 @@ function GUICheckTransmit()
 	local cansend = UIGetChosenMDL() and UIGetDownloadInfoX() and UIGetMDLList()
 	self.btnSendOutfit:SetEnabled2(cansend)
 	self.btn_bg:Refresh()
+	self:RefreshDependencyButton()
+end
+
+function PANEL:RefreshDependencyButton()
+	local button = self.btn_dependencies
+	if not button then return end
+
+	local wsid = UIGetWSID()
+	local visible = tonumber(wsid) ~= nil and ShouldMountChildren()
+	self.dependency_button_request = (self.dependency_button_request or 0) + 1
+
+	button:SetVisible(visible)
+	button:SetEnabled(false)
+
+	if not visible then return end
+
+	if not UIGetChosenMDL() then
+		button:SetTooltip("Choose a model before reviewing dependencies")
+		return
+	end
+
+	button:SetTooltip("Checking workshop dependencies...")
+
+	local request = self.dependency_button_request
+	co(function()
+		local graph, err = coResolveWSDependencies(wsid)
+		if not self:IsValid() or not button:IsValid() then return end
+		if request ~= self.dependency_button_request or wsid ~= UIGetWSID() then return end
+
+		local has_dependencies = graph and graph.count > 0
+		button:SetEnabled(has_dependencies)
+		button:SetTooltip(has_dependencies and "Review the dependencies sent with this outfit" or
+			(graph and "This workshop outfit does not declare dependencies" or
+				("Could not read dependencies: " .. tostring(err))))
+	end)
 end
 
 function PANEL:DoRefresh(trychoose_mdl)

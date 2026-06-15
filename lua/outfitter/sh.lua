@@ -26,7 +26,67 @@ function HasMDL(mdl)
 	return file.Exists(mdl .. '.mdl', 'GAME')
 end
 
-function SanityCheckNData(mdl, download_path)
+local DEPENDENCY_MANIFEST_VERSION = 1
+MAX_DEPENDENCY_COUNT = 64
+
+function NormalizeDependencyManifest(manifest)
+	if manifest == nil then return nil end
+	if not istable(manifest) or tonumber(manifest.version) ~= DEPENDENCY_MANIFEST_VERSION or not istable(manifest.dependencies) then
+		return nil, "invalid dependency manifest"
+	end
+
+	local dependencies = {}
+	local seen = {}
+	for k, id in next, manifest.dependencies do
+		if not isnumber(k) or k < 1 or k % 1 ~= 0 then
+			return nil, "invalid dependency manifest"
+		end
+
+		id = tostring(id)
+		if not seen[id] then
+			seen[id] = true
+			dependencies[#dependencies + 1] = id
+			if #dependencies > MAX_DEPENDENCY_COUNT then
+				return nil, "dependency count"
+			end
+		end
+	end
+
+	table.sort(dependencies, function(a, b)
+		if #a ~= #b then return #a < #b end
+		return a < b
+	end)
+
+	return {
+		version = DEPENDENCY_MANIFEST_VERSION,
+		dependencies = dependencies
+	}
+end
+
+function MakeDependencyManifest(dependencies)
+	return NormalizeDependencyManifest({
+		version = DEPENDENCY_MANIFEST_VERSION,
+		dependencies = dependencies or {}
+	})
+end
+
+function DependencyManifestID(manifest)
+	if not manifest then return "" end
+
+	local normalized = NormalizeDependencyManifest(manifest)
+	if not normalized then return "invalid" end
+
+	local parts = { tostring(normalized.version), ":" }
+	for _, id in next, normalized.dependencies do
+		parts[#parts + 1] = tostring(#id)
+		parts[#parts + 1] = ":"
+		parts[#parts + 1] = id
+	end
+
+	return table.concat(parts)
+end
+
+function SanityCheckNData(mdl, download_path, dependency_manifest)
 	if not mdl then return false end
 	if not download_path then return false end
 	if mdl == "" or #mdl > 2048 * 2 then return false end
@@ -36,6 +96,10 @@ function SanityCheckNData(mdl, download_path)
 		if tonumber(download_path) <= 0 then return false end
 	else
 		if not IsHTTPURL(download_path) then return false end
+	end
+
+	if dependency_manifest then
+		if not tonumber(download_path) then return false end
 	end
 
 	return nil
@@ -48,11 +112,22 @@ function findpl(uid)
 	end
 end
 
--- Encodes the shared payload to be sent to everyone: {model_path,25293523 or "https://example.com/asd.gma" or false}
-function EncodeOutfitterPayload(model_path, download_path)
-	local encoded = model_path and download_path and
-	util.TableToJSON({ assert(model_path:find(".mdl", 2, true) and model_path, 'invalid path: ' .. tostring(model_path)),
-		tostring(download_path) or false }) or nil
+-- Encodes the shared payload to be sent to everyone:
+-- {model_path,25293523 or "https://example.com/asd.gma" or false,dependency_manifest or nil}
+function EncodeOutfitterPayload(model_path, download_path, dependency_manifest)
+	local normalized, err = NormalizeDependencyManifest(dependency_manifest)
+	if dependency_manifest and not normalized then return nil, err end
+
+	local payload = model_path and download_path and {
+		assert(model_path:find(".mdl", 2, true) and model_path, 'invalid path: ' .. tostring(model_path)),
+		tostring(download_path) or false
+	} or nil
+
+	if payload and normalized then
+		payload[3] = normalized
+	end
+
+	local encoded = payload and util.TableToJSON(payload) or nil
 
 	return encoded and #encoded < 32000 and encoded
 end
@@ -68,6 +143,8 @@ function DecodeOutfitterPayload(encoded)
 	if not decoded then return nil, err or 'json parsing failed' end
 	local model_path = decoded[1]
 	local download_path = decoded[2]
+	local dependency_manifest, err = NormalizeDependencyManifest(decoded[3])
+	if decoded[3] and not dependency_manifest then return nil, err end
 	if not model_path then return nil, 'empty' end
 	model_path = tostring(model_path)
 	if not model_path:find("%.mdl$") and not model_path:lower():find("%.mdl$") then return nil, 'not a .mdl' end
@@ -77,7 +154,7 @@ function DecodeOutfitterPayload(encoded)
 	if not tonumber(download_path) and not download_path:find "^https?://.*/" and download_path ~= false then return nil,
 			'invalid' end
 
-	return model_path, download_path
+	return model_path, download_path, dependency_manifest
 end
 
 -- legacy
@@ -300,7 +377,7 @@ for _,fn in next,flist do
 	f:Close()
 	
 end--]]
-local t = { "", "", "", "" }
+local t = { "", "", "", "", "" }
 
 local function GenID(_1, _2, _3, _4, _5)
 	if not _1 then return end
@@ -308,19 +385,24 @@ local function GenID(_1, _2, _3, _4, _5)
 	t[2] = tostring(_2)
 	t[3] = tostring(_3)
 	t[4] = tostring(_4)
-	assert(not _5)
+	t[5] = DependencyManifestID(_5)
 
 	return table.concat(t, "|")
 end
 
 local Player = FindMetaTable "Player"
 
+function Player.OutfitDependencyManifest(pl)
+	return pl.outfitter_dependency_manifest
+end
+
 function Player.OutfitHash(pl)
 	return pl.outfitter_latest
 end
 
 function Player.OutfitUpdateHash(pl)
-	local hash = GenID(pl:OutfitInfo())
+	local mdl, download_path, skin, bodygroups = pl:OutfitInfo()
+	local hash = GenID(mdl, download_path, skin, bodygroups, pl:OutfitDependencyManifest())
 	pl.outfitter_latest = hash
 
 	return hash
@@ -338,11 +420,12 @@ function Player.OutfitInfo(pl)
 	return pl.outfitter_mdl, pl.outfitter_download_path, pl.outfitter_skin, pl.outfitter_bodygroups
 end
 
-function Player.OutfitSetInfo(pl, mdl, download_path, skin, bodygroups)
+function Player.OutfitSetInfo(pl, mdl, download_path, skin, bodygroups, dependency_manifest)
 	pl.outfitter_mdl = mdl
 	pl.outfitter_download_path = download_path
 	pl.outfitter_skin = skin
 	pl.outfitter_bodygroups = bodygroups
+	pl.outfitter_dependency_manifest = NormalizeDependencyManifest(dependency_manifest)
 	pl:OutfitUpdateHash()
 end
 
