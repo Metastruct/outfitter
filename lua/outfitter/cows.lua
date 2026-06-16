@@ -18,7 +18,7 @@ end
 
 -- External decompression helper (nerfed by http.Fetch)
 
-local outfitter_disable_decompress_helper = CreateClientConVar("outfitter_disable_decompress_helper", '1', true)
+local outfitter_disable_decompress_helper = CreateClientConVar("outfitter_disable_decompress_helper", '1', true, false, "Disable external decompression helper")
 if not outfitter_disable_decompress_helper:GetBool() then
 	file.Write("decomp_in_steamworks.dat", 'INIT')
 end
@@ -186,7 +186,7 @@ function coFetchWS(wsid, skip_maxsize)
 			end
 			local cb = co.newcb()
 			dat[#dat + 1] = cb
-			return co.waitcb()
+			return co.waitcb(cb)
 		elseif dat == false then
 			-- already failed, retry or cancel if because of size (TODO: retry at most every N seconds?)
 			local res = res[wsid]
@@ -264,7 +264,7 @@ function coFetchWS(wsid, skip_maxsize)
 		return SYNCWS(wsid, dat, cantmount(wsid, "fileinfo: " .. tostring(fileinfo.error)))
 	end
 
-	if tonumber(fileinfo.size or 0) == 0 or tonumber(fileinfo.size or 0) == 0 then
+	if tonumber(fileinfo.size or 0) == 0 then
 		return SYNCWS(wsid, dat, cantmount(wsid, "undownloadable"))
 	end
 
@@ -379,7 +379,7 @@ function MountWS(path)
 	local took = SysTime() - TIME
 	if isdbg() then dbg("MountGMA", path, "took", math.Round(took * 1000) .. ' ms') end
 
-	result = ok or false
+	local result = ok or false
 	return result, files, took
 end
 
@@ -415,11 +415,6 @@ function _coDecompressExt(path)
 		return nil, data
 	end
 
-
-	if code ~= 200 then
-		dbge(data)
-		return nil, 'idk'
-	end
 
 	local resultpath = path .. '.decompressed'
 	local ex = file.Exists(resultpath, 'GAME')
@@ -807,7 +802,7 @@ end
 -- TODO: cache
 
 
-local function checkhttp(ok, ret, len, hdrs, retcode)
+local function checkhttp(ok, ret, len, hdrs, retcode, skip_maxsize)
 	if retcode == 404 then return nil, 'not found' end
 	if retcode ~= 200 then return nil, "http error", retcode end
 	local size = hdrs["Content-Length"] and tonumber(hdrs["Content-Length"])
@@ -840,6 +835,8 @@ function coFetchGMA(download_info, pl, mdl)
 
 	local download_info_actual = MakeURLDownloadable(download_info)
 	local filename = URLFilename(download_info) or "noname" .. util.CRC(download_info)
+	local skip_maxsize = false --TODO: if server owners want to enforce a model
+	--TODO: skip whitelist if server whitelisted? 
 
 	-- 1. first try getting header info to see if we are downloading insanity
 	local ok, ret, len, hdrs, retcode = co_head(download_info_actual)
@@ -850,7 +847,7 @@ function coFetchGMA(download_info, pl, mdl)
 		dbg("NeedHTTPGMA Header", download_info, "ETag=", ETag, "Size=", size, "can_range=", can_range,
 			table.ToString(hdrs))
 
-		local ok, err, err2 = checkhttp(ok, ret, len, hdrs, retcode)
+		local ok, err, err2 = checkhttp(ok, ret, len, hdrs, retcode, skip_maxsize)
 		if not ok then
 			return ok, err, err2
 		end
@@ -863,7 +860,7 @@ function coFetchGMA(download_info, pl, mdl)
 	SetUIFetching(filename, true, nil, true)
 	--dbgn(2,'NeedHTTPGMA','minimized garbage for download',coMinimizeGarbage())
 	local ok, data, len, hdrs, retcode = co.fetch(download_info_actual)
-	SetUIFetching(filename, false, not ok and ddata or retcode ~= 200 and "server returned an error" or nil, true)
+	SetUIFetching(filename, false, not ok and data or retcode ~= 200 and "server returned an error" or nil, true)
 	if not ok then return nil, data or 'download failed' end
 
 	-- TODO: lower memory usage instantly rather than this?
@@ -876,7 +873,7 @@ function coFetchGMA(download_info, pl, mdl)
 	dbg("NeedHTTPGMA Downloaded", download_info, "ETag=", ETag, "LastModified=", LastModified, "Size=",
 		string.NiceSize(len), "can_range=", can_range, table.ToString(hdrs))
 
-	local ok, err, err2 = checkhttp(ok, data, len, hdrs, retcode)
+	local ok, err, err2 = checkhttp(ok, data, len, hdrs, retcode, skip_maxsize)
 	if not ok then
 		return ok, err, err2
 	end
