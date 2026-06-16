@@ -127,7 +127,9 @@ net.Receive(NTagSkin, function(len, pl)
 	pl.outfitter_skin = n
 	if hook.Run("OutfitterCanSkin", pl, n, has_outfit) == false then return end
 	if not has_outfit then
-		pl:ChatPrint("[Outfitter] You must have submitted an outfit before changing skin")
+		if n > 1 then
+			pl:ChatPrint("[Outfitter] You must have submitted an outfit before changing skin")
+		end
 		return
 	end
 	pl:SetSkin(n)
@@ -141,7 +143,7 @@ if not game.IsDedicated() and not game.SinglePlayer() then
 	end)
 end
 
-CreateConVar("_outfitter_version", "0.11.0", FCVAR_NOTIFY)
+CreateConVar("_outfitter_version", "0.13.20260601", FCVAR_NOTIFY)
 resource.AddSingleFile "materials/icon64/outfitter.png"
 
 
@@ -167,7 +169,7 @@ end
 
 -- Add me to server.cfg
 concommand.Add("outfitter_testmode", function(pl)
-	if IsValid(pl) then return end
+	if IsValid(pl) and not pl:IsSuperAdmin() then return end
 
 	timer.Simple(3, function()
 		if not player.GetBots()[1] then
@@ -182,4 +184,4 @@ concommand.Add("outfitter_testmode", function(pl)
 			TestOutfitsOnBots()
 		end)
 	end)
-end)
+end, "(Admin) Spawn bots with test outfits")
