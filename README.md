@@ -1,8 +1,6 @@
-**Coming straight from the Meta Construct Labs**
+# Outfitter: Multiplayer player models
 
-
-Now you can wear workshop playermodels also in multiplayer! (Yes, others will see what you wear too!)
-
+Now you can wear workshop playermodels also in multiplayer! (*Yes, others will also see what you wear, usually!*)
 
 ---
 
