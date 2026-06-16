@@ -400,7 +400,8 @@ function Player.OutfitHash(pl)
 end
 
 function Player.OutfitUpdateHash(pl)
-	local mdl, download_path, skin, bodygroups = pl:OutfitInfo()
+	--TODO: can we use manifest from OutfitInfo?
+	local mdl, download_path, skin, bodygroups, _ = pl:OutfitInfo()
 	local hash = GenID(mdl, download_path, skin, bodygroups, pl:OutfitDependencyManifest())
 	pl.outfitter_latest = hash
 
@@ -416,7 +417,7 @@ function Player.OutfitCheckHash(pl, nhash)
 end
 
 function Player.OutfitInfo(pl)
-	return pl.outfitter_mdl, pl.outfitter_download_path, pl.outfitter_skin, pl.outfitter_bodygroups
+	return pl.outfitter_mdl, pl.outfitter_download_path, pl.outfitter_skin, pl.outfitter_bodygroups, pl.outfitter_dependency_manifest
 end
 
 function Player.OutfitSetInfo(pl, mdl, download_path, skin, bodygroups, dependency_manifest)
