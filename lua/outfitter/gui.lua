@@ -5,7 +5,7 @@ local Tag = 'outfitter'
 module(Tag, package.seeall)
 local NOUI = OUTFITTER_NO_UI
 
-local outfitter_gui_focusdim = CreateClientConVar("outfitter_gui_focusdim", "0", true)
+local outfitter_gui_focusdim = CreateClientConVar("outfitter_gui_focusdim", "0", true, false, "Dim GUI when mouse leaves window")
 local vgui = GetVGUI()
 
 -- GUIWantChangeModel
@@ -1259,7 +1259,7 @@ function PANEL:DoRefresh(trychoose_mdl)
 				local str = ("%s (%s)"):format(info.title, string.NiceSize(info.size or 0))
 				self.lbl_chosen:SetText(str)
 			end
-		elseif wsid and #wsid:find "http" then -- it's a gma download
+		elseif wsid and wsid:find("http") then -- it's a gma download
 			local ok, body, len, hdrs, code = co_head(wsid)
 			if ok then
 				self.lbl_chosen:SetText("GMA: Not OK?")
@@ -1587,7 +1587,7 @@ end
 if NOUI then return end
 concommand.Add(Tag .. '_open', function()
 	GUIOpen()
-end)
+end, "Open the outfit selection GUI")
 --RunConsoleCommand(Tag..'_open')
 
 

@@ -112,7 +112,11 @@ function NetData(pl, k, val)
 	end
 
 	if pl.outfitter_skin then
-		SetSkin(pl, pl.outfitter_skin)
+		--TODO: should this be moved?
+		if hook.Run("OutfitterCanSkin", pl) ~= false then
+			dbgn(8,"experimental setskin",pl,pl.outfitter_skin)
+			pl:SetSkin(pl.outfitter_skin)
+		end
 	end
 	PrecacheModel(mdl)
 	-- CyclePlayerModel(pl) -- it needs to happen after networking
@@ -127,7 +131,9 @@ net.Receive(NTagSkin, function(len, pl)
 	pl.outfitter_skin = n
 	if hook.Run("OutfitterCanSkin", pl, n, has_outfit) == false then return end
 	if not has_outfit then
-		pl:ChatPrint("[Outfitter] You must have submitted an outfit before changing skin")
+		if n > 1 then
+			pl:ChatPrint("[Outfitter] You must have submitted an outfit before changing skin")
+		end
 		return
 	end
 	pl:SetSkin(n)
@@ -141,7 +147,7 @@ if not game.IsDedicated() and not game.SinglePlayer() then
 	end)
 end
 
-CreateConVar("_outfitter_version", "0.11.0", FCVAR_NOTIFY)
+CreateConVar("_outfitter_version", "0.13.20260601", FCVAR_NOTIFY)
 resource.AddSingleFile "materials/icon64/outfitter.png"
 
 
@@ -157,6 +163,9 @@ function TestOutfitsOnBots()
 		{ "models/argonian.mdl",                                  646729594 },
 		{ "models/captainbigbutt/vocaloid/apocalypse_miku.mdl",   629121990 },
 		{ "models/player_chibiterasu.mdl",                        503568129 },
+		{ "models/player/dewobedil/persona/yu/default_p.mdl",    1640675931 },
+		{ "models/alvaroports/vrchat/spectrelightpm.mdl",      3731746852, { version = 1, dependencies = { "3486238431" } } },
+		{ "models/pdthcloaker/pdthcloaker.mdl",                   "https://g3cf.metastruct.net/playermodel_test_1.gma" },
 	}
 	for k, v in next, player.GetBots() do
 		local of = t[(k - 1) % (#t) + 1]
@@ -167,7 +176,7 @@ end
 
 -- Add me to server.cfg
 concommand.Add("outfitter_testmode", function(pl)
-	if IsValid(pl) then return end
+	if IsValid(pl) and not pl:IsSuperAdmin() then return end
 
 	timer.Simple(3, function()
 		if not player.GetBots()[1] then
@@ -182,4 +191,4 @@ concommand.Add("outfitter_testmode", function(pl)
 			TestOutfitsOnBots()
 		end)
 	end)
-end)
+end, "(Admin) Spawn bots with test outfits")

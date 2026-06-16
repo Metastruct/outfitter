@@ -133,8 +133,8 @@ _M.this = setmetatable({},{__index = function(self,k) return rawget(_M,k) end,__
 this.Tag =Tag
 this.NTag = 'OF'
 
-local outfitter_dbg_tosv = SERVER and CreateConVar("outfitter_dbg_tosv","0") or CreateClientConVar("outfitter_dbg_tosv","0",false,false)
-local outfitter_dbg = SERVER and CreateConVar("outfitter_dbg","1") or CreateClientConVar("outfitter_dbg","0",true,false)
+local outfitter_dbg_tosv = SERVER and CreateConVar("outfitter_dbg_tosv","0", FCVAR_NONE, "Send debug messages to server console") or CreateClientConVar("outfitter_dbg_tosv","0",false,false, "Send debug messages to server console")
+local outfitter_dbg = SERVER and CreateConVar("outfitter_dbg","1", FCVAR_NONE, "Print debug info to console") or CreateClientConVar("outfitter_dbg","0",true,false, "Print debug info to console")
 _M.outfitter_dbg = outfitter_dbg
 
 function isdbg(n)

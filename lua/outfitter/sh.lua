@@ -140,7 +140,7 @@ end
 function DecodeOutfitterPayload(encoded)
 	if not encoded or #encoded == 0 then return nil, 'empty' end
 	local decoded = util.JSONToTable(encoded)
-	if not decoded then return nil, err or 'json parsing failed' end
+	if not decoded then return nil, 'json parsing failed' end
 	local model_path = decoded[1]
 	local download_path = decoded[2]
 	local dependency_manifest, err = NormalizeDependencyManifest(decoded[3])
@@ -187,7 +187,6 @@ function MDLIsPlayermodel(f, sz)
 	end
 
 	--print(mdl,mdl.bodypart_count,mdl.skinreference_count)
-	local found = false
 	local imdls = mdl:IncludedModels()
 
 	if mdl.bonecontroller_count ~= mdl.bone_count then
@@ -401,7 +400,8 @@ function Player.OutfitHash(pl)
 end
 
 function Player.OutfitUpdateHash(pl)
-	local mdl, download_path, skin, bodygroups = pl:OutfitInfo()
+	--TODO: can we use manifest from OutfitInfo?
+	local mdl, download_path, skin, bodygroups, _ = pl:OutfitInfo()
 	local hash = GenID(mdl, download_path, skin, bodygroups, pl:OutfitDependencyManifest())
 	pl.outfitter_latest = hash
 
@@ -417,7 +417,7 @@ function Player.OutfitCheckHash(pl, nhash)
 end
 
 function Player.OutfitInfo(pl)
-	return pl.outfitter_mdl, pl.outfitter_download_path, pl.outfitter_skin, pl.outfitter_bodygroups
+	return pl.outfitter_mdl, pl.outfitter_download_path, pl.outfitter_skin, pl.outfitter_bodygroups, pl.outfitter_dependency_manifest
 end
 
 function Player.OutfitSetInfo(pl, mdl, download_path, skin, bodygroups, dependency_manifest)
@@ -480,11 +480,11 @@ function InitCrashSys()
 			table.Empty(crashlist)
 			SAVE()
 			chat.AddText("Cleared blacklist (had " .. n .. ")")
-		end)
+		end, "Clear the crash blacklist")
 
 		concommand.Add(Tag .. "_dump", function()
 			PrintTable(crashlist)
-		end)
+		end, "Dump the crash blacklist")
 	end
 
 	function DidCrash(key, val)

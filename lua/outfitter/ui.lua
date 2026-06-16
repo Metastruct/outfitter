@@ -210,7 +210,15 @@ concommand.Add(Tag .. '_cmd', function(_, _, args, line)
 		end
 	end
 	Command('outfit', unpack(args))
-end)
+end, "Outfitter command: accepts workshop IDs, URLs, or subcommands (apply, cancel, autowear, etc.)")
+
+concommand.Add(Tag .. '_cancel', function()
+	UICancelAll()
+end, "Cancel current outfit and reset to default")
+
+concommand.Add(Tag .. '_reset', function()
+	UICancelAll()
+end, "Reset outfit to default player model")
 
 concommand.Add(Tag, function(_, _, args, line)
 	if not line then
@@ -230,15 +238,15 @@ concommand.Add(Tag, function(_, _, args, line)
 	end
 
 	Command(Tag, unpack(args))
-end)
+end, "Open outfitter GUI or apply an outfit by ID/URL")
 
 hook.Add("ChatCommand", Tag, function(com, v1)
 	return Command(com, v1)
 end)
 
-concommand.Add("outfitter_bodygroups_list", function(pl, _, _, mdl)
+concommand.Add("outfitter_bodygroups_list", function(_, _, _, mdl)
 	if not mdl or mdl:Trim() == "" then
-		mdl = pl:GetModel()
+		mdl = LocalPlayer():GetModel()
 	end
 
 	MsgN("Listing bodygroups of ", mdl)
@@ -263,16 +271,16 @@ concommand.Add("outfitter_bodygroups_list", function(pl, _, _, mdl)
 	end
 	if not found then print "No bodygroups??" end
 	MsgN "================"
-end)
+end, "List bodygroups of current or specified model")
 
 concommand.Add("outfitter_skin_set", function(pl, cmd, args, line)
-	n = tonumber(args[1] or 1) or 1
+	local n = tonumber(args[1] or 1) or 1
 	RequestSkin(n)
-	pl.outfitter_skin = n
-end)
+	LocalPlayer().outfitter_skin = n
+end, "Set skin number for current outfit")
 
 
-concommand.Add("outfitter_bodygroups_set", function(pl, cmd, args, line)
+concommand.Add("outfitter_bodygroups_set", function(_, cmd, args, line)
 	if not line then
 		chat.AddText("[Outfitter] Something is messing with the concommand library (outdated addon?)")
 		line = args[1]
@@ -290,6 +298,7 @@ concommand.Add("outfitter_bodygroups_set", function(pl, cmd, args, line)
 		end
 	end
 
+	local pl = LocalPlayer()
 	local mdl = mdlinspect.Open(pl:GetModel())
 	local bodyparts = mdl:BodyParts()
 	local bp = mdlinspect.BodyPartBuilder(bodyparts, 0)
@@ -297,7 +306,6 @@ concommand.Add("outfitter_bodygroups_set", function(pl, cmd, args, line)
 	print(table.ToString(t))
 
 	pl.outfitter_bodygroups = {}
-	--pl.outfitter_skin = 1
 
 	for k, v in next, t do
 		local ok, a, b, c = bp:Set(k, v)
@@ -311,7 +319,7 @@ concommand.Add("outfitter_bodygroups_set", function(pl, cmd, args, line)
 	end
 
 	pl:SetBodyGroupData(bp:GetValue())
-end)
+end, "Set bodygroups (e.g. HeadAttachment=0,Backpack=2)")
 
 
 CWHITE = Color(255, 255, 255, 255)
@@ -567,7 +575,8 @@ function UIChoseWorkshop(wsid, opengui, review_dependencies)
 	--PrintTable(mdls)
 
 	if not mdls and extramodelinfos == 'notgma' then
-		dbgn(2, " TestLZMA(", path, ") ==", ("%q"):format(file.Read(path, 'GAME'):sub(1, 14)), TestLZMA(path))
+		local header = file.Read(path, 'GAME')
+		dbgn(2, " TestLZMA(", path, ") ==", ("%q"):format(header and header:sub(1, 14) or "nil"), TestLZMA(path))
 	end
 	if not mdls and extramodelinfos == 'notgma' and TestLZMA(path) then
 		local newpath, extramodelinfos = coDecompress(path)
@@ -575,8 +584,8 @@ function UIChoseWorkshop(wsid, opengui, review_dependencies)
 			if opengui then GUIOpen() end
 			return UIError("Download failed for workshop " ..
 			wsid ..
-			": " .. tostring(extramodelinfos ~= nil and tostring(extramodelinfos) or
-			GetLastMountErr and GetLastMountErr()))
+			": " ..
+			tostring(extramodelinfos ~= nil and tostring(extramodelinfos) or GetLastMountErr and GetLastMountErr()))
 		end
 		path = newpath
 
@@ -688,7 +697,8 @@ function UIChoseHTTPGMA(download_info, opengui)
 	--PrintTable(mdls)
 
 	if not mdls and extramodelinfos == 'notgma' then
-		dbgn(2, " TestLZMA(", path, ") ==", ("%q"):format(file.Read(path, 'GAME'):sub(1, 14)), TestLZMA(path))
+		local header = file.Read(path, 'GAME')
+		dbgn(2, " TestLZMA(", path, ") ==", ("%q"):format(header and header:sub(1, 14) or "nil"), TestLZMA(path))
 	end
 	if not mdls and extramodelinfos == 'notgma' and TestLZMA(path) then
 		local newpath, extramodelinfos = coDecompress(path)
@@ -856,7 +866,6 @@ function coDoAutowear()
 
 	if not path then
 		dbg("coDoAutowear", wsid, "FetchWS failed:", err, err2)
-		if opengui then GUIOpen() end
 		return UIError("Download failed for workshop " ..
 		wsid .. ": " .. tostring(err ~= nil and tostring(err) or GetLastMountErr and GetLastMountErr()))
 	end
@@ -874,12 +883,12 @@ function coDoAutowear()
 		mdls, extramodelinfos, err = GMAPlayerModels(path)
 
 		if not mdls and extramodelinfos == 'notgma' then
-			dbgn(2, " TestLZMA(", path, ") ==", ("%q"):format(file.Read(path, 'GAME'):sub(1, 14)), TestLZMA(path))
+			local header = file.Read(path, 'GAME')
+			dbgn(2, " TestLZMA(", path, ") ==", ("%q"):format(header and header:sub(1, 14) or "nil"), TestLZMA(path))
 		end
 		if not mdls and extramodelinfos == 'notgma' and TestLZMA(path) then
 			local newpath, extramodelinfos = coDecompress(path)
 			if not newpath then
-				if opengui then GUIOpen() end
 				return UIError("Download failed for workshop " ..
 				wsid ..
 				": " ..

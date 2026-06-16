@@ -9,17 +9,57 @@ SKIN.Author       = "Python1320"
 SKIN.DermaVersion = 1
 SKIN.GwenTexture  = Material("gwenskin/GModDefault.png")
 
-SKIN.Colours      = setmetatable({}, {
-	__index = function(t, k)
-		setmetatable(t, { __index = error })
-		SKIN.Colours                      = nil
-		SKIN.Colours                      = table.Copy(SKIN.Colours)
-		SKIN.Colours.Window.TitleActive   = Color(0, 0, 0, 255)
-		SKIN.Colours.Window.TitleInactive = Color(0, 0, 0, 255)
+SKIN.Colours = {}
 
-		return SKIN.Colours[k]
-	end
-})
+-- DLabel/DButton colour keys
+-- DLabel UpdateColours (dlabel.lua:104): Bright/Dark/Highlight/Default
+-- DButton UpdateColours (dbutton.lua:86): Disabled/Down/Hover/Normal
+SKIN.Colours.Label = {
+	Default   = Color(200, 200, 200, 255),
+	Bright    = Color(200, 200, 200, 255),
+	Dark      = Color(0, 0, 0, 255),
+	Highlight = Color(240, 240, 200, 255),
+}
+SKIN.Colours.Button = {
+	Normal   = Color(0, 0, 0, 255),
+	Hover    = Color(0, 0, 0, 255),
+	Down     = Color(0, 0, 0, 255),
+	Disabled = Color(120, 120, 120, 255),
+}
+SKIN.Colours.Text = {
+	Bright = Color(255, 255, 255, 255),
+	Dark   = Color(0, 0, 0, 255),
+	Normal = Color(180, 180, 180, 255),
+}
+-- DTab UpdateColours (dpropertysheet.lua:60): Active.{Normal,Hover,Down,Disabled}, Inactive.{Normal,Hover,Down,Disabled}
+SKIN.Colours.Tab = {
+	Active = {
+		Normal   = Color(0, 0, 0, 255),
+		Hover    = Color(0, 0, 0, 255),
+		Down     = Color(0, 0, 0, 255),
+		Disabled = Color(120, 120, 120, 255),
+	},
+	Inactive = {
+		Normal   = Color(0, 0, 0, 255),
+		Hover    = Color(0, 0, 0, 255),
+		Down     = Color(0, 0, 0, 255),
+		Disabled = Color(120, 120, 120, 255),
+	},
+}
+SKIN.Colours.Window = {}
+SKIN.Colours.Window.TitleActive   = Color(0, 0, 0, 255)
+SKIN.Colours.Window.TitleInactive = Color(0, 0, 0, 255)
+
+-- Catch-all for any colour section not explicitly defined above
+setmetatable(SKIN.Colours, { __index = function(t, k)
+	local section = setmetatable({}, { __index = function(_, kk)
+		local v = Color(0, 0, 0, 255)
+		_[kk] = v
+		return v
+	end })
+	t[k] = section
+	return section
+end })
 
 pcall(require, 'urlimage')
 local function URLImage(m)

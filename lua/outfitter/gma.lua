@@ -208,8 +208,8 @@ local function build(meta, gma, collect, no_crc)
 end
 
 local function strip_lua(meta)
-	for i, file_meta in pairs(meta.files) do
-		if file_meta.ext:lower() == "lua" then
+	for i = #meta.files, 1, -1 do
+		if meta.files[i].ext:lower() == "lua" then
 			table.remove(meta.files, i)
 		end
 	end

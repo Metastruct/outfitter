@@ -30,7 +30,7 @@ function Fullupdate()
 end
 
 --TODO: Make outfitter mount all after enabling?
-outfitter_enabled = CreateClientConVar("outfitter_enabled", "1", true, true)
+outfitter_enabled = CreateClientConVar("outfitter_enabled", "1", true, true, "Toggle outfitter outfits on/off")
 cvars.AddChangeCallback("outfitter_enabled", function(cvar, old, new)
 	if new == '0' then
 		DisableEverything()
@@ -47,7 +47,7 @@ do
 end
 
 do
-	local outfitter_download_notifications = CreateClientConVar("outfitter_download_notifications", "0", true, false)
+	local outfitter_download_notifications = CreateClientConVar("outfitter_download_notifications", "0", true, false, "Show download progress notifications")
 	function CanDownloadNotification()
 		return outfitter_download_notifications:GetBool()
 	end
@@ -55,7 +55,7 @@ end
 
 
 --TODO: Make outfitter mount all after enabling?
-outfitter_fix_error_players = CreateClientConVar("outfitter_fix_error_players", "1", true, true)
+outfitter_fix_error_players = CreateClientConVar("outfitter_fix_error_players", "1", true, true, "Fix error player models")
 cvars.AddChangeCallback("outfitter_fix_error_players", function(cvar, old, new)
 
 end)
@@ -87,7 +87,7 @@ end
 hook.Add("InitPostEntity", Tag, InitPostEntity)
 
 do
-	local outfitter_sounds = CreateClientConVar("outfitter_sounds", "1", true)
+	local outfitter_sounds = CreateClientConVar("outfitter_sounds", "1", true, false, "Play informational sounds")
 	function CanPlaySounds()
 		local ok = outfitter_sounds:GetBool()
 		if not ok then return ok end
@@ -99,14 +99,14 @@ do
 end
 
 do
-	local outfitter_hands = CreateClientConVar("outfitter_hands", "1", true)
+	local outfitter_hands = CreateClientConVar("outfitter_hands", "1", true, false, "Guess hands for playermodels")
 	function ShouldHands()
 		return outfitter_hands:GetBool()
 	end
 end
 
 do
-	local outfitter_animfix_oldmethod = CreateClientConVar("outfitter_animfix_oldmethod", "0", true)
+	local outfitter_animfix_oldmethod = CreateClientConVar("outfitter_animfix_oldmethod", "0", true, false, "Use fullupdate for local player animations (legacy fix)")
 	function UseOldAnimFixMethod()
 		return outfitter_animfix_oldmethod:GetBool()
 	end
@@ -127,8 +127,8 @@ do
 	-- -1: server preference
 	-- 0: force disable distance check
 	-- 1: force enable distance check
-	local outfitter_distance_mode = CreateClientConVar("outfitter_distance_mode", "-1", true)
-	local outfitter_distance = CreateClientConVar("outfitter_distance", "2047", true)
+	local outfitter_distance_mode = CreateClientConVar("outfitter_distance_mode", "-1", true, false, "Distance mode: -1=server pref, 0=disable, 1=enable")
+	local outfitter_distance = CreateClientConVar("outfitter_distance", "2047", true, false, "Max distance in units for outfit downloads")
 	function ShouldDistance()
 		local mode = outfitter_distance_mode:GetInt()
 		if mode == 0 then
@@ -153,7 +153,7 @@ do
 end
 
 do
-	local outfitter_nohighperf = CreateClientConVar("outfitter_nohighperf", "0", false)
+	local outfitter_nohighperf = CreateClientConVar("outfitter_nohighperf", "0", false, false, "Disable high performance mode")
 	local highperf = 0
 	local prehighperf = true
 	function IsHighPerf()
@@ -192,7 +192,7 @@ end
 
 --TODO
 do
-	local outfitter_use_autoblacklist = CreateClientConVar("outfitter_use_autoblacklist", "0", true)
+	local outfitter_use_autoblacklist = CreateClientConVar("outfitter_use_autoblacklist", "0", true, false, "Auto-blacklist outfits that crash you")
 	function AutoblacklistEnabled()
 		return outfitter_use_autoblacklist:GetBool()
 	end
@@ -205,7 +205,7 @@ local function refresh_dependencies()
 end
 
 do
-	local outfitter_allow_dependencies = CreateClientConVar("outfitter_allow_dependencies", "1", true)
+	local outfitter_allow_dependencies = CreateClientConVar("outfitter_allow_dependencies", "1", true, false, "Mount selected workshop dependencies with outfits")
 
 	cvars.AddChangeCallback("outfitter_allow_dependencies", function(cvar, old, new)
 		if tonumber(old) == 0 and tonumber(new) ~= 0 then
@@ -262,7 +262,7 @@ end
 
 
 do
-	local outfitter_extra_safe_downloading = CreateClientConVar("outfitter_extra_safe_downloading", "0", true)
+	local outfitter_extra_safe_downloading = CreateClientConVar("outfitter_extra_safe_downloading", "0", true, false, "Extra safe / paranoid download mode")
 	function IsParanoidMode()
 		return outfitter_extra_safe_downloading:GetBool()
 	end
@@ -307,20 +307,20 @@ do
 end
 
 do
-	local outfitter_download_strip_lua = CreateClientConVar("outfitter_download_strip_lua", "1", true)
+	local outfitter_download_strip_lua = CreateClientConVar("outfitter_download_strip_lua", "1", true, false, "Strip Lua files from downloaded GMAs (exploit protection)")
 	function ShouldStripLuaFromDownloads()
 		return outfitter_download_strip_lua:GetBool()
 	end
 end
 
 do
-	local outfitter_allow_http = CreateClientConVar("outfitter_allow_http_test", "0", true)
+	local outfitter_allow_http = CreateClientConVar("outfitter_allow_http_test", "0", true, false, "Allow HTTP downloads from outside workshop (UNSAFE)")
 	function CanDownloadViaHTTP()
 		return outfitter_allow_http:GetBool()
 	end
 end
 do
-	local outfitter_allow_unsafe_http = CreateClientConVar("outfitter_allow_unsafe_http", "0", true)
+	local outfitter_allow_unsafe_http = CreateClientConVar("outfitter_allow_unsafe_http", "0", true, false, "Load outfits from untrusted URLs (may leak IP)")
 	local whitelist = {}
 	-- TODO: https://github.com/thegrb93/StarfallEx/blob/68527049b110af75ee08020255318099ddda58d5/lua/starfall/permissions/providers_sh/url_whitelist.lua
 	function AllowedHTTPURL(url, bypass_can_download)
@@ -344,7 +344,7 @@ end
 
 -- never save because of malicious servers?
 do
-	local outfitter_unsafe = CreateClientConVar("outfitter_unsafe", "0", false)
+	local outfitter_unsafe = CreateClientConVar("outfitter_unsafe", "0", false, false, "Remove some outfit checks (for self only)")
 	function IsUnsafe()
 		return outfitter_unsafe:GetBool()
 	end
@@ -353,7 +353,7 @@ end
 do
 	-- TODO: OnPlayerVisible calling
 
-	local outfitter_friendsonly = CreateClientConVar("outfitter_friendsonly", "0", true)
+	local outfitter_friendsonly = CreateClientConVar("outfitter_friendsonly", "0", true, false, "Block outfits from non-friends")
 
 	cvars.AddChangeCallback("outfitter_friendsonly", function(cvar, old, new)
 		if new == '1' then
@@ -376,7 +376,7 @@ do
 end
 
 --TODO
-local outfitter_failsafe = CreateClientConVar("outfitter_failsafe", "0", true)
+local outfitter_failsafe = CreateClientConVar("outfitter_failsafe", "0", true, false, "Ticked automatically after crash detected from outfit apply")
 function IsFailsafe()
 	return outfitter_failsafe:GetBool()
 end
@@ -387,7 +387,13 @@ function SetFailsafe()
 end
 
 --TODO
-outfitter_maxsize = CreateClientConVar("outfitter_maxsize", "60", true)
+outfitter_maxsize = CreateClientConVar("outfitter_maxsize", "70", true, false, "Max download size (MB) for an outfit + dependencies")
+
+if outfitter_maxsize:GetFloat()==60 then
+	-- Override old default 
+	outfitter_maxsize:SetInt(70)
+end
+
 cvars.AddChangeCallback("outfitter_maxsize", function(cvar, old, new)
 	old = tonumber(old) or 0
 	new = tonumber(new) or 0
@@ -441,7 +447,6 @@ local function BadRagdoll(mdl)
 	cache[mdl] = false
 
 	local sz = file.Size(mdl:gsub("%.mdl$", '.phy'), 'GAME')
-	cache[mdl] = cached
 
 	if sz and sz > 100 * 1000 then
 		cached = true
@@ -896,7 +901,7 @@ function GMAPlayerModels(fpath)
 			continue
 		end
 
-		can = mdlfiles[path_extless]
+		local can = mdlfiles[path_extless]
 		local discard
 		local isplr, err, err2 = MDLIsPlayermodel(GMAORFILE(path_fd, gma and gma:GetFile(), entry.Size))
 		local hasAnims = err
@@ -1128,7 +1133,8 @@ hook.Add("GUIMouseReleased", Tag, GUIMouseReleased)
 
 
 concommand.Add("outfitter_camera_toggle",
-	function(a, b, c) if c[1] then ToggleThirdperson(tonumber(c[1])) else ToggleThirdperson() end end)
+	function(a, b, c) if c[1] then ToggleThirdperson(tonumber(c[1])) else ToggleThirdperson() end end,
+	"Toggle thirdperson camera")
 
 ------------
 

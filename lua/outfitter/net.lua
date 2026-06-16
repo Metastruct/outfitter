@@ -123,7 +123,7 @@ hook.Add("NetworkEntityCreated", Tag, function(ent)
 		OnPlayerVisible(ent)
 	elseif ent:GetClass() == "class C_HL2MPRagdoll" then
 		local owner = ent:GetRagdollOwner()
-		if owner:IsValid() then
+		if IsValid(owner) then
 			OnDeathRagdollCreated(ent, owner)
 			return
 		end
