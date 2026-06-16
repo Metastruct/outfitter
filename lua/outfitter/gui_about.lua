@@ -120,6 +120,10 @@ local credits = {
 	"Meta Construct",
 	{ '76561198047188411', "http://metastruct.eu" },
 	[[The programming community that made outfitter possible]],
+}, {
+	"ilker",
+	"76561198114061219",
+	[[Created dependencies mounting]],
 },
 }
 
@@ -422,4 +426,4 @@ end
 
 concommand.Add(Tag .. '_about', function()
 	GUIAbout()
-end)
+end, "Open the about/credits dialog")
