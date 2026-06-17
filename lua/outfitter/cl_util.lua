@@ -326,7 +326,11 @@ do
 	function AllowedHTTPURL(url, bypass_can_download)
 		if not CanDownloadViaHTTP() and bypass_can_download ~= true then return false end
 		if outfitter_allow_unsafe_http:GetBool() then return true end
-		return true -- TODO
+		if _G.gurl and _G.gurl.check_url_easy then
+			return _G.gurl.check_url_easy(url)
+		end
+		chat.AddText(Color(255, 100, 0), "[outfitter] ", Color(255, 255, 255), "URL blocked. Enable outfitter_allow_unsafe_http or install the gurl addon.")
+		return false
 	end
 
 	function AddHTTPWhitelist(str, strtype)

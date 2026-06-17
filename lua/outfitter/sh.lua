@@ -529,6 +529,13 @@ end
 function MakeURLDownloadable(url)
 	url = url:Trim()
 
+	if _G.gurl and _G.gurl.make_downloadable then
+		local result = _G.gurl.make_downloadable(url)
+		if result then
+			return result
+		end
+	end
+
 	if url:find("dropbox", 4, true) then
 		url = url:gsub([[^http%://dl%.dropboxusercontent%.com/]], [[https://dl.dropboxusercontent.com/]])
 		url = url:gsub([[^https?://dl.dropbox.com/]], [[https://www.dropbox.com/]])
