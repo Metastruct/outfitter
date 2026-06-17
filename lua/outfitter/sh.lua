@@ -480,11 +480,11 @@ function InitCrashSys()
 			table.Empty(crashlist)
 			SAVE()
 			chat.AddText("Cleared blacklist (had " .. n .. ")")
-		end, "Clear the crash blacklist")
+		end, nil, "Clear the crash blacklist")
 
 		concommand.Add(Tag .. "_dump", function()
 			PrintTable(crashlist)
-		end, "Dump the crash blacklist")
+		end, nil, "Dump the crash blacklist")
 	end
 
 	function DidCrash(key, val)

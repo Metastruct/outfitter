@@ -210,15 +210,15 @@ concommand.Add(Tag .. '_cmd', function(_, _, args, line)
 		end
 	end
 	Command('outfit', unpack(args))
-end, "Outfitter command: accepts workshop IDs, URLs, or subcommands (apply, cancel, autowear, etc.)")
+end, nil, "Outfitter command: accepts workshop IDs, URLs, or subcommands (apply, cancel, autowear, etc.)")
 
 concommand.Add(Tag .. '_cancel', function()
 	UICancelAll()
-end, "Cancel current outfit and reset to default")
+end, nil, "Cancel current outfit and reset to default")
 
 concommand.Add(Tag .. '_reset', function()
 	UICancelAll()
-end, "Reset outfit to default player model")
+end, nil, "Reset outfit to default player model")
 
 concommand.Add(Tag, function(_, _, args, line)
 	if not line then
@@ -238,7 +238,7 @@ concommand.Add(Tag, function(_, _, args, line)
 	end
 
 	Command(Tag, unpack(args))
-end, "Open outfitter GUI or apply an outfit by ID/URL")
+end, nil, "Open outfitter GUI or apply an outfit by ID/URL")
 
 hook.Add("ChatCommand", Tag, function(com, v1)
 	return Command(com, v1)
@@ -271,13 +271,13 @@ concommand.Add("outfitter_bodygroups_list", function(_, _, _, mdl)
 	end
 	if not found then print "No bodygroups??" end
 	MsgN "================"
-end, "List bodygroups of current or specified model")
+end, nil, "List bodygroups of current or specified model")
 
 concommand.Add("outfitter_skin_set", function(pl, cmd, args, line)
 	local n = tonumber(args[1] or 1) or 1
 	RequestSkin(n)
 	LocalPlayer().outfitter_skin = n
-end, "Set skin number for current outfit")
+end, nil, "Set skin number for current outfit")
 
 
 concommand.Add("outfitter_bodygroups_set", function(_, cmd, args, line)
@@ -319,7 +319,7 @@ concommand.Add("outfitter_bodygroups_set", function(_, cmd, args, line)
 	end
 
 	pl:SetBodyGroupData(bp:GetValue())
-end, "Set bodygroups (e.g. HeadAttachment=0,Backpack=2)")
+end, nil, "Set bodygroups (e.g. HeadAttachment=0,Backpack=2)")
 
 
 CWHITE = Color(255, 255, 255, 255)

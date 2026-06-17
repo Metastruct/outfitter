@@ -426,4 +426,4 @@ end
 
 concommand.Add(Tag .. '_about', function()
 	GUIAbout()
-end, "Open the about/credits dialog")
+end, nil, "Open the about/credits dialog")

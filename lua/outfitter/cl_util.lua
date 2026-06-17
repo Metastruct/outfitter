@@ -1138,7 +1138,7 @@ hook.Add("GUIMouseReleased", Tag, GUIMouseReleased)
 
 concommand.Add("outfitter_camera_toggle",
 	function(a, b, c) if c[1] then ToggleThirdperson(tonumber(c[1])) else ToggleThirdperson() end end,
-	"Toggle thirdperson camera")
+	nil, "Toggle thirdperson camera")
 
 ------------
 
