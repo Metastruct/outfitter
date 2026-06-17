@@ -1587,7 +1587,7 @@ end
 if NOUI then return end
 concommand.Add(Tag .. '_open', function()
 	GUIOpen()
-end, "Open the outfit selection GUI")
+end, nil, "Open the outfit selection GUI")
 --RunConsoleCommand(Tag..'_open')
 
 
