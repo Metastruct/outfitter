@@ -246,9 +246,25 @@ do
 		return blocklist
 	end
 
-	function IsTitleBlocked(title)
-		if not AllowNSFW() and title:lower():find "nsfw" then
+	function IsTitleNSFW(title)
+		if not AllowNSFW() and (title:lower():find "nsfw" or title:find " 18%+ " or title:find "18%+$") then
 			return true
+		end
+		return false
+	end
+
+	function IsTitleBlocked(title, content_descriptors)
+		if not AllowNSFW() then
+			if content_descriptors then
+				for _, desc in ipairs(content_descriptors) do
+					if desc ~= "gore" and (desc == "adult_only" or desc == "general_mature" or desc == "suggestive" or desc == "nudity") then
+						return true
+					end
+				end
+			end
+			if IsTitleNSFW(title) then
+				return true
+			end
 		end
 
 		for _, l in pairs(blocklist) do
@@ -257,6 +273,10 @@ do
 			end
 		end
 		return false
+	end
+
+	function IsAddonNSFWBlocked(fileinfo) 
+		return IsTitleBlocked(fileinfo.title,fileinfo.content_descriptors)
 	end
 end
 
@@ -321,8 +341,6 @@ do
 end
 do
 	local outfitter_allow_unsafe_http = CreateClientConVar("outfitter_allow_unsafe_http", "0", true, false, "Load outfits from untrusted URLs (may leak IP)")
-	local whitelist = {}
-	-- TODO: https://github.com/thegrb93/StarfallEx/blob/68527049b110af75ee08020255318099ddda58d5/lua/starfall/permissions/providers_sh/url_whitelist.lua
 	function AllowedHTTPURL(url, bypass_can_download)
 		if not CanDownloadViaHTTP() and bypass_can_download ~= true then return false end
 		if outfitter_allow_unsafe_http:GetBool() then return true end

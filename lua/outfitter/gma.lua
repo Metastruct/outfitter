@@ -218,7 +218,7 @@ local function strip_lua(meta)
 end
 
 local function skip_if_no_lua(meta)
-	for i, file_meta in pairs(meta.files) do
+	for _, file_meta in pairs(meta.files) do
 		if file_meta.ext:lower() == "lua" then return end
 	end
 
