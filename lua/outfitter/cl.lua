@@ -200,6 +200,11 @@ function ChangeOutfitThreadWorker(pl, hash)
 	local exists = HasMDL(mdl)
 	if exists then
 		if tonumber(download_info) then
+			local fileinfo = co_steamworks_FileInfo(download_info)
+			if istable(fileinfo) and IsAddonNSFWBlocked(fileinfo) then
+				dbg("ChangeOutfit", download_info, "NSFW blocked on re-mount")
+				return false, "blocked title"
+			end
 			-- The model may have been mounted before its required items.
 			if ShouldMountChildren() then
 				local ok, err, err2 = coMountWSChildren(download_info, dependency_manifest)

@@ -18,7 +18,8 @@ end
 
 -- External decompression helper (nerfed by http.Fetch)
 
-local outfitter_disable_decompress_helper = CreateClientConVar("outfitter_disable_decompress_helper", '1', true, false, "Disable external decompression helper")
+local outfitter_disable_decompress_helper = CreateClientConVar("outfitter_disable_decompress_helper", '1', true, false,
+	"Disable external decompression helper")
 if not outfitter_disable_decompress_helper:GetBool() then
 	file.Write("decomp_in_steamworks.dat", 'INIT')
 end
@@ -177,10 +178,19 @@ function coFetchWS(wsid, skip_maxsize)
 
 	if dat then
 		if dat == true then
-			-- true: already fetched
-			return res[wsid] or true
+			local fileinfo = co_steamworks_FileInfo(wsid)
+			if istable(fileinfo) and IsAddonNSFWBlocked(fileinfo) then
+				dbg("BLOCKED",wsid)
+				return SYNCWS(wsid, dat, cantmount(wsid, "blocked title"))
+			end
+			local ret = res[wsid] or true
+			
+			dbgn(8,"FetchWS","wsid=",wsid,"fetching=",dat,"ret=",ret)
+			return ret
 		elseif istable(dat) then
 			-- become a waiter
+			
+			dbgn(8,"FetchWS","wsid=",wsid,"fetching=",dat,"awaiting...")
 			if skip_maxsize then
 				skip_maxsizes[wsid] = true
 			end
@@ -188,6 +198,8 @@ function coFetchWS(wsid, skip_maxsize)
 			dat[#dat + 1] = cb
 			return co.waitcb(cb)
 		elseif dat == false then
+			dbgn(2,"FetchWS","wsid=",wsid,"fetching=",dat)
+
 			-- already failed, retry or cancel if because of size (TODO: retry at most every N seconds?)
 			local res = res[wsid]
 			local canskip = res == "oversize" and skip_maxsize
@@ -209,7 +221,7 @@ function coFetchWS(wsid, skip_maxsize)
 
 	local fileinfo = co_steamworks_FileInfo(wsid)
 
-	dbg("steamworks.FileInfo", wsid, "->", fileinfo)
+	dbg("steamworks.FileInfo", wsid, "->", fileinfo and "OK" or "fail?")
 	if istable(fileinfo) then
 		dbg("", "title", fileinfo.title)
 		if fileinfo.error then
@@ -251,12 +263,15 @@ function coFetchWS(wsid, skip_maxsize)
 		if installed then
 			dbgn(3, "FileInfo", wsid, "installed? We shouldn't get this far if not disabled")
 		end
+		if fileinfo.content_descriptors then
+			dbg("", "content_descriptors", table.ToString(fileinfo.content_descriptors))
+		end
 	end
 
 	if not fileinfo or not fileinfo.title then
 		return SYNCWS(wsid, dat, cantmount(wsid, "fileinfo"))
 	end
-	if IsTitleBlocked(fileinfo.title) then
+	if IsAddonNSFWBlocked(fileinfo) then
 		return SYNCWS(wsid, dat, cantmount(wsid, "blocked title"))
 	end
 
@@ -650,7 +665,14 @@ function NeedWS(wsid, pl, mdl, dependency_manifest)
 	if co.make(wsid, pl, mdl, dependency_manifest) then return end
 
 	-- already mounted, don't mount again
-	if steamworks.IsSubscribed(wsid) and file.Exists(mdl, 'GAME') then return true end
+	if steamworks.IsSubscribed(wsid) and file.Exists(mdl, 'GAME') then
+		local fileinfo = co_steamworks_FileInfo(wsid)
+		if istable(fileinfo) and IsAddonNSFWBlocked(fileinfo) then
+			dbg("NeedWS", wsid, "NSFW blocked on re-mount")
+			return nil, "blocked title"
+		end
+		return true
+	end
 
 	SetUIFetching(wsid, true)
 
@@ -807,12 +829,11 @@ local function checkhttp(ok, ret, len, hdrs, retcode, skip_maxsize)
 	if retcode ~= 200 then return nil, "http error", retcode end
 	local size = hdrs["Content-Length"] and tonumber(hdrs["Content-Length"])
 
-	local wsid = 0 -- TODO FIXME
 	local maxsz = outfitter_maxsize:GetFloat()
 	maxsz = maxsz * 1000 * 1000
 
 	if size and maxsz >= 1 and size > math.min(maxsz, 1024 * 1024 * 1024) then
-		dbg("NeedHTTPGMA", "MAXSIZE", skip_maxsize and "OVERRIDE" or "", wsid, string.NiceSize(size))
+		dbg("NeedHTTPGMA", "MAXSIZE", skip_maxsize and "OVERRIDE" or "",  string.NiceSize(size))
 
 		if not skip_maxsize then
 			return nil, "oversize"
@@ -836,7 +857,7 @@ function coFetchGMA(download_info, pl, mdl)
 	local download_info_actual = MakeURLDownloadable(download_info)
 	local filename = URLFilename(download_info) or "noname" .. util.CRC(download_info)
 	local skip_maxsize = false --TODO: if server owners want to enforce a model
-	--TODO: skip whitelist if server whitelisted? 
+	--TODO: skip whitelist if server whitelisted?
 
 	-- 1. first try getting header info to see if we are downloading insanity
 	local ok, ret, len, hdrs, retcode = co_head(download_info_actual)
@@ -905,6 +926,20 @@ function coFetchGMA(download_info, pl, mdl)
 	if not ok then
 		dbge("NeedHTTPGMA", "GMABlacklist", download_info, "->", err)
 		return
+	end
+
+	local gma_f = file.Open(path, 'rb', 'MOD')
+	if gma_f then
+		local gma_parser, gma_err = gmaparse.Parser(gma_f)
+		if gma_parser then
+			gma_parser:ParseHeader()
+			if IsTitleNSFW(gma_parser.name or "") then
+				gma_f:Close()
+				dbg("NeedHTTPGMA", "NSFW title", download_info, "->", gma_parser.name)
+				return
+			end
+		end
+		gma_f:Close()
 	end
 
 	local mdls, extra, errlist = GMAPlayerModels(path)

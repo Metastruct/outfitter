@@ -574,7 +574,7 @@ function PANEL:Init()
 	check:SetConVar("nsfw")
 	check:SetText("Allow NSFW")
 	check:SizeToContents()
-	check:SetTooltip [[Allow NSFW content in title]]
+	check:SetTooltip [[Allow NSFW rated addons]]
 	check:DockMargin(1, 0, 1, 1)
 	check:Dock(TOP)
 
