@@ -567,6 +567,13 @@ function Player.EnforceModel(pl, mdl, nocheck)
 			curmdl = nil
 		end
 		pl.original_model = curmdl
+	
+	elseif curmdl and curmdl ~= origmdl and curmdl ~= curenforce then
+		--NOTE: WARNING: This is a fix attempt at finding original_model when it changes serverside while forcing outfitter playermodel
+		local valid = curmdl ~= "" and curmdl ~= "models/error.mdl" and curmdl ~= "models/player.mdl"
+		if valid then
+			pl.original_model = curmdl
+		end
 	end
 
 	pl.enforce_model = mdl
@@ -590,10 +597,12 @@ end
 function OnPlayerInPVS(pl)
 	if not pl.enforce_model then return end
 
-	local orig = pl.original_model
 	local neworig = pl:GetModel()
-	-- pl.original_model = neworig
-	dbgn(2, "OnPlayerInPVS", "enforce", pl, pl.enforce_model, "orig", orig, orig == neworig)
+	if neworig and neworig ~= "" and neworig ~= "models/error.mdl" and neworig ~= "models/player.mdl" then
+				--NOTE: WARNING: This is a fix attempt at finding original_model when it changes serverside while forcing outfitter playermodel
+		pl.original_model = neworig
+	end
+	dbgn(2, "OnPlayerInPVS", "enforce", pl, pl.enforce_model, "orig", pl.original_model, "new", neworig)
 	StartEnforcing(pl)
 end
 
