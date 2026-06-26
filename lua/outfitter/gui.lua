@@ -1,4 +1,5 @@
 local Tag = 'outfitter'
+local NTag = 'OF'
 
 -- lua_openscript_cl srv/outfitter/lua/outfitter/ui.lua;lua_openscript_cl srv/outfitter/lua/outfitter/gui.lua;outfitter_open
 
@@ -929,7 +930,19 @@ function PANEL:Init()
 	b:SetSize(24, 24)
 	b:SetTooltip [[#GameUI_Modify]]
 	b.DoClick = function()
-		GUIOpenBodyGroupOverlay(self) --, b.mdl.Name)
+		if not LocalPlayer():GetNetData(NTag) then
+			local menu = DermaMenu()
+			menu:AddOption("#gameui_submit", function()
+				GUIBroadcastMyOutfit()
+			end):SetIcon('icon16/transmit.png')
+			menu:AddOption("#gameui_cancel", function() end):SetIcon('icon16/cancel.png')
+			menu:AddOption("Edit anyway", function()
+				GUIOpenBodyGroupOverlay(self)
+			end):SetIcon('icon16/accept.png')
+			menu:Open()
+		else
+			GUIOpenBodyGroupOverlay(self)
+		end
 	end
 	b:SetImage 'icon16/group_edit.png'
 	b.PerformLayout = function(b, w, h)

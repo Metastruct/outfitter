@@ -567,6 +567,13 @@ function Player.EnforceModel(pl, mdl, nocheck)
 			curmdl = nil
 		end
 		pl.original_model = curmdl
+	
+	elseif curmdl and curmdl ~= origmdl and curmdl ~= curenforce then
+		--NOTE: WARNING: This is a fix attempt at finding original_model when it changes serverside while forcing outfitter playermodel
+		local valid = curmdl ~= "" and curmdl ~= "models/error.mdl" and curmdl ~= "models/player.mdl"
+		if valid then
+			pl.original_model = curmdl
+		end
 	end
 
 	pl.enforce_model = mdl
@@ -590,10 +597,12 @@ end
 function OnPlayerInPVS(pl)
 	if not pl.enforce_model then return end
 
-	local orig = pl.original_model
 	local neworig = pl:GetModel()
-	-- pl.original_model = neworig
-	dbgn(2, "OnPlayerInPVS", "enforce", pl, pl.enforce_model, "orig", orig, orig == neworig)
+	if neworig and neworig ~= "" and neworig ~= "models/error.mdl" and neworig ~= "models/player.mdl" then
+				--NOTE: WARNING: This is a fix attempt at finding original_model when it changes serverside while forcing outfitter playermodel
+		pl.original_model = neworig
+	end
+	dbgn(2, "OnPlayerInPVS", "enforce", pl, pl.enforce_model, "orig", pl.original_model, "new", neworig)
 	StartEnforcing(pl)
 end
 
@@ -1078,8 +1087,74 @@ hook.Add("Think", Tag, Think)
 
 
 
--------------------
+do
+    local outfitter_player_menu = CreateClientConVar("outfitter_player_menu", "1", true, false, "Show a menu item on each player to open their outfit workshop page")
+    function CanPlayerMenu()
+        return outfitter_player_menu:GetBool()
+    end
+end
 
+if CLIENT then
+    properties.Add("outfitter_workshop", {
+        MenuLabel = "Open Outfit Workshop Page",
+        Order = 776,
+        MenuIcon = "icon16/picture.png",
+        Filter = function(self, ent, ply)
+            if not IsValid(ent) then return false end
+            if not ent:IsPlayer() then return false end
+            if not CanPlayerMenu() then return false end
+            local _, download_path = ent:OutfitInfo()
+            if not download_path then return false end
+            if not tonumber(download_path) then return false end
+            return true
+        end,
+        Action = function(self, ent)
+            if not IsValid(ent) then return end
+            local _, download_path = ent:OutfitInfo()
+            if download_path and tonumber(download_path) then
+                gui.OpenURL("https://steamcommunity.com/workshop/filedetails/?id=" .. download_path)
+            end
+        end
+    })
+
+    properties.Add("outfitter_block", {
+        MenuLabel = "Block Outfit",
+        Order = 777,
+        MenuIcon = "icon16/stop.png",
+        Filter = function(self, ent, ply)
+            if not IsValid(ent) then return false end
+            if not ent:IsPlayer() then return false end
+            if not CanPlayerMenu() then return false end
+            local mdl = ent:OutfitInfo()
+            if not mdl then return false end
+            return true
+        end,
+        MenuOpen = function(self, option, ent, tr)
+            if not IsValid(ent) then return end
+            local mdl = ent:OutfitInfo()
+            if not mdl then return end
+            if api.is_blocked(mdl) then
+                option:SetText("Unblock Outfit")
+                option:SetImage("icon16/status_online.png")
+            else
+                option:SetText("Block Outfit")
+                option:SetImage("icon16/status_offline.png")
+            end
+        end,
+        Action = function(self, ent)
+            if not IsValid(ent) then return end
+            local mdl = ent:OutfitInfo()
+            if not mdl then return end
+            if api.is_blocked(mdl) then
+                api.unblock(mdl)
+            else
+                api.block(mdl)
+            end
+        end
+    })
+end
+
+---------------
 local viewing
 local view = {}
 local lastt
@@ -1157,6 +1232,56 @@ hook.Add("GUIMouseReleased", Tag, GUIMouseReleased)
 concommand.Add("outfitter_camera_toggle",
 	function(a, b, c) if c[1] then ToggleThirdperson(tonumber(c[1])) else ToggleThirdperson() end end,
 	nil, "Toggle thirdperson camera")
+
+concommand.Add("outfitter_dump", function()
+	local COL_PLAYER = Color(255, 200, 100)
+	local COL_INFO = Color(180, 180, 180)
+	local COL_SECTION = Color(130, 200, 255)
+	local COL_VALUE = Color(200, 255, 200)
+	local COL_NONE = Color(140, 140, 140)
+	local COL_KEY = Color(200, 200, 200)
+
+--[[TODO: Add 
+	local key = util.GetPData("0", CrashingTagk, false)
+	if not key or key == "" then return end
+	local val = util.GetPData("0", CrashingTagv, "")
+	
+	Model: GetModel or original_model
+	Outfi: OutfitInfo if exists
+	 - skin
+	 - bodygroup table
+	 - etc
+	]]
+
+	MsgC(COL_SECTION, "\n=== Players ===\n")
+	for i, pl in ipairs(player.GetAll()) do
+		local mdl, download_path, skin, bodygroups = pl:OutfitInfo()
+		MsgC(COL_PLAYER, string.format("[%d] %s\n", pl:UserID(), pl:Nick()))
+		MsgC(COL_KEY, "  original_model = ")
+		MsgC(COL_INFO, pl.original_model or "nil\n")
+		MsgC(COL_KEY, "  OutfitInfo: ")
+		MsgC(COL_INFO, string.format("mdl=%s, download_path=%s, skin=%s, bodygroups=%s\n",
+			tostring(mdl), tostring(download_path), tostring(skin), tostring(bodygroups or {})))
+	end
+
+	MsgC(COL_SECTION, "\n=== Autoload ===\n")
+	local autoload = util.GetPData("0", Tag .. '_autowear')
+	if autoload and autoload ~= "" and autoload ~= "nil" then
+		MsgC(COL_VALUE, autoload .. "\n")
+	else
+		MsgC(COL_NONE, "none\n")
+	end
+
+	MsgC(COL_SECTION, "\n=== Blocklist ===\n")
+	local blocklist = api.get_blocklist()
+	if blocklist and next(blocklist) then
+		for mdl in pairs(blocklist) do
+			MsgC(COL_INFO, mdl .. "\n")
+		end
+	else
+		MsgC(COL_NONE, "none\n")
+	end
+end, nil, "Dump players, autoload config, and blocklist")
 
 ------------
 

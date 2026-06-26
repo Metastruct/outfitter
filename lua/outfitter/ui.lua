@@ -783,21 +783,19 @@ end
 function SetAutowear()
 	local pl = LocalPlayer()
 
-	local mdl, wsid, skin, bodygroup = pl:OutfitInfo()
-	local dependency_manifest = pl:OutfitDependencyManifest()
+	local current = api.get_current()
 
-	local t = {
-		mdl = mdl,
-		wsid = wsid,
-		skin = skin,
-		bodygroup = bodygroup,
-		setbodygroupdata = pl:GetBodyGroupData(),
-		hands = pl.outfitter_hands,
-		dependency_manifest = dependency_manifest
-	}
+	if current then
+		local t = {
+			mdl = current.mdl,
+			wsid = current.download_path,
+			skin = current.skin,
+			bodygroup = current.bodygroups,
+			setbodygroupdata = pl:GetBodyGroupData(),
+			hands = pl.outfitter_hands,
+			dependency_manifest = current.dependency_manifest
+		}
 
-
-	if mdl then
 		util.SetPData("0", Tag .. '_autowear', json.encode(t))
 		UIMsg("Autowear ON")
 	else

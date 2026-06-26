@@ -1,6 +1,6 @@
 local Tag = 'outfitter'
 local NTag = 'OF'
-local NTagSkin = 'OFSKin'
+local NTagSkin = 'OFSkin'
 
 module(Tag, package.seeall)
 _M.NTagSkin = NTagSkin
