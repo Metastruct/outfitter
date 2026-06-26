@@ -307,6 +307,23 @@ function GUIOpenBodyGroupOverlay(owner, mdl)
 		if IsValid(frame) then frame:Remove() end
 	end)
 
+	local orig_mdl = LocalPlayer().original_model or LocalPlayer():GetModel()
+	local info = util.GetModelInfo(orig_mdl)
+	local skinCount = info and info.SkinCount or 0
+	if skinCount < 2 then
+		local warn = vgui.Create('DLabel', frame)
+		warn:Dock(TOP)
+		warn:DockMargin(4, 4, 4, 0)
+		warn:SetWrap(true)
+		warn:SetAutoStretchVertical(true)
+		warn:SetTextColor(Color(226, 85, 85))
+		warn:SetFont("BudgetLabel")
+		local msg =
+		"Changing skin might not work due to a GMod bug (need serverside playermodel with two or more skins)."
+		if _G.pac then msg = msg .. '\n NOTE: PAC entity part prevents changing skin, change in PAC instead.' end
+		warn:SetText(msg)
+	end
+
 	local scrollpanel = vgui.Create('DScrollPanel', frame)
 	scrollpanel:Dock(FILL)
 

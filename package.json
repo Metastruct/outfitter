@@ -22,16 +22,16 @@
     "netext": "git+https://github.com/Metastruct/glua_utilities.git#netext",
     "webbrowser": "git+https://github.com/Metastruct/glua_utilities.git#webbrowser"
   },
-  "bundledDependencies": {
-    "gmod-imageutils": "git+https://github.com/Metastruct/gmod-imageutils.git",
-    "gmod-sqliteext": "git+https://github.com/Metastruct/sqliteext.git",
-    "co": "git+https://github.com/Metastruct/glua_utilities.git#co",
-    "coext": "git+https://github.com/Metastruct/glua_utilities.git#coext",
-    "helpers": "git+https://github.com/Metastruct/glua_utilities.git#helpers",
-    "gmod-clientchatcommand": "git+https://github.com/Metastruct/glua_utilities.git#clientchatcommand",
-    "netext": "git+https://github.com/Metastruct/glua_utilities.git#netext",
-    "webbrowser": "git+https://github.com/Metastruct/glua_utilities.git#webbrowser"
-  },
+  "bundledDependencies": [
+    "gmod-imageutils",
+    "gmod-sqliteext",
+    "co",
+    "coext",
+    "helpers",
+    "gmod-clientchatcommand",
+    "netext",
+    "webbrowser"
+  ],
   "devDependencies": {
     "gmod-packager": "git+https://github.com/Python1320/gmod-packager.git"
   },

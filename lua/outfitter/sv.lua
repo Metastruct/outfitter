@@ -1,6 +1,6 @@
 local Tag = 'outfitter'
 local NTag = 'OF'
-local NTagSkin = 'OFSKin'
+local NTagSkin = 'OFSkin'
 
 
 module(Tag, package.seeall)
@@ -8,7 +8,6 @@ module(Tag, package.seeall)
 util.AddNetworkString(Tag)
 util.AddNetworkString(NTag)
 util.AddNetworkString(NTagSkin)
-
 function RateLimitMessage(pl, rem)
 	local msg = "[Outfitter] you need to wait before sending a new outfit (" .. math.ceil(rem) .. " s remaining)"
 	pl:ChatPrint(msg)
@@ -132,7 +131,8 @@ net.Receive(NTagSkin, function(len, pl)
 	if hook.Run("OutfitterCanSkin", pl, n, has_outfit) == false then return end
 	if not has_outfit then
 		if n > 1 then
-			pl:ChatPrint("[Outfitter] You must have submitted an outfit before changing skin")
+			net.Start(NTagSkin)
+			net.Send(pl)
 		end
 		return
 	end

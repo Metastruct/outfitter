@@ -1,5 +1,6 @@
 local Tag = 'outfitter'
 local NTag = 'OF'
+local NTagSkin = 'OFSkin'
 
 module(Tag, package.seeall)
 
@@ -316,4 +317,9 @@ hook.Add("PlayerSlowThink", Tag, function(pl)
 	if pl:InPVS() then
 		OnPlayerVisible(pl)
 	end
+end)
+
+net.Receive(NTagSkin, function()
+	notification.AddLegacy("You must have submitted an outfit before changing skin", NOTIFY_ERROR, 4)
+	surface.PlaySound("common/wpn_denyselect.wav")
 end)

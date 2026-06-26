@@ -106,6 +106,7 @@ The amalgamation is a CI build process that bundles Outfitter with all its exter
 | `outfitter_failsafe` | `0` | Ticked automatically if crash detected after applying outfit |
 | `outfitter_maxsize` | `60` | Max download size (MB) for an outfit + selected dependencies |
 | `outfitter_gui_focusdim` | `0` | Dim GUI when mouse leaves the window |
+| `outfitter_player_menu` | `1` | Show a menu item on each player to open their outfit workshop page |
 | `outfitter_disable_decompress_helper` | `1` | Disable external decompression helper |
 | `outfitter_dbg` | `0` | Print debug info to console |
 | `outfitter_dbg_tosv` | `0` | Send debug messages to server console |
