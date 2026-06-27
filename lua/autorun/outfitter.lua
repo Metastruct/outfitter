@@ -35,6 +35,12 @@ TODO
 	Check for spectators and do nothing for "models/player.mdl" 
 	Perfmode only disable downloading, allow enforcing
 	
+	Create local NTagVisState ='of_s', LocalPlayer():SetNetData(NTagVisState, bitmap string of which EntIndex() has outfit visible ) . Update every 5 seconds.
+	Clone outfit if sv_allowcslua or player allows cloning.
+	
+	Fix autowear not showing up in GUI
+
+
 	BodyGroups testing 	471628201
 	NSFW test crashes: 2806932615 (huge addon, crashes outside outfitter?)
 	list favorited from workshop (playermodels heuristic?)
@@ -226,6 +232,8 @@ inc 'gui'		'cl'
 inc 'net'		'sh'
 
 inc 'api'		'cl'
+
+inc 'cl_hud'	'cl'
 
 gma.rebuild_nolua_cache_purge(function(path)
 	dbgn(4,"Attempting cleaning cache: "..tostring(path))

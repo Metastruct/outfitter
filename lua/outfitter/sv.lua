@@ -153,6 +153,9 @@ resource.AddSingleFile "materials/icon64/outfitter.png"
 
 function TestOutfitsOnBots()
 	local t = {
+		{ "models/alvaroports/vrchat/spectrelightpm.mdl",      3731746852, { version = 1, dependencies = { "3486238431" } } },
+		{ "models/pdthcloaker/pdthcloaker.mdl",                   "https://g3cf.metastruct.net/playermodel_test_1.gma" },
+		{ "models/player/dewobedil/persona/yu/default_p.mdl",    1640675931 },
 		{ "models/player/fillipuster/fillipuster.mdl",            1982247237 },
 		{ "models/epangelmatikes/revan/revan.mdl",                2018997751 },
 		{ "models/pechenko_121/deadpool/chr_deadpool2.mdl",       200700693 },
@@ -163,9 +166,6 @@ function TestOutfitsOnBots()
 		{ "models/argonian.mdl",                                  646729594 },
 		{ "models/captainbigbutt/vocaloid/apocalypse_miku.mdl",   629121990 },
 		{ "models/player_chibiterasu.mdl",                        503568129 },
-		{ "models/player/dewobedil/persona/yu/default_p.mdl",    1640675931 },
-		{ "models/alvaroports/vrchat/spectrelightpm.mdl",      3731746852, { version = 1, dependencies = { "3486238431" } } },
-		{ "models/pdthcloaker/pdthcloaker.mdl",                   "https://g3cf.metastruct.net/playermodel_test_1.gma" },
 	}
 	for k, v in next, player.GetBots() do
 		local of = t[(k - 1) % (#t) + 1]

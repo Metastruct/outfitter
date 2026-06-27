@@ -119,6 +119,7 @@ end
 local function cantmount(wsid, reason, ...)
 	fetching[wsid] = false
 	res[wsid] = reason or "failed?"
+	_load_info_history[wsid] = {state = "error", error = reason or "failed?", time = SysTime()}
 	if reason ~= 'oversize' or outfitter_maxsize:GetInt() == 60 then
 		dbgn(3, "FetchWS", "downloading", wsid, "failed for reason:", reason, ...)
 
@@ -150,6 +151,7 @@ do -- steamworks fileinfo worker
 			end)
 	)
 	co_steamworks_FileInfo = co.worker(worker)
+	_M._ws_cache = cache
 end
 
 
@@ -363,6 +365,7 @@ function coFetchWS(wsid, skip_maxsize)
 	-- mark as fetched
 	fetching[wsid] = true
 	res[wsid] = result
+	_load_info_history[wsid] = {state = "ready", time = SysTime()}
 
 	return SYNCWS(wsid, dat, result)
 end
@@ -929,17 +932,23 @@ function coFetchGMA(download_info, pl, mdl)
 	end
 
 	local gma_f = file.Open(path, 'rb', 'MOD')
+	local http_title
 	if gma_f then
 		local gma_parser, gma_err = gmaparse.Parser(gma_f)
 		if gma_parser then
 			gma_parser:ParseHeader()
-			if IsTitleNSFW(gma_parser.name or "") then
+			http_title = gma_parser.name
+			if IsTitleNSFW(http_title or "") then
 				gma_f:Close()
-				dbg("NeedHTTPGMA", "NSFW title", download_info, "->", gma_parser.name)
+				dbg("NeedHTTPGMA", "NSFW title", download_info, "->", http_title)
 				return
 			end
 		end
 		gma_f:Close()
+	end
+	if http_title then
+		_load_info_history[download_info] = _load_info_history[download_info] or {}
+		_load_info_history[download_info].title = http_title
 	end
 
 	local mdls, extra, errlist = GMAPlayerModels(path)

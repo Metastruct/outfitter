@@ -73,12 +73,24 @@ do
         if not mdl then return end
         blocklist[mdl] = true
         save_blocklist(blocklist)
+        for _, ply in ipairs(player.GetAll()) do
+            if ply.outfitter_mdl == mdl then
+                ply:EnforceModel(false)
+            end
+        end
     end
 
     function api.unblock(mdl)
         if not mdl then return end
         blocklist[mdl] = nil
         save_blocklist(blocklist)
+        for _, ply in ipairs(player.GetAll()) do
+            local data = api.get_player_networked_data(ply)
+            if data and data.mdl == mdl then
+                ply.outfitter_nvar = nil
+                OnPlayerVisible(ply)
+            end
+        end
     end
 
     function api.is_blocked(mdl)
@@ -91,8 +103,89 @@ do
     end
 end
 
+---Returns the decoded networked outfit data for any player, or nil.
+---@param ply Player
+---@return OutfitterData|nil
+function api.get_player_networked_data(ply)
+    if not IsValid(ply) then return end
+    local encoded = ply:GetNetData(NTag)
+    if not encoded then return end
+    local mdl, download_path, dependency_manifest = DecodeOutfitterPayload(encoded)
+    if not mdl then return end
+    return {
+        mdl = mdl,
+        download_path = download_path,
+        dependency_manifest = dependency_manifest
+    }
+end
+
 hook.Add("CanOutfit", Tag, function(pl, mdl, download_info)
     if api.is_blocked(mdl) then return false end
 end)
 
 _M.api = api
+
+if CLIENT then
+    local T = language.GetPhrase
+
+    properties.Add("outfitter", {
+        MenuLabel = "#outfitter",
+        Order = 22,
+        MenuIcon = "icon16/user_go.png",
+        PrependSpacer = true,
+
+        Filter = function(self, ent, ply)
+            if not IsValid(ent) then return false end
+            if not ent:IsPlayer() then return false end
+            if not IsEnabled() then return false end
+            if not CanPlayerMenu() then return false end
+            local mdl = ent:OutfitInfo()
+            if mdl then return true end
+            if api.get_player_networked_data(ent) then return true end
+            return false
+        end,
+
+        MenuOpen = function(self, option, ent, tr)
+            if not IsValid(ent) then return end
+            local submenu = option:AddSubMenu()
+            local mdl, download_path = ent:OutfitInfo()
+
+            if not mdl then
+                local netdata = api.get_player_networked_data(ent)
+                if netdata then
+                    if api.is_blocked(netdata.mdl) then
+                        submenu:AddOption("Unblock Outfit", function()
+                            api.unblock(netdata.mdl)
+                        end):SetImage("icon16/status_online.png")
+                    else
+                        submenu:AddOption("Unknown error", function() end):SetImage("icon16/exclamation.png")
+                    end
+                    return
+                end
+            end
+
+            if mdl then
+                if api.is_blocked(mdl) then
+                    submenu:AddOption("Unblock Outfit", function()
+                        api.unblock(mdl)
+                    end):SetImage("icon16/status_online.png")
+                else
+                    submenu:AddOption("Block Outfit", function()
+                        api.block(mdl)
+                    end):SetImage("icon16/status_offline.png")
+                end
+                submenu:AddOption("Copy model path", function()
+                    SetClipboardText(mdl)
+                end):SetImage("icon16/page_white_copy.png")
+            end
+
+            if download_path and tonumber(download_path) then
+                submenu:AddOption("Open Outfit Workshop Page", function()
+                    gui.OpenURL("https://steamcommunity.com/workshop/filedetails/?id=" .. download_path)
+                end):SetImage("icon16/picture.png")
+            end
+        end,
+
+        Action = function(self, ent) end
+    })
+end

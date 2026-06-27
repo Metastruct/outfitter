@@ -6,6 +6,9 @@ require 'gmaparse'
 
 module(Tag, package.seeall)
 
+_M._load_info_history = _M._load_info_history or {}
+local _load_info_history = _M._load_info_history
+
 local SAVE = true --TODO: make save after end of debugging
 
 local Player = FindMetaTable "Player"
@@ -366,10 +369,32 @@ end
 
 -- never save because of malicious servers?
 do
-	local outfitter_unsafe = CreateClientConVar("outfitter_unsafe", "0", false, false, "Remove some outfit checks (for self only)")
+	local outfitter_unsafe = CreateClientConVar("outfitter_unsafe", "0", false, false, "Remove some outfit checks (for self only). Create cfg/outfitter_force_unsafe.cfg to force enable (will print a warning).")
+
+	if file.Exists("cfg/outfitter_force_unsafe.cfg", "GAME") then
+		outfitter_unsafe:SetInt(1)
+	end
+
+	local warned = false
+
 	function IsUnsafe()
 		return outfitter_unsafe:GetBool()
 	end
+
+	local function UnsafeSpawnWarn(ent)
+		local me = LocalPlayer()
+		if ent ~= me then return end
+		if warned then return end
+		if not outfitter_unsafe:GetBool() then return end
+		if not file.Exists("cfg/outfitter_force_unsafe.cfg", "GAME") then return end
+
+		warned = true
+
+		MsgC(Color(255, 100, 0), "[Outfitter] WARNING: Unsafe mode force-enabled by cfg/outfitter_force_unsafe.cfg\n")
+		chat.AddText(Color(255, 100, 0), "[Outfitter] ", Color(255, 255, 255), "WARNING: Unsafe mode force-enabled by cfg/outfitter_force_unsafe.cfg")
+	end
+
+	hook.Add("OnEntityCreated", Tag, UnsafeSpawnWarn)
 end
 
 do
@@ -1094,65 +1119,7 @@ do
     end
 end
 
-if CLIENT then
-    properties.Add("outfitter_workshop", {
-        MenuLabel = "Open Outfit Workshop Page",
-        Order = 776,
-        MenuIcon = "icon16/picture.png",
-        Filter = function(self, ent, ply)
-            if not IsValid(ent) then return false end
-            if not ent:IsPlayer() then return false end
-            if not CanPlayerMenu() then return false end
-            local _, download_path = ent:OutfitInfo()
-            if not download_path then return false end
-            if not tonumber(download_path) then return false end
-            return true
-        end,
-        Action = function(self, ent)
-            if not IsValid(ent) then return end
-            local _, download_path = ent:OutfitInfo()
-            if download_path and tonumber(download_path) then
-                gui.OpenURL("https://steamcommunity.com/workshop/filedetails/?id=" .. download_path)
-            end
-        end
-    })
 
-    properties.Add("outfitter_block", {
-        MenuLabel = "Block Outfit",
-        Order = 777,
-        MenuIcon = "icon16/stop.png",
-        Filter = function(self, ent, ply)
-            if not IsValid(ent) then return false end
-            if not ent:IsPlayer() then return false end
-            if not CanPlayerMenu() then return false end
-            local mdl = ent:OutfitInfo()
-            if not mdl then return false end
-            return true
-        end,
-        MenuOpen = function(self, option, ent, tr)
-            if not IsValid(ent) then return end
-            local mdl = ent:OutfitInfo()
-            if not mdl then return end
-            if api.is_blocked(mdl) then
-                option:SetText("Unblock Outfit")
-                option:SetImage("icon16/status_online.png")
-            else
-                option:SetText("Block Outfit")
-                option:SetImage("icon16/status_offline.png")
-            end
-        end,
-        Action = function(self, ent)
-            if not IsValid(ent) then return end
-            local mdl = ent:OutfitInfo()
-            if not mdl then return end
-            if api.is_blocked(mdl) then
-                api.unblock(mdl)
-            else
-                api.block(mdl)
-            end
-        end
-    })
-end
 
 ---------------
 local viewing

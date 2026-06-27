@@ -239,7 +239,7 @@ function GUIReviewDependencies(graph, dependency_manifest, cb)
 	local cancel = buttons:Add("DButton")
 	cancel:Dock(LEFT)
 	cancel:SetWide(80)
-	cancel:SetText("#gameui_cancel")
+	cancel:SetText("#dialog.cancel")
 	cancel:SetImage("icon16/cancel.png")
 	cancel.DoClick = function()
 		finish(false)
@@ -803,7 +803,7 @@ function PANEL:Init()
 	check:SetText("Unsafe")
 	check:SizeToContents()
 
-	check:SetTooltip [[Remove some outfit checks (for yourself only). This should not be needed ever.]]
+	check:SetTooltip [[Remove some outfit checks (for yourself only). This should not be needed ever. Create cfg/outfitter_force_unsafe.cfg to force enable (will print a warning).]]
 	check:DockMargin(1, 4, 1, 1)
 	local d_1 = check
 	local check = AddS("DCheckBoxLabel")
@@ -837,6 +837,14 @@ function PANEL:Init()
 	check:SetText("Legacy: Show downloading notifications")
 	check:SizeToContents()
 	check:SetTooltip [[Show downloading notifications when downloading models from the workshop]]
+
+	check:DockMargin(1, 4, 1, 1)
+
+	local check = AddS("DCheckBoxLabel")
+	check:SetConVar(Tag .. "_info_hud")
+	check:SetText("Show outfit info in context menu")
+	check:SizeToContents()
+	check:SetTooltip [[Shows outfit status and model path when hovering over a player while holding the context menu key]]
 
 	check:DockMargin(1, 4, 1, 1)
 

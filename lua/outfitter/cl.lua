@@ -134,6 +134,12 @@ end
 
 function ChangeOutfitThread(pl)
 	pl.outfitter_changing = true
+	pl.outfitter_last_error = nil
+
+	local _, download_info = pl:OutfitInfo()
+	if download_info then
+		_load_info_history[download_info] = {state = "loading", time = SysTime()}
+	end
 
 	co.waittick() -- detach, need to check player validity after this
 
@@ -235,6 +241,12 @@ function ChangeOutfitThreadWorker(pl, hash)
 		if not ok and IsEnabled() then
 			dbge("DoChangeOutfit", "Setting model failed, but file.Existed", err, mdl)
 		end
+		if ok and download_info then
+			_load_info_history[download_info] = {state = "ready", mdl = mdl, time = SysTime()}
+		end
+		if ok then
+			pl.outfitter_last_error = nil
+		end
 
 		return true
 	end
@@ -246,6 +258,10 @@ function ChangeOutfitThreadWorker(pl, hash)
 		if err == 'oversize' then
 			coUIOversizeMsg(pl, download_info)
 		end
+		if download_info then
+			_load_info_history[download_info] = {state = "error", error = err or "unknown", mdl = mdl, time = SysTime()}
+		end
+		pl.outfitter_last_error = {error = err or "unknown", download_path = download_info, mdl = mdl, time = SysTime()}
 	end
 
 	local ok, err = co.wait_player(pl) -- so check for player validity
@@ -276,6 +292,10 @@ function ChangeOutfitThreadWorker(pl, hash)
 
 	-- 7. Actually set the outfit!
 	SET(pl, mdl, download_info, skin, bodygroups)
+	pl.outfitter_last_error = nil
+	if download_info then
+		_load_info_history[download_info] = {state = "ready", mdl = mdl, time = SysTime()}
+	end
 
 	dbg("ChangeOutfit", "FINISHED", pl, mdl or "unset", download_info)
 
