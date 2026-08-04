@@ -6,7 +6,7 @@ local NTag = 'OF'
 module(Tag, package.seeall)
 local NOUI = OUTFITTER_NO_UI
 
-local outfitter_gui_focusdim = CreateClientConVar("outfitter_gui_focusdim", "0", true, false, "Dim GUI when mouse leaves window")
+local outfitter_gui_focusdim = CreateClientConVar("outfitter_gui_focusdim", "0", true, false, "#outfitter_gui_focusdim")
 local vgui = GetVGUI()
 
 -- GUIWantChangeModel
@@ -17,7 +17,7 @@ local matUp = Material "icon16/arrow_up.png"
 function PANEL:Init()
 	local txt = vgui.Create('DLabel', self, 'msg')
 	txt:Dock(TOP)
-	txt:SetText "If the browser does not change URL please paste the URL yourself in the browser bar from your web browser."
+	txt:SetText "#outfitter_urlmsg"
 	txt:SetTextColor(Color(0, 0, 0, 255))
 	local b = vgui.Create('DButton', self.top, 'choose button')
 
@@ -224,7 +224,7 @@ function GUIReviewDependencies(graph, dependency_manifest, cb)
 	info:SetWrap(true)
 	info:SetAutoStretchVertical(true)
 	info:SetTextColor(text_color)
-	info:SetText("This workshop outfit declares the following dependencies. Select the ones that should be mounted and sent with your outfit. Unavailable items cannot be selected. Already-mounted items remain mounted until Garry's Mod restarts.")
+	info:SetText("#outfitter_depinfo")
 
 	local status = frame:Add("DLabel")
 	status:Dock(BOTTOM)
@@ -248,7 +248,7 @@ function GUIReviewDependencies(graph, dependency_manifest, cb)
 	local none = buttons:Add("DButton")
 	none:Dock(RIGHT)
 	none:SetWide(190)
-	none:SetText("Continue without dependencies")
+	none:SetText("#outfitter_depcontwo")
 	none:SetImage("icon16/delete.png")
 	none.DoClick = function()
 		finish(MakeDependencyManifest())
@@ -323,7 +323,7 @@ function GUIReviewDependencies(graph, dependency_manifest, cb)
 		open:SetWide(34)
 		open:SetText("")
 		open:SetImage("icon16/world.png")
-		open:SetTooltip("Open workshop page")
+		open:SetTooltip("#outfitter_openws")
 		open.DoClick = function()
 			gui.OpenURL("https://steamcommunity.com/sharedfiles/filedetails/?id=" .. id)
 		end
@@ -394,7 +394,7 @@ function PANEL:Init()
 
 		b:Dock(TOP)
 		b:SetText("#open_workshop")
-		b:SetTooltip [[Choose a workshop addon which contains an outfit]]
+		b:SetTooltip [[#outfitter_choosemdl]]
 
 		b.DoClick = function()
 			GUIWantChangeModel(nil, true)
@@ -439,7 +439,7 @@ function PANEL:Init()
 						self:GetParent():Hide()
 						UIChoseHTTPGMA(url, true)
 					else
-						chat.AddText("This HTTP URL is not in allowlist")
+						chat.AddText("#outfitter_warnlist")
 						surface.PlaySound "common/warning.wav"
 					end
 				else
@@ -456,8 +456,8 @@ function PANEL:Init()
 	l:Dock(TOP)
 	l:DockMargin(1, 1, 1, 1)
 	l:SetWrap(true)
-	l:SetTooltip [[Title of the chosen workshop addon]]
-	l:SetText("1. Choose a workshop addon")
+	l:SetTooltip [[#outfitter_ws_title]]
+	l:SetText("#outfitter_choose_ws")
 	l:SetTall(44)
 	l:SetFont "BudgetLabel"
 	l:SetTextColor(Color(255, 255, 255, 255))
@@ -466,9 +466,9 @@ function PANEL:Init()
 	self.btn_dependencies = dependencies
 	dependencies:Dock(TOP)
 	dependencies:DockMargin(0, 1, 1, 4)
-	dependencies:SetText("Dependencies...")
+	dependencies:SetText("#outfitter_deps")
 	dependencies:SetImage("icon16/bricks.png")
-	dependencies:SetTooltip("Review the dependencies sent with this outfit")
+	dependencies:SetTooltip("#outfitter_review_deps")
 	dependencies:SetVisible(false)
 	dependencies.DoClick = function()
 		local wsid = UIGetWSID()
@@ -492,7 +492,7 @@ function PANEL:Init()
 	mdllist:SetMultiSelect(false)
 	mdllist:AddColumn("#gameui_playermodel")
 	self.mdllist = mdllist
-	mdllist:SetTooltip [[Click one of the models on this list to choose as your outfit]]
+	mdllist:SetTooltip [[#outfitter_choose_of]]
 	mdllist:DockMargin(0, 5, 0, 0)
 	mdllist:Dock(FILL)
 	mdllist:SetTall(128)
@@ -565,7 +565,7 @@ function PANEL:Init()
 
 	local txt = blocklistPanel:Add('DLabel', 'infomsg')
 	txt:Dock(TOP)
-	txt:SetText "Title blocklist"
+	txt:SetText "#outfitter_titlebl"
 	txt:SetWrap(true)
 	txt:SetTextColor(Color(0, 0, 0, 255))
 
@@ -573,9 +573,9 @@ function PANEL:Init()
 
 	local check = blocklistPanel:Add("DCheckBoxLabel", 'nsfwtoggle')
 	check:SetConVar("nsfw")
-	check:SetText("Allow NSFW")
+	check:SetText("#outfitter_allownsfw")
 	check:SizeToContents()
-	check:SetTooltip [[Allow NSFW rated addons]]
+	check:SetTooltip [[#outfitter_allownsfwtip]]
 	check:DockMargin(1, 0, 1, 1)
 	check:Dock(TOP)
 
@@ -587,8 +587,8 @@ function PANEL:Init()
 	TextEntry:SetVerticalScrollbarEnabled(true)
 	TextEntry:SetAllowNonAsciiCharacters(true)
 	TextEntry:SetEditable(true)
-	TextEntry:SetTooltip "Add a banned sentence per line.\n An outfit's title matching any of the sentences will be blocked."
-	TextEntry:SetPlaceholderText "Add a banned sentence per line.\n An outfit's title matching any of the sentences will be blocked."
+	TextEntry:SetTooltip "#outfitter_title_blacklist"
+	TextEntry:SetPlaceholderText "#outfitter_title_blacklist"
 	function TextEntry.OnLoseFocus()
 		SetTitleBlocklist(TextEntry:GetValue())
 		TextEntry:SetValue(table.concat(GetTitleBlocklist(), "\n"))
@@ -652,14 +652,14 @@ function PANEL:Init()
 	check:SetConVar(Tag .. "_enabled")
 	check:SetText("#gameui_enabled")
 	check:SizeToContents()
-	check:SetTooltip [[Toggle this if someone's outfit got blocked or should be showing]]
+	check:SetTooltip [[#outfitter_on_tip]]
 	check:DockMargin(1, 0, 1, 1)
 	local btn_en = check
 
 	local check = AddS("DCheckBoxLabel")
 	check:SetConVar(Tag .. "_friendsonly")
-	check:SetText("Load only outfits of friends")
-	check:SetTooltip [[When non friend wears an outfit it gets blocked]]
+	check:SetText("#outfitter_friendsonly")
+	check:SetTooltip [[#outfitter_friendsonlytip]]
 	check:SizeToContents()
 
 	check:DockMargin(1, 4, 1, 1)
@@ -668,12 +668,12 @@ function PANEL:Init()
 	hr()
 
 	local slider = AddS("DNumSlider")
-	slider:SetText("Outfit download distance")
+	slider:SetText("#outfitter_dldistance")
 	slider:SizeToContents()
 	slider:DockPadding(0, 16, 0, 0)
 	slider.Label:Dock(TOP)
 	slider.Label:DockMargin(0, -16, 0, 0)
-	slider:SetTooltip [[How near does a player have to be for an outfit to download]]
+	slider:SetTooltip [[#outfitter_dldistancetip]]
 
 	slider:DockMargin(1, 12, 1, 1)
 	slider:SetMin(0)
@@ -684,7 +684,7 @@ function PANEL:Init()
 
 	local c = AddS("DComboBox")
 	c:SetSize(100, 20)
-	c:SetTooltip [[Distance mode: start downloading outfits when you get near a player]]
+	c:SetTooltip [[#outfitter_distmode]]
 	--c.SetValue = function(c,val)
 	--	local setv = val==0 and 2 or val==1 and 3 or 1
 	--	dbgn(2,"ChooseDistanceModeCtrl",val,'->',setv)
@@ -697,9 +697,9 @@ function PANEL:Init()
 		dbgn(2, "ChooseDistanceMode", val, '->', choose)
 		distance_mode:SetInt(choose)
 	end
-	c:AddChoice("Default Mode", '-1')
-	c:AddChoice("See All Outfits", '0')
-	c:AddChoice("Nearby Outfits Only", '1')
+	c:AddChoice("#outfitter_def", '-1')
+	c:AddChoice("#outfitter_seo", '0')
+	c:AddChoice("#outfitter_noo", '1')
 
 	c:SetConVar(Tag .. '_distance_mode')
 	local d_4 = c
@@ -709,13 +709,13 @@ function PANEL:Init()
 	hr()
 
 	local slider = AddS("DNumSlider")
-	slider:SetText("Maximum download size (in MB)")
+	slider:SetText("#outfitter_maxdlsize")
 	slider:SizeToContents()
 	slider:DockPadding(0, 16, 0, 0)
 	slider.Label:Dock(TOP)
 	slider.Label:DockMargin(0, -16, 0, 0)
 
-	slider:SetTooltip [[This is how big an outfit and its selected dependencies can be before being blocked]]
+	slider:SetTooltip [[#outfitter_maxdlsizetip]]
 
 	slider:DockMargin(1, 4, 1, 1)
 	slider:SetMin(0)
@@ -726,9 +726,9 @@ function PANEL:Init()
 
 	local check = AddS("DCheckBoxLabel")
 	check:SetConVar(Tag .. "_allow_dependencies")
-	check:SetText("Allow workshop dependencies")
+	check:SetText("#outfitter_allow_wsdeps")
 	check:SizeToContents()
-	check:SetTooltip [[Mounts selected workshop dependencies along with outfits]]
+	check:SetTooltip [[#outfitter_allow_wsdepstip]]
 	check:DockMargin(1, 12, 1, 1)
 
 	--TODO
@@ -744,8 +744,8 @@ function PANEL:Init()
 
 	local check = AddS("DCheckBoxLabel")
 	check:SetConVar(Tag .. "_hands")
-	check:SetText("Use hands")
-	check:SetTooltip [[Should we guess hands for the playermodels]]
+	check:SetText("#outfitter_guesschands")
+	check:SetTooltip [[#outfitter_guesschandstip]]
 	check:SizeToContents()
 
 	check:DockMargin(1, 4, 1, 1)
@@ -753,8 +753,8 @@ function PANEL:Init()
 
 	local check = AddS("DCheckBoxLabel")
 	check:SetConVar(Tag .. "_sounds")
-	check:SetText("UI sounds")
-	check:SetTooltip [[Should we play informational sounds]]
+	check:SetText("#outfitter_uisfx=")
+	check:SetTooltip [[#outfitter_uisfxtip]]
 	check:SizeToContents()
 
 	check:DockMargin(1, 4, 1, 1)
@@ -762,16 +762,16 @@ function PANEL:Init()
 
 	local check = AddS("DCheckBoxLabel")
 	check:SetConVar(Tag .. "_gui_focusdim")
-	check:SetText("Dim GUI")
-	check:SetTooltip [[When mouse leaves the UI should we dim it?]]
+	check:SetText("#outfitter_dimgui")
+	check:SetTooltip [[#outfitter_dimguitip]]
 	check:SizeToContents()
 	check:DockMargin(1, 4, 1, 1)
 
 	hr()
 	local check = AddS("DCheckBoxLabel")
 	check:SetConVar(Tag .. "_allow_http_test")
-	check:SetText("Allow outfits from outside workshop")
-	check:SetTooltip [[Allow HTTP downloads from outside workshop. Unsafe potentially!!!]]
+	check:SetText("#outfitter_outsidews")
+	check:SetTooltip [[#outfitter_outsidewstip]]
 	check:SizeToContents()
 
 	check:DockMargin(1, 4, 1, 1)
@@ -781,8 +781,8 @@ function PANEL:Init()
 
 	local check = AddS("DCheckBoxLabel")
 	check:SetConVar(Tag .. "_allow_unsafe_http")
-	check:SetText("Load outfits from untrusted URLs (UNSAFE, may leak IP!!!)")
-	check:SetTooltip [[Outfitter by default does not allow HTTP downloads from everywhere, but can be set to allow them for local testing]]
+	check:SetText("#outfitter_untrustedurl")
+	check:SetTooltip [[#outfitter_untrustedurltip]]
 	check:SizeToContents()
 
 	check:DockMargin(1, 4, 1, 1)
@@ -792,7 +792,7 @@ function PANEL:Init()
 	local debug = AddS("DCheckBoxLabel")
 	debug:SetConVar(Tag .. "_dbg")
 	debug:SetText("#debug")
-	debug:SetTooltip [[Print debug stuff to console. Enable this if something is wrong and in the bugreport give the log output.]]
+	debug:SetTooltip [[#outfitter_debugtip]]
 	debug:SizeToContents()
 
 	debug:DockMargin(1, 14, 1, 1)
@@ -800,56 +800,56 @@ function PANEL:Init()
 
 	local check = AddS("DCheckBoxLabel")
 	check:SetConVar(Tag .. "_unsafe")
-	check:SetText("Unsafe")
+	check:SetText("#outfitter_unsafe")
 	check:SizeToContents()
 
-	check:SetTooltip [[Remove some outfit checks (for yourself only). This should not be needed ever. Create cfg/outfitter_force_unsafe.cfg to force enable (will print a warning).]]
+	check:SetTooltip [[#outfitter_removesafetychecks]]
 	check:DockMargin(1, 4, 1, 1)
 	local d_1 = check
 	local check = AddS("DCheckBoxLabel")
 	check:SetConVar(Tag .. "_failsafe")
-	check:SetText("Failsafe")
+	check:SetText("#outfitter_failsafe")
 	check:SizeToContents()
-	check:SetTooltip [[This gets ticked if you were detected to crash right after applying outfit.]]
+	check:SetTooltip [[#outfitter_failsafetip]]
 
 	check:DockMargin(1, 4, 1, 1)
 	local d_2 = check
 
 	local check = AddS("DCheckBoxLabel")
 	check:SetConVar(Tag .. "_use_autoblacklist")
-	check:SetText("Autoblacklist")
+	check:SetText("#outfitter_autoblock")
 	check:SizeToContents()
-	check:SetTooltip [[Blacklists outfits that crashed you automatically]]
+	check:SetTooltip [[#outfitter_autoblocktip]]
 	check:DockMargin(1, 4, 1, 1)
 	local d_2 = check
 
 	hr()
 	local check = AddS("DCheckBoxLabel")
 	check:SetConVar(Tag .. "_animfix_oldmethod")
-	check:SetText("Legacy: Use fullupdate for local player animations")
+	check:SetText("#outfitter_legacy")
 	check:SizeToContents()
-	check:SetTooltip [[Previously we needed a fullupdate to fix animations. Now a different technique is used.]]
+	check:SetTooltip [[#outfitter_legacytip]]
 
 	check:DockMargin(1, 4, 1, 1)
 
 	local check = AddS("DCheckBoxLabel")
 	check:SetConVar(Tag .. "_download_notifications")
-	check:SetText("Legacy: Show downloading notifications")
+	check:SetText("#outfitter_dlnotif")
 	check:SizeToContents()
-	check:SetTooltip [[Show downloading notifications when downloading models from the workshop]]
+	check:SetTooltip [[#outfitter_dlnotiftip]]
 
 	check:DockMargin(1, 4, 1, 1)
 
 	local check = AddS("DCheckBoxLabel")
 	check:SetConVar(Tag .. "_info_hud")
-	check:SetText("Show outfit info in context menu")
+	check:SetText("#outfitter_ofitinfocontext")
 	check:SizeToContents()
-	check:SetTooltip [[Shows outfit status and model path when hovering over a player while holding the context menu key]]
+	check:SetTooltip [[#outfitter_ofitinfocontexttip]]
 
 	check:DockMargin(1, 4, 1, 1)
 
 	local check = AddS("DButton")
-	check:SetText("FIX: Clear models blacklist")
+	check:SetText("#outfitter_clrmdlblacklist")
 	check:DockMargin(1, 4, 1, 1)
 	check.DoClick = function()
 		RunConsoleCommand "outfitter_blacklist_clear"
@@ -857,7 +857,7 @@ function PANEL:Init()
 	check:SetImage 'icon16/tag_blue_delete.png'
 
 	local check = AddS("DButton")
-	check:SetText("FIX: Fullupdate")
+	check:SetText("#outfitter_fixfullupdate")
 	check:DockMargin(1, 4, 1, 1)
 	check.DoClick = function()
 		Fullupdate()
@@ -874,7 +874,7 @@ function PANEL:Init()
 
 	local b = Add('DButton', 'thirdperson')
 	b:SetText("#tool.camera.name")
-	b:SetTooltip [[Enables/disable thirdperson (if one is installed)]]
+	b:SetTooltip [[#outfitter_thirdptip]]
 
 	b.DoClick = function() ToggleThirdperson() end
 	b:DockMargin(16, 2, 16, 1)
@@ -977,7 +977,7 @@ function PANEL:Init()
 
 	local b = cont:Add('DButton', 'Autowear button')
 	self.btn_autowear = b
-	b:SetTooltip [[Automatically wear this outfit on servers]]
+	b:SetTooltip [[#outfitter_autoweartip]]
 	b:SetText("#makepersistent")
 	b:Dock(FILL)
 	b:SizeToContents()
@@ -1006,7 +1006,7 @@ function PANEL:Init()
 	self.btn_send = b
 	b:Dock(LEFT)
 	b:SetText("#gameui_submit")
-	b:SetTooltip [[This broadcasts the outfit you have chosen to the whole server]]
+	b:SetTooltip [[#outfitter_broadcastof]]
 	b.DoClick = function()
 		GUIBroadcastMyOutfit()
 		b._set_enabled = false
@@ -1036,7 +1036,7 @@ function PANEL:Init()
 
 	local b = cont:Add('DButton', 'Clear button')
 	self.btn_clear = b
-	b:SetTooltip [[This removes all traces of you wearing an outfit]]
+	b:SetTooltip [[#outfitter_remoutfit]]
 	b:SetText("#gameui_cancel")
 	b:Dock(FILL)
 	b:SizeToContents()
@@ -1258,7 +1258,7 @@ function PANEL:DoRefresh(trychoose_mdl)
 	self.btn_bg:Refresh()
 	self.mdlhist:Clear()
 
-	self.lbl_chosen:SetText("Please choose a workshop addon")
+	self.lbl_chosen:SetText("#outfitter_slctwsaddon")
 
 	local wsid = UIGetWSID()
 
@@ -1266,7 +1266,7 @@ function PANEL:DoRefresh(trychoose_mdl)
 		self.lbl_chosen:SetText("-")
 
 		if wsid and tonumber(wsid) then
-			self.lbl_chosen:SetText("Loading info...")
+			self.lbl_chosen:SetText("#outfitter_loadinginfo")
 			local info = co_steamworks_FileInfo(wsid)
 			if not self:IsValid() then return end
 			if not self.lbl_chosen:IsValid() then return end
@@ -1283,7 +1283,7 @@ function PANEL:DoRefresh(trychoose_mdl)
 		elseif wsid and wsid:find("http") then -- it's a gma download
 			local ok, body, len, hdrs, code = co_head(wsid)
 			if ok then
-				self.lbl_chosen:SetText("GMA: Not OK?")
+				self.lbl_chosen:SetText("#outfitter_badgma")
 			else
 				local size = hdrs and hdrs["Content-Length"] and tonumber(hdrs["Content-Length"])
 				self.lbl_chosen:SetText(("GMA HEAD OK (%s)"):format(size and string.NiceSize(size) or "Size Unknown!"))
@@ -1394,7 +1394,7 @@ function PANEL:Init()
 	self.m_bPaintHat = t.month == 12 and t.day <= 25
 
 	self:SetCookieName "ofp"
-	self:SetTitle "Outfitter"
+	self:SetTitle "#outfitter_maintitle"
 	self:SetMinHeight(290)
 	self:SetMinWidth(312)
 	self:SetPos(32, 32)
@@ -1451,7 +1451,7 @@ function PANEL:Init()
 		check:SetConVar(Tag .. "_enabled")
 		check:SetText("#gameui_enabled")
 		check:SizeToContents()
-		check:SetTooltip [[Toggle this if someone's outfit got blocked or should be showing]]
+		check:SetTooltip [[#outfitter_on_tip]]
 		self.btnCheck = check
 	end
 	local OnMouseReleased = self.OnMouseReleased
@@ -1599,7 +1599,7 @@ function GUIOpen(_, trychoose_mdl)
 
 	if Derma_Message and not alerted and game.SinglePlayer() then
 		alerted = true
-		Derma_Message("You are playing singleplayer. Outfitter may not work at all.", 'WARNING')
+		Derma_Message("#outfitter_dermaalertmsg", '#outfitter_warning')
 	end
 
 	return m_vGUIDlg
