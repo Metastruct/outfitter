@@ -698,7 +698,7 @@ function PANEL:Init()
 		distance_mode:SetInt(choose)
 	end
 	c:AddChoice("#outfitter_def", '-1')
-	c:AddChoice("#outfitter_seo", '0')
+	c:AddChoice("#outfitter_sao", '0')
 	c:AddChoice("#outfitter_noo", '1')
 
 	c:SetConVar(Tag .. '_distance_mode')
