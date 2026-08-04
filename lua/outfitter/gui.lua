@@ -753,7 +753,7 @@ function PANEL:Init()
 
 	local check = AddS("DCheckBoxLabel")
 	check:SetConVar(Tag .. "_sounds")
-	check:SetText("#outfitter_uisfx=")
+	check:SetText("#outfitter_uisfx")
 	check:SetTooltip [[#outfitter_uisfxtip]]
 	check:SizeToContents()
 
