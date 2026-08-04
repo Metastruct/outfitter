@@ -6,7 +6,7 @@ local NTag = 'OF'
 module(Tag, package.seeall)
 local NOUI = OUTFITTER_NO_UI
 
-local outfitter_gui_focusdim = CreateClientConVar("outfitter_gui_focusdim", "0", true, false, "#outfitter_gui_focusdim")
+local outfitter_gui_focusdim = CreateClientConVar("outfitter_gui_focusdim", "0", true, false, "Dim GUI when mouse leaves window")
 local vgui = GetVGUI()
 
 -- GUIWantChangeModel
