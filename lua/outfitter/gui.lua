@@ -865,7 +865,7 @@ function PANEL:Init()
 	check:SetImage 'icon16/transmit_error.png'
 
 	local check = AddS("DButton")
-	check:SetText("FIX: Local player animations")
+	check:SetText("#outfitter_fixlplyanim")
 	check:DockMargin(1, 4, 1, 1)
 	check.DoClick = function()
 		FixLocalPlayerAnimations(true)
