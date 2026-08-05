@@ -944,7 +944,7 @@ function PANEL:Init()
 				GUIBroadcastMyOutfit()
 			end):SetIcon('icon16/transmit.png')
 			menu:AddOption("#gameui_cancel", function() end):SetIcon('icon16/cancel.png')
-			menu:AddOption("Edit anyway", function()
+			menu:AddOption("#outfitter_editanyway", function()
 				GUIOpenBodyGroupOverlay(self)
 			end):SetIcon('icon16/accept.png')
 			menu:Open()
@@ -1232,11 +1232,11 @@ function PANEL:RefreshDependencyButton()
 	if not visible then return end
 
 	if not UIGetChosenMDL() then
-		button:SetTooltip("Choose a model before reviewing dependencies")
+		button:SetTooltip("#outfitter_depscho")
 		return
 	end
 
-	button:SetTooltip("Checking workshop dependencies...")
+	button:SetTooltip("#outfitter_depscheck")
 
 	local request = self.dependency_button_request
 	co(function()
@@ -1513,8 +1513,8 @@ function PANEL:OnMouseReleasedHook(mc)
 
 	--menu:AddLine()
 
-	menu:AddOption("About", function() GUIAbout() end):SetImage 'icon16/information.png'
-	menu:AddOption("Close", function() self:Hide() end):SetImage 'icon16/door_out.png'
+	menu:AddOption("#outfitter_bout", function() GUIAbout() end):SetImage 'icon16/information.png'
+	menu:AddOption("#outfitter_close", function() self:Hide() end):SetImage 'icon16/door_out.png'
 	menu:Open()
 end
 
