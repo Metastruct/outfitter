@@ -34,9 +34,19 @@ local function ResolveSizeStr(download_path)
     end
 end
 
+local context_menu_open = false
+
+hook.Add("OnContextMenuOpen", Tag, function()
+    context_menu_open = true
+end)
+
+hook.Add("OnContextMenuClose", Tag, function()
+    context_menu_open = false
+end)
+
 hook.Add("HUDPaintBackground", Tag, function()
     if not outfitter_info_hud:GetBool() then return end
-    if not input.IsKeyDown(KEY_C) then return end
+    if not context_menu_open then return end
     if not IsEnabled() then return end
 
     local ply = LocalPlayer()
@@ -136,7 +146,7 @@ hook.Add("HUDPaintBackground", Tag, function()
 
     for _, l in ipairs(lines) do
         surface.SetFont(l.font)
-        draw.SimpleText(l.text, l.font, right_x - l.w, y, l.color)
+        draw.SimpleText(l.text, l.font, right_x - 8 - l.w, y, l.color)
         y = y + l.h + 2
     end
 end)

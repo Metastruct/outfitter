@@ -170,16 +170,16 @@ net.Receive(Tag, function(len, pl)
 	local _type = net.ReadUInt(8)
 	local value = ReadType(_type, len - #key * 8 - 8 - 8)
 
-	-- for necessity
-	local success, override = hook.Call(Tag, nil, pl, key, value)
+	local success, override = hook.Run(Tag, pl, key, value) -- this is for applying
 	if success == true then
 		if override ~= nil then
 			value = override
 		end
 
+		local allowed = hook.Run("Can" .. Tag, pl, key, value) -- this is for permissions
+		if allowed == false then return end
+			
 		pl:SetNetData(key, value)
-	-- else
-		-- TODO: RejectMessage()
 	end
 end)
 
