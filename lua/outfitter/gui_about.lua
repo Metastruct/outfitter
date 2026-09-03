@@ -91,39 +91,43 @@ local credits = {
 	{
 		"Willox",
 		"76561197998909316",
-		[[Ex-Facepunch who gave us the tools to make outfitter]],
+		[[#outfitter_credits_willox]],
 	}, {
 	"CapsAdmin",
 	"76561197978977007",
-	[[Insipration from Player Appearance Customizer (PAC3)]],
+	[[#outfitter_credits_capsadmin]],
 }, {
 	"Aerthas",
 	"76561198053556165",
-	[[Help with initial outfitter prototyping]],
+	[[#outfitter_credits_aerthas]],
 }, {
 	"Henke",
 	"76561198000730944",
-	[[Found anim fix alternative]],
+	[[#outfitter_credits_henke]],
 }, {
-	"Facepunch forums",
+	"#outfitter_credits_facepunchforum",
 	{ '76561197960279927', 'http://steamcommunity.com/groups/facepunch' },
-	[[For helping with all the LAU selflessly and also for emotional support over the years for all of us. Lots of stuff would not have been possible without!]],
+	[[#outfitter_credits_facepunch]],
 }, {
 	"Garry",
 	"76561197960279927",
-	[[<Garry :D> You guys are crazy WTF]],
+	[[#outfitter_credits_garry]],
 }, {
 	"Python1320",
 	"76561197986413226",
-	[[The guy who wrote this madness]],
+	[[#outfitter_credits_python1320]],
 }, {
 	"Meta Construct",
 	{ '76561198047188411', "http://metastruct.eu" },
-	[[The programming community that made outfitter possible]],
+	[[#outfitter_credits_metaconstruct]],
 }, {
 	"ilker",
 	"76561198114061219",
-	[[Created dependencies mounting]],
+	[[#outfitter_credits_ilker]],
+ }, {
+	"Toraichi",
+	"76561198443702005",
+	[[#outfitter_credits_toraichi]],
 },
 }
 
@@ -135,7 +139,7 @@ local function initcredits()
 	credits[#credits + 1] = {
 		LocalPlayer():GetName(),
 		LocalPlayer():SteamID64(),
-		[[For being interested in outfitter!]],
+		[[#outfitter_credits_you]],
 	}
 end
 
@@ -149,7 +153,7 @@ function PANEL:Init(asd)
 
 	initcredits()
 	if not self.is_panel then
-		self:SetTitle "Outfitter (About)"
+		self:SetTitle "#outfitter_about"
 		local W, H = 290, 350
 		self:SetMinHeight(100)
 		self:SetMinWidth(200)
@@ -200,8 +204,7 @@ function PANEL:GenDesc()
 
 
 	local lbl_desc = vgui.Create('DLabel', self)
-	lbl_desc:SetText [[Hello there! Outfitter was made to fill the need of the GMod community and for procrastination.
-Although mostly working, outfitter still has bugs and you can help with that by reporting them.]]
+	lbl_desc:SetText [[#outfitter_desc]]
 	lbl_desc:DockMargin(4, 4, 4, 14)
 	--lbl_desc:SetFont(fdesc)
 	lbl_desc:SetDark(false)
@@ -212,7 +215,7 @@ Although mostly working, outfitter still has bugs and you can help with that by 
 
 
 	local b = vgui.Create("DButton", self)
-	b:SetText "Bug reporting"
+	b:SetText "#outfitter_bugreport"
 	b.DoClick = function()
 		gui.OpenURL "https://github.com/Metastruct/outfitter/issues"
 	end
@@ -220,7 +223,7 @@ Although mostly working, outfitter still has bugs and you can help with that by 
 	self:AddItem(b)
 
 	local b = vgui.Create("DButton", self)
-	b:SetText "Get outfitter"
+	b:SetText "#outfitter_getof"
 	b.DoClick = function()
 		gui.OpenURL "http://www.google.com/search?q=garrysmod+outfitter"
 	end
@@ -228,7 +231,7 @@ Although mostly working, outfitter still has bugs and you can help with that by 
 	self:AddItem(b)
 
 	local lbl_desc = vgui.Create('DLabel', self)
-	lbl_desc:SetText [[Finally, the people responsible for this mess include but are not limited to:]]
+	lbl_desc:SetText [[#outfitter_credits_list]]
 	lbl_desc:DockMargin(4, 14, 4, 8)
 	--lbl_desc:SetFont(fdesc)
 	lbl_desc:SetDark(false)
