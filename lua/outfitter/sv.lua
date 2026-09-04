@@ -147,8 +147,20 @@ if not game.IsDedicated() and not game.SinglePlayer() then
 	end)
 end
 
-CreateConVar("_outfitter_version", "0.13.20260601", FCVAR_NOTIFY)
-resource.AddSingleFile "materials/icon64/outfitter.png"
+CreateConVar("_outfitter_version", "0.13.20260801", FCVAR_NOTIFY)
+
+CreateConVar("outfitter_workshop_enabled", "0", FCVAR_ARCHIVE, "Make clients download and mount workshop addon 882463775")
+local function ApplyOutfitterWorkshop()
+	if GetConVar("outfitter_workshop_enabled"):GetBool() then
+		resource.AddWorkshop("882463775")
+		dbgn(1, "outfitter_workshop_enabled=1, requiring workshop addon 882463775 for clients")
+	else
+		resource.AddSingleFile "materials/icon64/outfitter.png"
+		resource.AddSingleFile "resource/localization/en/outfitter.properties"
+	end
+end
+cvars.AddChangeCallback("outfitter_workshop_enabled", ApplyOutfitterWorkshop)
+ApplyOutfitterWorkshop()
 
 
 function TestOutfitsOnBots()
