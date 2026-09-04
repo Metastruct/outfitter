@@ -156,7 +156,7 @@ local function ApplyOutfitterWorkshop()
 		dbgn(1, "outfitter_workshop_enabled=1, requiring workshop addon 882463775 for clients")
 	else
 		resource.AddSingleFile "materials/icon64/outfitter.png"
-		resource.AddSingleFile "resource/localization/en/outfitter.properties"
+		-- linux gets stuck? resource.AddSingleFile "resource/localization/en/outfitter.properties"
 	end
 end
 cvars.AddChangeCallback("outfitter_workshop_enabled", ApplyOutfitterWorkshop)
