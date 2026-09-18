@@ -210,6 +210,9 @@ if CLIENT then
         MenuOpen = function(self, option, ent, tr)
             if not IsValid(ent) then return end
             local submenu = option:AddSubMenu()
+            submenu:AddOption("Open Outfitter", function()
+                GUIOpen()
+            end):SetImage("icon16/application_view_list.png")
             local mdl, download_path = ent:OutfitInfo()
 
             if not mdl then
@@ -291,6 +294,8 @@ if CLIENT then
             end
         end,
 
-        Action = function(self, ent) end
+        Action = function(self, ent)
+            GUIOpen()
+        end
     })
 end
