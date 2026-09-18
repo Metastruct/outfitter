@@ -1268,16 +1268,17 @@ function GetGUIInteractionOffset()
 	return off
 end
 
-local mstartx
+local mlastx
 local function GUIMousePressed()
-	mstartx = input.GetCursorPos()
+	mlastx = input.GetCursorPos()
 end
 hook.Add("GUIMousePressed", Tag, GUIMousePressed)
 
 local function GUIMousePressedThink()
-	if not mstartx then return end
+	if not mlastx then return end
 	local x = input.GetCursorPos()
-	off = (x - mstartx) / ScrW()
+	off = (off or 0) + (x - mlastx) / ScrW()
+	mlastx = x
 end
 hook.Add("Think", Tag .. 'mintoff', GUIMousePressedThink)
 
@@ -1285,7 +1286,7 @@ local function GUIMouseReleased()
 	if false --[[todo]] then
 		off = nil
 	end
-	mstartx = nil
+	mlastx = nil
 end
 
 hook.Add("GUIMouseReleased", Tag, GUIMouseReleased)
