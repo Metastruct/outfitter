@@ -1487,9 +1487,13 @@ end
 do
 	local _vgui = vgui
 
+	local outfitter_gui_derma_skin = CreateClientConVar("outfitter_gui_derma_skin", "0", true, false, "Use the custom Outfitter derma skin")
+
 	local recurse
 	recurse = function(pnl)
-		pnl:SetSkin('Outfitter')
+		if outfitter_gui_derma_skin:GetBool() then
+			pnl:SetSkin('Outfitter')
+		end
 		--print(pnl)
 		for k, v in next, pnl:GetChildren() do
 			recurse(v)
