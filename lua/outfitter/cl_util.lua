@@ -243,10 +243,29 @@ do
 		local thelist, data = proc(str)
 		blocklist = thelist
 		file.Write("outfitter_blocklist.txt", data)
+		ClearTemporaryAllows()
 	end
 
 	function GetTitleBlocklist()
 		return blocklist
+	end
+
+	-- Session-only bypasses for specific workshop items ("temporarily unblock").
+	-- These only skip the local title blocklist; the NSFW/content rating filter still applies.
+	local temporary_allows = {}
+
+	function TemporarilyAllowWS(wsid)
+		if not wsid then return end
+		temporary_allows[tostring(wsid)] = true
+	end
+
+	function ClearTemporaryAllows()
+		temporary_allows = {}
+	end
+
+	function IsTemporarilyAllowed(wsid)
+		if not wsid then return false end
+		return temporary_allows[tostring(wsid)] == true
 	end
 
 	function IsTitleNSFW(title)
@@ -256,30 +275,96 @@ do
 		return false
 	end
 
-	function IsTitleBlocked(title, content_descriptors)
+	-- Returns false when not blocked, or a human-readable reason when blocked.
+	-- wsid, when given, is honoured by the temporary-unblock feature (session-only).
+	function IsTitleBlocked(title, content_descriptors, wsid)
 		if not AllowNSFW() then
 			if content_descriptors then
 				for _, desc in ipairs(content_descriptors) do
 					if desc ~= "gore" and (desc == "adult_only" or desc == "general_mature" or desc == "suggestive" or desc == "nudity") then
-						return true
+						return ("Blocked by content rating (%s)"):format(desc)
 					end
 				end
 			end
 			if IsTitleNSFW(title) then
-				return true
+				return "Blocked by content rating (title)"
 			end
 		end
 
-		for _, l in pairs(blocklist) do
-			if title:lower():find(l, 1, true) then
-				return l
+		if not IsTemporarilyAllowed(wsid) then
+			local t = title and title:lower()
+			for _, l in pairs(blocklist) do
+				if t and t:find(l, 1, true) then
+					return ("Blocked by title filter (%q)"):format(l)
+				end
 			end
 		end
+
 		return false
 	end
 
-	function IsAddonNSFWBlocked(fileinfo) 
-		return IsTitleBlocked(fileinfo.title,fileinfo.content_descriptors)
+	function IsAddonNSFWBlocked(fileinfo, wsid)
+		return IsTitleBlocked(fileinfo.title, fileinfo.content_descriptors, wsid)
+	end
+
+	-- Turns raw outfitter error codes/strings (e.g. "blocked title") into something
+	-- descriptive enough to show in the hover HUD and context menu.
+	function ExplainErrorCode(err, download_path)
+		if err == 'blocked title' then
+			if download_path then
+				local cached = _ws_cache and _ws_cache[download_path]
+				if istable(cached) then
+					local fileinfo = cached[1]
+					if istable(fileinfo) and isstring(fileinfo.title) then
+						local reason = IsTitleBlocked(fileinfo.title, fileinfo.content_descriptors, download_path)
+						if reason then
+							return reason
+						end
+					end
+				end
+			end
+			return "Blocked by title filter"
+		end
+		if err == 'oversize' then
+			return "Blocked: addon is larger than the allowed download size"
+		end
+		if err == 'mdl' or err == 'invalid' then
+			return "Model is not loaded"
+		end
+		if err == 'download' then
+			return "Workshop download failed"
+		end
+		if err == 'file' then
+			return "Could not read the downloaded file"
+		end
+		if err == 'mount' then
+			return "Failed to mount the addon"
+		end
+		if err == 'gmarebuild' then
+			return "Failed to rebuild the addon (outdated?)"
+		end
+		if err == 'new_addon' then
+			return "Blocked: addon is less than a week old"
+		end
+		if err == 'banned' then
+			return "This workshop item is banned"
+		end
+		if err == 'undownloadable' then
+			return "This workshop item cannot be downloaded"
+		end
+		if err == 'noplayer' then
+			return "Player left while applying the outfit"
+		end
+		if err == 'outdated' then
+			return "Outfit changed while it was being applied"
+		end
+		if err == 'canoutfit' then
+			return "Rejected by an outfit rule"
+		end
+		if err == 'disabled' then
+			return "Outfitter is disabled"
+		end
+		return err
 	end
 end
 

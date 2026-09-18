@@ -208,8 +208,10 @@ function ChangeOutfitThreadWorker(pl, hash)
 	if exists then
 		if tonumber(download_info) then
 			local fileinfo = co_steamworks_FileInfo(download_info)
-			if istable(fileinfo) and IsAddonNSFWBlocked(fileinfo) then
+			if istable(fileinfo) and IsAddonNSFWBlocked(fileinfo, download_info) then
 				dbg("ChangeOutfit", download_info, "NSFW blocked on re-mount")
+				_load_info_history[download_info] = {state = "error", error = "blocked title", mdl = mdl, time = SysTime()}
+				pl.outfitter_last_error = {error = "blocked title", download_path = download_info, mdl = mdl, time = SysTime()}
 				return false, "blocked title"
 			end
 			-- The model may have been mounted before its required items.

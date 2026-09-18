@@ -68,7 +68,7 @@ hook.Add("HUDPaintBackground", Tag, function()
         local info = download_path and _load_info_history[download_path]
         if info then
             if info.state == "error" then
-                status = "Failed: " .. (info.error or "unknown")
+                status = "Failed: " .. (ExplainErrorCode(info.error, download_path) or info.error or "unknown")
                 status_color = Color(255, 120, 120)
             elseif info.state == "loading" then
                 status = "Loading..."
@@ -90,21 +90,12 @@ hook.Add("HUDPaintBackground", Tag, function()
         title = ResolveTitle(download_path)
         size_str = ResolveSizeStr(download_path)
     else
-        if api.get_player_networked_data(ent) then
-            status = "Unknown error"
-            status_color = Color(255, 120, 120)
-            mdl = "?"
-        else
-            local last = ent.outfitter_last_error
-            if last then
-                status = "Failed: " .. (last.error or "unknown")
-                status_color = Color(255, 120, 120)
-                mdl = last.mdl or "?"
-                title = ResolveTitle(last.download_path)
-            else
-                return
-            end
-        end
+        local reason, data = api.describe_outfit_error(ent)
+        if not reason then return end
+        status = "Failed: " .. reason
+        status_color = Color(255, 120, 120)
+        mdl = data and data.mdl or "?"
+        title = ResolveTitle(data and data.download_path)
     end
 
     local mouse_x, mouse_y = input.GetCursorPos()
