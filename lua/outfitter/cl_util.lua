@@ -334,8 +334,20 @@ do
 		if err == 'download' then
 			return "Workshop download failed"
 		end
+		if err == 'file-corrupt' then
+			return "Downloaded addon is empty or corrupt (<=0.5 KB): failed download or GMod x86-64 not exposing the gma"
+		end
+		if err == 'file-missing' then
+			return "Downloaded addon file is missing after decompression"
+		end
 		if err == 'file' then
-			return "Could not read the downloaded file"
+			return "Could not read the downloaded addon file (corrupt, or GMod x86-64 does not expose gma contents)"
+		end
+		if err == 'notgma' then
+			return "Downloaded addon is not a valid gma archive"
+		end
+		if err == 'gma-parse' then
+			return "Could not parse the addon archive"
 		end
 		if err == 'mount' then
 			return "Failed to mount the addon"

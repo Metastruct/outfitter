@@ -327,7 +327,7 @@ function coFetchWS(wsid, skip_maxsize)
 	end
 
 	if not IsUGCFilePath(path) and file.Size(path, 'MOD') <= 512 then
-		return SYNCWS(wsid, dat, cantmount(wsid, "file"))
+		return SYNCWS(wsid, dat, cantmount(wsid, "file-corrupt"))
 	end
 
 	-- Decompress manually
@@ -340,7 +340,7 @@ function coFetchWS(wsid, skip_maxsize)
 
 		if not IsUGCFilePath(path) and not file.Exists(path, 'MOD') then
 			dbg(path, "IsUGCFilePath", IsUGCFilePath(path), "file.Exists", file.Exists(path, 'MOD'))
-			return SYNCWS(wsid, dat, cantmount(wsid, "file"))
+			return SYNCWS(wsid, dat, cantmount(wsid, "file-missing"))
 		end
 	end
 
@@ -724,7 +724,7 @@ function NeedWS(wsid, pl, mdl, dependency_manifest)
 
 	if not ok then
 		dbge("NeedWS", "GMABlacklist", wsid, "->", err)
-		return
+		return nil, err or "gma-parse"
 	end
 
 	local mdls, extra, errlist = GMAPlayerModels(path)
