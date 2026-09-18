@@ -278,6 +278,17 @@ if CLIENT then
                 end):SetImage("icon16/picture.png")
             end
 
+            local developer = GetConVar("developer")
+            local me = LocalPlayer()
+            if IsValid(me) and me:IsAdmin() and developer and developer:GetBool() then
+                local debugmenu = submenu:AddSubMenu("Debug", function() end, "icon16/wrench.png")
+                debugmenu:AddOption("Copy my outfit to this bot", function()
+                    local ok, err = SendDebugOutfitToBot(ent)
+                    if not ok then
+                        chat.AddText("[Outfitter] " .. tostring(err or "failed"))
+                    end
+                end)
+            end
         end,
 
         Action = function(self, ent) end

@@ -139,6 +139,42 @@ net.Receive(NTagSkin, function(len, pl)
 	pl:SetSkin(n)
 end)
 
+util.AddNetworkString('OFDebug')
+
+-- Debug: admin copies their own outfit (incl. skin + bodygroups) onto a bot.
+net.Receive('OFDebug', function(len, pl)
+	if not IsValid(pl) or not pl:IsAdmin() then return end
+
+	local bot = net.ReadEntity()
+	if not IsValid(bot) or not bot:IsPlayer() or not bot:IsBot() then return end
+
+	local mdl = net.ReadString()
+	local download_info = net.ReadString()
+	local dep_manifest_s = net.ReadString()
+	local skin = net.ReadUInt(10)
+	local bodygroups_s = net.ReadString()
+
+	if mdl == "" then mdl = nil end
+	if download_info == "" then download_info = nil end
+
+	local dep_manifest
+	if dep_manifest_s ~= "" then
+		local ok, d = pcall(json.decode, dep_manifest_s)
+		if ok then dep_manifest = d end
+	end
+
+	dbgn(2, "OFDebug", pl, "copying outfit to bot", bot, mdl, download_info, "skin", skin, "bg", bodygroups_s)
+
+	SHNetworkOutfit(bot, mdl, download_info, dep_manifest)
+
+	bot.outfitter_skin = skin
+	pcall(function() bot:SetSkin(skin) end)
+
+	if bodygroups_s ~= "" then
+		pcall(function() bot:SetBodyGroups(bodygroups_s) end)
+	end
+end)
+
 if not game.IsDedicated() and not game.SinglePlayer() then
 	hook.Add("OnEntityCreated", Tag, function(e)
 		if e:IsPlayer() and e:IsListenServerHost() then
