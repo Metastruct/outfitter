@@ -1404,13 +1404,13 @@ function PANEL:Init()
 	local had_max = self:GetCookie("pmax", "") == '1'
 
 	if had_max then
-		self:SetSize(640, 400)
+		self:SetSize(640, 586)
 	else
-		self:SetSize(313, 293)
+		self:SetSize(313, 586)
 	end
 
 	self.btnMaxim.DoClick = function()
-		self:SetSize(640, 400)
+		self:SetSize(640, 586)
 		self:SetCookie("pmax", '1')
 		had_max = true
 		self:CenterVertical()
@@ -1430,7 +1430,7 @@ function PANEL:Init()
 		end
 	end
 	self.btnMinim.DoClick = function()
-		self:SetSize(313, 293)
+		self:SetSize(313, 586)
 		self:CenterVertical()
 	end
 	self:SetDraggable(true)
