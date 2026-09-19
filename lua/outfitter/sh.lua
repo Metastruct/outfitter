@@ -429,6 +429,16 @@ function Player.OutfitSetInfo(pl, mdl, download_path, skin, bodygroups, dependen
 	pl:OutfitUpdateHash()
 end
 
+SuppressNWVar = 'outfitter_suppress'
+
+function Player.GetOutfitSuppress(pl)
+	local token = pl:GetNW2String(SuppressNWVar, "")
+	if token ~= "" then
+		return true, token
+	end
+	return false
+end
+
 local function filt(ok, err, ...)
 	if not ok then
 		ErrorNoHalt(err .. '\n')

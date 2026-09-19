@@ -5,6 +5,8 @@ local NTagSkin = 'OFSkin'
 
 module(Tag, package.seeall)
 
+local Player = FindMetaTable "Player"
+
 util.AddNetworkString(Tag)
 util.AddNetworkString(NTag)
 util.AddNetworkString(NTagSkin)
@@ -65,9 +67,61 @@ net.Receive(Tag, function(len, pl)
 	--CyclePlayerModel(pl)
 end)
 
+function Player.OutfitSuppress(pl, suppress, token)
+	assert(IsValid(pl) and pl:IsPlayer(), "OutfitSuppress: expected a player")
+	if token == nil or type(token) ~= 'string' or token == '' then
+		return false, 'OutfitSuppress: token must be a string'
+	end
+
+	local set = pl.outfitter_suppress_set or {}
+	local order = pl.outfitter_suppress_order or {}
+	pl.outfitter_suppress_set = set
+	pl.outfitter_suppress_order = order
+
+	if suppress then
+		if set[token] then return false end
+		if not next(order) then
+			pl.outfitter_suppress_saved = pl:GetNetData(NTag)
+			pl:OutfitSetInfo(nil, nil, nil, nil, nil)
+			SHNetworkOutfit(pl, nil, nil, nil)
+		end
+		set[token] = true
+		order[#order + 1] = token
+		pl:SetNW2String(SuppressNWVar, token, true)
+
+		return true
+	end
+
+	if not set[token] then return false end
+	set[token] = nil
+	for i, tk in ipairs(order) do
+		if tk == token then
+			table.remove(order, i)
+			break
+		end
+	end
+
+	if not next(order) then
+		local d = pl.outfitter_suppress_saved
+		pl.outfitter_suppress_saved = nil
+		if d then
+			pl:SetNetData(NTag, d)
+		else
+			SHNetworkOutfit(pl, nil, nil, nil)
+		end
+		pl:SetNW2String(SuppressNWVar, '', true)
+	else
+		pl:SetNW2String(SuppressNWVar, order[1], true)
+	end
+
+	return true
+end
+
 function NetData(pl, k, val)
 	if k ~= NTag then return end
 	dbgn(2, "NetData", "receiving outfit from", pl)
+
+	if pl:GetOutfitSuppress() then return false end
 
 	if not isstring(val) and val ~= nil then
 		dbg(pl, "val", type(val))

@@ -7,7 +7,87 @@ module(Tag, package.seeall)
 local NOUI = OUTFITTER_NO_UI
 
 local outfitter_gui_focusdim = CreateClientConVar("outfitter_gui_focusdim", "0", true, false, "Dim GUI when mouse leaves window")
+local outfitter_debug_cefcheck = CreateClientConVar("outfitter_debug_cefcheck", "1", true, false, "Check if the CEF/H.264 codec is installed; if not, open pasted URLs in the Steam overlay instead of mounting them")
 local vgui = GetVGUI()
+
+local cef_codec_checked
+local cef_codec_available
+local cef_callbacks
+
+local function CEFCodecCheckFinish()
+	if not cef_callbacks then return end
+	local cbs = cef_callbacks
+	cef_callbacks = nil
+	for _, cb in ipairs(cbs) do
+		cb(cef_codec_available)
+	end
+end
+
+local function RunCEFCodecCheck()
+	if not (BRANCH == "x86-64" or system.IsWindows()) then
+		cef_codec_available = false
+		CEFCodecCheckFinish()
+		return
+	end
+
+	local panel = vgui.Create("DHTML", nil, "outfitter_cef_codec_check")
+	panel:SetSize(32, 32)
+	panel:SetKeyboardInputEnabled(false)
+	panel:SetMouseInputEnabled(false)
+	panel.Paint = function() return true end
+
+	panel.RemoveWhileHidden = function()
+		if not IsValid(panel) then return end
+		panel:SetVisible(false)
+		panel:Remove()
+	end
+
+	local timeout_timer = "outfitter_cef_codec_check_timeout"
+	timer.Create(timeout_timer, 8, 1, function()
+		if cef_codec_available == nil then
+			cef_codec_available = false
+			panel:RemoveWhileHidden()
+			CEFCodecCheckFinish()
+		end
+	end)
+
+	panel:SetHTML("")
+
+	panel.OnDocumentReady = function()
+		if cef_codec_available ~= nil then
+			panel:RemoveWhileHidden()
+			return
+		end
+		panel:AddFunction("gmod", "getCodecStatus", function(codecStatus)
+			if cef_codec_available ~= nil then return end
+			timer.Remove(timeout_timer)
+			cef_codec_available = tobool(codecStatus)
+			panel:RemoveWhileHidden()
+			CEFCodecCheckFinish()
+		end)
+		panel:QueueJavascript([[gmod.getCodecStatus(document.createElement("video").canPlayType('video/mp4; codecs="avc1.42E01E, mp4a.40.2"') == "probably")]])
+	end
+end
+
+function CheckCEFCodec(cb)
+	if cef_codec_available ~= nil then
+		if cb then cb(cef_codec_available) end
+		return
+	end
+	if cb then
+		cef_callbacks = cef_callbacks or {}
+		cef_callbacks[#cef_callbacks + 1] = cb
+	end
+	if not cef_codec_checked then
+		cef_codec_checked = true
+		RunCEFCodecCheck()
+	end
+end
+
+hook.Add("PreRender", Tag, function()
+	hook.Remove("PreRender", Tag)
+	CheckCEFCodec()
+end)
 
 -- GUIWantChangeModel
 local PANEL = {}
@@ -418,15 +498,19 @@ function PANEL:Init()
 		end
 	end
 	do
-		local b = functions:Add('DTextEntry', 'url input')
+		local wrap = functions:Add('EditablePanel', 'url wrap')
+		wrap:Dock(TOP)
+		wrap:DockMargin(0, 4, 1, 8)
+		wrap:SetTall(28)
+
+		local b = wrap:Add('DTextEntry', 'url input')
 		self.input_mdlsource = b
 
-		b:Dock(TOP)
+		b:Dock(FILL)
 		b:SetText("")
 		b:SetPlaceholderText("https://steamcommunity.com/sharedfiles/filedetails/?id=1234")
 
-		b.OnEnter = function()
-			local url = b:GetValue():Trim()
+		local function SubmitURL(url, hidegui)
 			if url == "puze" then
 				url = "https://g2cf.metastruct.net/delme/puze.gma"
 			end
@@ -435,11 +519,11 @@ function PANEL:Init()
 			if wsid then
 				surface.PlaySound "npc/vort/claw_swing1.wav"
 				UIChoseWorkshop(wsid, true, true)
-				self:GetParent():Hide()
+				hidegui()
 			else
 				if IsHTTPURL(url) then
 					if AllowedHTTPURL(url) then
-						self:GetParent():Hide()
+						hidegui()
 						UIChoseHTTPGMA(url, true)
 					else
 						chat.AddText("#outfitter_warnlist")
@@ -451,7 +535,26 @@ function PANEL:Init()
 				end
 			end
 		end
-		b:DockMargin(0, 4, 1, 8)
+
+		b.OnEnter = function()
+			local url = b:GetValue():Trim()
+			local hidegui = function() self:GetParent():Hide() end
+			local submit = function()
+				SubmitURL(url, hidegui)
+			end
+			if not outfitter_debug_cefcheck:GetBool() then
+				return submit()
+			end
+			CheckCEFCodec(function(codec_ok)
+				if codec_ok then
+					submit()
+				else
+					dbg("CEF codec not installed, opening URL in Steam overlay", url)
+					gui.OpenURL(url)
+					hidegui()
+				end
+			end)
+		end
 	end
 
 	local l = functions:Add("DLabel", 'chosen')
