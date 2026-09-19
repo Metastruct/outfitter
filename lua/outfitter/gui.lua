@@ -559,6 +559,9 @@ function PANEL:Init()
 			local submit = function()
 				SubmitURL(url, hidegui)
 			end
+			if UrlToWorkshopID(url, true) then
+				return submit()
+			end
 			if not outfitter_debug_cefcheck:GetBool() then
 				return submit()
 			end
