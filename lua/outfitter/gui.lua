@@ -94,6 +94,21 @@ local PANEL = {}
 
 local matUp = Material "icon16/arrow_up.png"
 
+
+local function WorkshopBrowseURL(str)
+	local url = 'http://steamcommunity.com/workshop/browse/?appid=4000&searchtext=playermodel&childpublishedfileid=0&browsesort=trend&section=readytouseitems&requiredtags%5B%5D=Model'
+	if str then
+		str = tostring(str)
+		str = #str > 0 and str
+		if str then
+			str = string.urlencode and string.urlencode(str) or str
+			url = 'http://steamcommunity.com/workshop/browse/?appid=4000&searchtext=playermodel+' ..
+			str .. '&childpublishedfileid=0&browsesort=trend&section=readytouseitems&requiredtags%5B%5D=Model'
+		end
+	end
+	return url
+end
+
 function PANEL:Init()
 	local txt = vgui.Create('DLabel', self, 'msg')
 	txt:Dock(TOP)
@@ -191,17 +206,7 @@ function PANEL:Show(str, returntoui)
 	local dourl = not self.already_loaded
 	self.already_loaded = true
 
-	local url =
-	'http://steamcommunity.com/workshop/browse/?appid=4000&searchtext=playermodel&childpublishedfileid=0&browsesort=trend&section=readytouseitems&requiredtags%5B%5D=Model'
-	if str then
-		str = str and tostring(str)
-		str = str and #str > 0 and str
-		if str then
-			str = string.urlencode and string.urlencode(str) or str
-			url = 'http://steamcommunity.com/workshop/browse/?appid=4000&searchtext=playermodel+' ..
-			str .. '&childpublishedfileid=0&browsesort=trend&section=readytouseitems&requiredtags%5B%5D=Model'
-		end
-	end
+	local url = WorkshopBrowseURL(str)
 
 	if dourl then
 		self:OpenURL(url)
@@ -231,14 +236,30 @@ vgui.Register(Tag, PANEL, 'custombrowser')
 
 m_vModelDlg = NULL
 function GUIWantChangeModel(str, returntoui)
-	if not ValidPanel(m_vModelDlg) then
-		local d = vgui.Create(Tag, nil, Tag)
-		m_vModelDlg = d
+	local openbrowser = function()
+		if not ValidPanel(m_vModelDlg) then
+			local d = vgui.Create(Tag, nil, Tag)
+			m_vModelDlg = d
+		end
+
+		m_vModelDlg:Show(str, returntoui)
+
+		return m_vModelDlg
 	end
-
-	m_vModelDlg:Show(str, returntoui)
-
-	return m_vModelDlg
+	if not outfitter_debug_cefcheck:GetBool() then
+		return openbrowser()
+	end
+	CheckCEFCodec(function(codec_ok)
+		if codec_ok then
+			openbrowser()
+		else
+			dbg("CEF codec not installed, opening workshop in Steam overlay")
+			gui.OpenURL(WorkshopBrowseURL(str), true)
+			if returntoui then
+				GUIOpen()
+			end
+		end
+	end)
 end
 
 function GUIReviewDependencies(graph, dependency_manifest, cb)
@@ -480,9 +501,8 @@ function PANEL:Init()
 		b:SetTooltip [[#outfitter_choosemdl]]
 
 		b.DoClick = function()
-			GUIWantChangeModel(nil, true)
-
 			self:GetParent():Hide()
+			GUIWantChangeModel(nil, true)
 		end
 		b:DockMargin(0, 4, 1, 8)
 		b:SetImage 'icon16/folder_user.png'
@@ -550,8 +570,7 @@ function PANEL:Init()
 					submit()
 				else
 					dbg("CEF codec not installed, opening URL in Steam overlay", url)
-					gui.OpenURL(url)
-					hidegui()
+					gui.OpenURL(url, true)
 				end
 			end)
 		end
