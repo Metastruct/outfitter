@@ -372,14 +372,17 @@ end
 
 local PANEL = {}
 function PANEL:Init()
-	local functions = self:Add('DPanel', 'settings')
-	functions:Dock(LEFT)
-	functions:SetWidth(300)
-	functions:SetHeight(300)
-	functions:DockMargin(4, 1, 24, 0)
-	functions:SetPaintBackground(false)
+	local leftscroll = self:Add('DScrollPanel', 'settings')
+	leftscroll:Dock(LEFT)
+	leftscroll:SetWidth(377)
+	leftscroll:SetHeight(300)
+	leftscroll:DockMargin(4, 1, 24, 0)
+	leftscroll:SetPaintBackground(false)
 
-	--functions:EnableVerticalScrollbar()
+	local functions = leftscroll:Add('DPanel', 'settings')
+	functions:Dock(TOP)
+	functions:SetHeight(560)
+	functions:SetPaintBackground(false)
 
 	local function Add(itm, b)
 		local c = vgui.Create(itm, functions, b)
@@ -494,20 +497,15 @@ function PANEL:Init()
 	self.mdllist = mdllist
 	mdllist:SetTooltip [[#outfitter_choose_of]]
 	mdllist:DockMargin(0, 5, 0, 0)
-	mdllist:Dock(FILL)
-	mdllist:SetTall(128)
+	mdllist:Dock(TOP)
+	mdllist:SetTall(360)
 	mdllist.OnRowSelected = function(mdllist, n, itm)
 		local ret = GUIChooseMDL(n)
 		if not ret then
 			surface.PlaySound "common/warning.wav"
 		end
-		self.btn_bg:Refresh()
 	end
 	--TODO : OnRowRightClick
-	function mdllist.PerformLayout(mdllist)
-		DListView.PerformLayout(mdllist)
-		self.btn_bg:InvalidateLayout()
-	end
 
 	mdllist.PaintOver = function(b, w, h)
 		if next(mdllist:GetLines()) and not mdllist:GetSelectedLine() then
@@ -872,14 +870,6 @@ function PANEL:Init()
 	end
 	check:SetImage 'icon16/transmit_error.png'
 
-	local b = Add('DButton', 'thirdperson')
-	b:SetText("#tool.camera.name")
-	b:SetTooltip [[#outfitter_thirdptip]]
-
-	b.DoClick = function() ToggleThirdperson() end
-	b:DockMargin(16, 2, 16, 1)
-	b:SetImage 'icon16/find.png'
-
 
 
 	--local b = Add('EditablePanel')
@@ -898,82 +888,7 @@ function PANEL:Init()
 	-- second layer
 	local cont = functions:Add('EditablePanel', 'container')
 	cont:SetTall(24)
-	cont:Dock(BOTTOM)
-
-	local b = vgui.Create('DButton', mdllist, 'Bodygroups button')
-	function b.Refresh(b)
-		-- poor man's pcall
-		co(function()
-			b.mdl = false
-			b:SetEnabled2(false)
-			dbg("Bodygroup", "BTN", "Refresh")
-
-			local l = UIGetMDLList()
-			if not l then return end
-			local chosen = UIGetChosenMDL()
-			if not chosen then return false end
-			local mdl = l[chosen]
-			if not mdl then return false end
-			if not file.Exists(mdl.Name, 'workshop') and not file.Exists(mdl.Name, 'GAME') then return false end
-			local a = mdlinspect.Open(mdl.Name)
-			a:ParseHeader()
-			local parts = a:BodyPartsEx()
-			local ok
-			for k, v in next, parts do
-				if v.nummodels > 1 then
-					ok = true
-					break
-				end
-			end
-			if not ok then return end
-
-			b:SetEnabled2(true)
-			b.mdl = mdl
-		end)
-	end
-
-	self.btn_bg = b
-	b:Dock(NODOCK)
-	b:SetText("")
-	b:SetSize(24, 24)
-	b:SetTooltip [[#GameUI_Modify]]
-	b.DoClick = function()
-		if not LocalPlayer():GetNetData(NTag) then
-			local menu = DermaMenu()
-			menu:AddOption("#gameui_submit", function()
-				GUIBroadcastMyOutfit()
-			end):SetIcon('icon16/transmit.png')
-			menu:AddOption("#gameui_cancel", function() end):SetIcon('icon16/cancel.png')
-			menu:AddOption("#outfitter_editanyway", function()
-				GUIOpenBodyGroupOverlay(self)
-			end):SetIcon('icon16/accept.png')
-			menu:Open()
-		else
-			GUIOpenBodyGroupOverlay(self)
-		end
-	end
-	b:SetImage 'icon16/group_edit.png'
-	b.PerformLayout = function(b, w, h)
-		DButton.PerformLayout(b, w, h)
-
-		local w2 = b:GetParent():GetCanvas():GetWide()
-
-		local _, y = b:GetParent():GetSize()
-		b:SetPos(w2 - w - 1, y - h - 1)
-	end
-	function b.SetEnabled2(b, v)
-		b:SetDisabled(not v)
-		b._set_enabled = v
-	end
-
-	--b.PaintOver= function(b,w,h)
-	--	if b._set_enabled then
-	--		if UIGetChosenMDL() and UIGetMDLList() and LocalPlayer().latest_want~=UIGetMDLList()[UIGetChosenMDL()] then
-	--			surface.SetDrawColor(55,240,55,40+25*math.sin(RealTime()*7)^2)
-	--			surface.DrawRect(1,1,w-2,h-2)
-	--		end
-	--	end
-	--end
+	cont:Dock(TOP)
 
 	local b = cont:Add('DButton', 'Autowear button')
 	self.btn_autowear = b
@@ -1000,7 +915,7 @@ function PANEL:Init()
 
 	local cont = functions:Add('EditablePanel', 'container')
 	cont:SetTall(32)
-	cont:Dock(BOTTOM)
+	cont:Dock(TOP)
 
 	local b = cont:Add('DButton', 'Send button')
 	self.btn_send = b
@@ -1047,20 +962,69 @@ function PANEL:Init()
 	end
 	b:SetImage 'icon16/cancel.png'
 
+	local b = functions:Add('DButton', 'thirdperson')
+	b:SetText("#tool.camera.name")
+	b:SetTooltip [[#outfitter_thirdptip]]
+	b:Dock(TOP)
+	b:DockMargin(16, 2, 16, 1)
+	b.DoClick = function() ToggleThirdperson() end
+	b:SetImage 'icon16/find.png'
 
+	-- bodygroup and skin editor, only usable once an outfit is submitted
+	self.bg_edit_disabled = vgui.Create('DLabel', functions, 'bodygroups disabled label')
+	self.bg_edit_disabled:Dock(TOP)
+	self.bg_edit_disabled:DockMargin(4, 8, 4, 4)
+	self.bg_edit_disabled:SetText("#outfitter_submitfirst")
+	self.bg_edit_disabled:SetFont("DermaDefault")
+	self.bg_edit_disabled:SetTextColor(Color(180, 180, 180, 255))
+	self.bg_edit_disabled:SetWrap(true)
+	self.bg_edit_disabled:SetAutoStretchVertical(true)
+
+	self.bg_edit = vgui.CreateFromTable(bodygroups_factor, functions, 'bodygroups editor')
+	self.bg_edit:Dock(TOP)
+	self.bg_edit:DockMargin(0, 4, 0, 0)
+
+	function self:RefreshBGE()
+		local data = api and api.get_player_networked_data(LocalPlayer())
+		local mdl = data and data.mdl
+		if mdl and (file.Exists(mdl, 'workshop') or file.Exists(mdl, 'GAME')) then
+			self.bg_edit_disabled:SetVisible(false)
+			if self.bg_edit.model ~= mdl then
+				self.bg_edit:SetModel(mdl)
+			end
+			self.bg_edit:SetVisible(true)
+		else
+			self.bg_edit:SetVisible(false)
+			self.bg_edit:Clear()
+			self.bg_edit_disabled:SetVisible(true)
+		end
+	end
 
 	local div = self:Add "DHorizontalDivider"
 	div:Dock(FILL)
 
-	functions:Dock(NODOCK)
+	leftscroll:Dock(NODOCK)
 	sheet:Dock(NODOCK)
 	div:SetCookieName(Tag)
-	div:SetLeft(functions)
+	div:SetLeft(leftscroll)
 	div:SetRight(sheet)
 	div:SetDividerWidth(4) --set the divider width. DEF: 8
 	div:SetLeftMin(150)   --set the minimun width of left side
 	div:SetRightMin(0)
-	div:SetLeftWidth(300)
+	div:SetLeftWidth(377)
+
+	function functions.PerformLayout(functions, w, h)
+		DPanel.PerformLayout(functions, w, h)
+		local t = 0
+		for k, v in next, functions:GetChildren() do
+			local a, b = v:GetDockMargin()
+			t = t + v:GetTall() + a + b
+		end
+		if t ~= functions:GetTall() then
+			functions:SetTall(t)
+		end
+	end
+	functions:InvalidateLayout()
 
 	--------------------------------------------------
 end
@@ -1214,7 +1178,6 @@ function GUICheckTransmit()
 
 	local cansend = UIGetChosenMDL() and UIGetDownloadInfoX() and UIGetMDLList()
 	self.btnSendOutfit:SetEnabled2(cansend)
-	self.btn_bg:Refresh()
 	self:RefreshDependencyButton()
 end
 
@@ -1255,7 +1218,7 @@ end
 function PANEL:DoRefresh(trychoose_mdl)
 	dbg("doRefresh", trychoose_mdl)
 	self.mdllist:Clear()
-	self.btn_bg:Refresh()
+	self:RefreshBGE()
 	self.mdlhist:Clear()
 
 	self.lbl_chosen:SetText("#outfitter_slctwsaddon")
@@ -1368,8 +1331,6 @@ function PANEL:DoRefresh(trychoose_mdl)
 			dbg("Choose missing", trychoose_mdl)
 		end
 	end
-
-	self.btn_bg:Refresh()
 end
 
 local factory = vgui.RegisterTable(PANEL, 'EditablePanel')
@@ -1406,7 +1367,7 @@ function PANEL:Init()
 	if had_max then
 		self:SetSize(640, 586)
 	else
-		self:SetSize(313, 586)
+		self:SetSize(377, 586)
 	end
 
 	self.btnMaxim.DoClick = function()
@@ -1430,7 +1391,7 @@ function PANEL:Init()
 		end
 	end
 	self.btnMinim.DoClick = function()
-		self:SetSize(313, 586)
+		self:SetSize(377, 586)
 		self:CenterVertical()
 	end
 	self:SetDraggable(true)
