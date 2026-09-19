@@ -187,6 +187,26 @@ function SendDebugOutfitToBot(bot)
 	return true
 end
 
+-- Remove the outfit from a bot. Mirrors SendDebugOutfitToBot with an empty
+-- payload so the server clears the bot's outfit data (and any dependent state).
+function SendDebugClearOutfit(bot)
+	if not IsValid(bot) then return false, "no target" end
+	if not bot:IsBot() then return false, "not a bot" end
+
+	dbg("SendDebugClearOutfit", bot)
+
+	net.Start(NTagDebug)
+	net.WriteEntity(bot)
+	net.WriteString("")
+	net.WriteString("")
+	net.WriteString("")
+	net.WriteUInt(1, 10)
+	net.WriteString("")
+	net.SendToServer()
+
+	return true
+end
+
 concommand.Add("outfitter_debug_setbot_outfit", function(pl, cmd, args)
 	local me = LocalPlayer()
 	if not IsValid(me) then return end
@@ -219,3 +239,36 @@ concommand.Add("outfitter_debug_setbot_outfit", function(pl, cmd, args)
 		chat.AddText("[Outfitter] " .. tostring(err))
 	end
 end, nil, "Copy your outfit (model, skin, bodygroups) to the bot you're aiming at (developer 1 + admin)")
+
+concommand.Add("outfitter_debug_clearbot_outfit", function(pl, cmd, args)
+	local me = LocalPlayer()
+	if not IsValid(me) then return end
+
+	local developer = GetConVar("developer")
+	if not developer or not developer:GetBool() or not me:IsAdmin() then
+		chat.AddText("[Outfitter] Requires developer 1 and admin")
+		return
+	end
+
+	local bot
+	local arg = tonumber(args[1])
+	if arg then
+		bot = Entity(arg)
+	else
+		local tr = me:GetEyeTrace()
+		if tr and tr.Hit and tr.HitNonWorld and IsValid(tr.Entity) then
+			bot = tr.Entity
+		end
+	end
+	if not IsValid(bot) or not bot:IsBot() then
+		chat.AddText("[Outfitter] Aim at a bot or pass its Entity index")
+		return
+	end
+
+	local ok, err = SendDebugClearOutfit(bot)
+	if ok then
+		chat.AddText("[Outfitter] Cleared the outfit of " .. bot:Nick() .. " (" .. bot:EntIndex() .. ")")
+	else
+		chat.AddText("[Outfitter] " .. tostring(err))
+	end
+end, nil, "Remove the outfit from the bot you're aiming at (developer 1 + admin)")

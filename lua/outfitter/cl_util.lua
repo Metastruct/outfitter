@@ -1346,7 +1346,21 @@ concommand.Add("outfitter_dump", function()
 	else
 		MsgC(COL_NONE, "none\n")
 	end
-end, nil, "Dump players, autoload config, and blocklist")
+
+	MsgC(COL_SECTION, "\n=== History (played models) ===\n")
+	local hist = GUIGetHistory()
+	if hist and next(hist) then
+		for i, v in ipairs(hist) do
+			MsgC(COL_INFO, string.format("[%d] %s\n", i, tostring(v[3])))
+			MsgC(COL_KEY, "  wsid = ")
+			MsgC(COL_INFO, tostring(v[1]) .. "\n")
+			MsgC(COL_KEY, "  mdl  = ")
+			MsgC(COL_INFO, tostring(v[2]) .. "\n")
+		end
+	else
+		MsgC(COL_NONE, "none\n")
+	end
+end, nil, "Dump players, autoload config, blocklist, and played models history")
 
 ------------
 

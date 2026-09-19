@@ -63,6 +63,7 @@ end
 
 function PANEL:OnMousePressed(mc)
 	if mc ~= MOUSE_LEFT then return end
+	surface.PlaySound("ui/buttonclick.wav")
 	self:GetParent():SetChecked(self.n)
 end
 

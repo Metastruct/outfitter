@@ -291,6 +291,22 @@ if CLIENT then
                         chat.AddText("[Outfitter] " .. tostring(err or "failed"))
                     end
                 end)
+                debugmenu:AddOption("Clear this bot's outfit", function()
+                    local ok, err = SendDebugClearOutfit(ent)
+                    if not ok then
+                        chat.AddText("[Outfitter] " .. tostring(err or "failed"))
+                    end
+                end)
+                debugmenu:AddOption("Dump outfit info", function()
+                    local mdl, download_path, skin, bodygroups, dependency_manifest = ent:OutfitInfo()
+                    PrintTable({
+                        mdl = mdl,
+                        download_path = download_path,
+                        skin = skin,
+                        bodygroups = bodygroups,
+                        dependency_manifest = dependency_manifest
+                    })
+                end)
             end
         end,
 

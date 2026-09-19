@@ -498,7 +498,7 @@ function PANEL:Init()
 	mdllist:SetTooltip [[#outfitter_choose_of]]
 	mdllist:DockMargin(0, 5, 0, 0)
 	mdllist:Dock(TOP)
-	mdllist:SetTall(360)
+	mdllist:SetTall(200)
 	mdllist.OnRowSelected = function(mdllist, n, itm)
 		local ret = GUIChooseMDL(n)
 		if not ret then
@@ -975,8 +975,8 @@ function PANEL:Init()
 	self.bg_edit_disabled:Dock(TOP)
 	self.bg_edit_disabled:DockMargin(4, 8, 4, 4)
 	self.bg_edit_disabled:SetText("#outfitter_submitfirst")
-	self.bg_edit_disabled:SetFont("DermaDefault")
-	self.bg_edit_disabled:SetTextColor(Color(180, 180, 180, 255))
+	self.bg_edit_disabled:SetFont("DermaDefaultBold")
+	self.bg_edit_disabled:SetTextColor(Color(220, 220, 220, 255))
 	self.bg_edit_disabled:SetWrap(true)
 	self.bg_edit_disabled:SetAutoStretchVertical(true)
 
@@ -989,10 +989,16 @@ function PANEL:Init()
 		local mdl = data and data.mdl
 		if mdl and (file.Exists(mdl, 'workshop') or file.Exists(mdl, 'GAME')) then
 			self.bg_edit_disabled:SetVisible(false)
-			if self.bg_edit.model ~= mdl then
-				self.bg_edit:SetModel(mdl)
-			end
 			self.bg_edit:SetVisible(true)
+			if self.bg_edit.model ~= mdl or #self.bg_edit:GetChildren() == 0 then
+				local ok, err = pcall(self.bg_edit.SetModel, self.bg_edit, mdl)
+				if not ok then
+					dbgelvl(3, err)
+					self.bg_edit:Clear()
+					self.bg_edit:SetVisible(false)
+					self.bg_edit_disabled:SetVisible(true)
+				end
+			end
 		else
 			self.bg_edit:SetVisible(false)
 			self.bg_edit:Clear()
@@ -1334,6 +1340,16 @@ function PANEL:DoRefresh(trychoose_mdl)
 end
 
 local factory = vgui.RegisterTable(PANEL, 'EditablePanel')
+
+function PANEL:Think()
+	if not self.bg_edit then return end
+	local pl = LocalPlayer()
+	local new = pl and pl:GetNetData(NTag)
+	if new ~= self._bge_lastnvar then
+		self._bge_lastnvar = new
+		self:RefreshBGE()
+	end
+end
 
 
 
