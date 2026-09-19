@@ -8,7 +8,6 @@ local NOUI = OUTFITTER_NO_UI
 
 local outfitter_gui_focusdim = CreateClientConVar("outfitter_gui_focusdim", "0", true, false, "Dim GUI when mouse leaves window")
 local outfitter_debug_cefcheck = CreateClientConVar("outfitter_debug_cefcheck", "1", true, false, "Check if the CEF/H.264 codec is installed; if not, open pasted URLs in the Steam overlay instead of mounting them")
-local vgui = GetVGUI()
 
 local cef_codec_checked
 local cef_codec_available
@@ -94,7 +93,6 @@ local PANEL = {}
 
 local matUp = Material "icon16/arrow_up.png"
 
-
 local function WorkshopBrowseURL(str)
 	local url = 'http://steamcommunity.com/workshop/browse/?appid=4000&searchtext=playermodel&childpublishedfileid=0&browsesort=trend&section=readytouseitems&requiredtags%5B%5D=Model'
 	if str then
@@ -113,7 +111,6 @@ function PANEL:Init()
 	local txt = vgui.Create('DLabel', self, 'msg')
 	txt:Dock(TOP)
 	txt:SetText "#outfitter_urlmsg"
-	txt:SetTextColor(Color(0, 0, 0, 255))
 	local b = vgui.Create('DButton', self.top, 'choose button')
 
 	self.chooseb = b
@@ -585,7 +582,6 @@ function PANEL:Init()
 	l:SetText("#outfitter_choose_ws")
 	l:SetTall(44)
 	l:SetFont "BudgetLabel"
-	l:SetTextColor(Color(255, 255, 255, 255))
 
 	local dependencies = functions:Add("DButton", 'dependencies')
 	self.btn_dependencies = dependencies
@@ -647,10 +643,13 @@ function PANEL:Init()
 	local mdlhistpanel = self:Add("EditablePanel")
 	self.mdlhistpanel = mdlhistpanel
 	sheet:AddSheet("#servers_history", mdlhistpanel, "icon16/user.png")
-	local settingspnl = self:Add("DScrollPanel")
+	local settingswrap = self:Add("DPanel")
+	settingswrap:DockPadding(4, 4, 4, 4)
+	local settingspnl = settingswrap:Add("DScrollPanel")
 	self.settingspnl = settingspnl
-	sheet:AddSheet("#spawnmenu.utilities.settings", settingspnl, "icon16/cog.png")
-	local blocklistPanel = self:Add("EditablePanel")
+	settingspnl:Dock(FILL)
+	sheet:AddSheet("#spawnmenu.utilities.settings", settingswrap, "icon16/cog.png")
+	local blocklistPanel = self:Add("DPanel")
 	self.blocklistPanel = blocklistPanel
 	sheet:AddSheet("#Blocklist", blocklistPanel, "icon16/stop.png")
 	local infopanel = self:Add("EditablePanel")
@@ -671,6 +670,9 @@ function PANEL:Init()
 		local c = vgui.Create(itm, settingspnl, b)
 		--settingslist:AddItem(c)
 		c:Dock(TOP)
+		if c.Label then
+			c.Label:SetDark(true)
+		end
 		return c
 	end
 
@@ -687,7 +689,6 @@ function PANEL:Init()
 	txt:Dock(TOP)
 	txt:SetText "#outfitter_titlebl"
 	txt:SetWrap(true)
-	txt:SetTextColor(Color(0, 0, 0, 255))
 
 
 
@@ -696,6 +697,7 @@ function PANEL:Init()
 	check:SetText("#outfitter_allownsfw")
 	check:SizeToContents()
 	check:SetTooltip [[#outfitter_allownsfwtip]]
+	if check.Label then check.Label:SetDark(true) end
 	check:DockMargin(1, 0, 1, 1)
 	check:Dock(TOP)
 
@@ -1098,7 +1100,6 @@ function PANEL:Init()
 	self.bg_edit_disabled:DockMargin(4, 8, 4, 4)
 	self.bg_edit_disabled:SetText("#outfitter_submitfirst")
 	self.bg_edit_disabled:SetFont("DermaDefaultBold")
-	self.bg_edit_disabled:SetTextColor(Color(220, 220, 220, 255))
 	self.bg_edit_disabled:SetWrap(true)
 	self.bg_edit_disabled:SetAutoStretchVertical(true)
 

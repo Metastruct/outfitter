@@ -46,7 +46,6 @@ function PANEL:Init()
 	self.lbl = vgui.Create("DLabel", self, "radio label")
 	self.lbl:Dock(FILL)
 	self.lbl:DockMargin(18, 1, 4, 1)
-	self.lbl:SetTextColor(Color(235, 235, 235, 255))
 	self.lbl:SetFont(RADIO_FONT)
 	self.lbl:SetWrap(true)
 end
@@ -78,13 +77,11 @@ function PANEL:Paint(w, h)
 		surface.DrawRect(2, 2, 8, 8)
 	end
 end
-
 local radiobtn = vgui.RegisterTable(PANEL, "EditablePanel")
 
 
 
 
-local vgui = GetVGUI()
 
 local PANEL = {}
 function PANEL:Init()
@@ -99,7 +96,6 @@ function PANEL:SetText(t)
 		self.header = vgui.Create("DLabel", self, "group header")
 		self.header:Dock(TOP)
 		self.header:DockMargin(2, 4, 2, 2)
-		self.header:SetTextColor(Color(255, 255, 255, 255))
 		self.header:SetFont(RADIO_FONT)
 		self.header:SetWrap(true)
 		self.header:SetAutoStretchVertical(true)

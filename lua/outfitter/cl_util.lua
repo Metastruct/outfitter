@@ -1499,51 +1499,6 @@ function MDLToUI(s)
 	return s
 end
 
-do
-	local _vgui = vgui
-
-	local outfitter_gui_derma_skin = CreateClientConVar("outfitter_gui_derma_skin", "0", true, false, "Use the custom Outfitter derma skin")
-
-	local recurse
-	recurse = function(pnl)
-		if outfitter_gui_derma_skin:GetBool() then
-			pnl:SetSkin('Outfitter')
-		end
-		--print(pnl)
-		for k, v in next, pnl:GetChildren() do
-			recurse(v)
-		end
-	end
-
-	local vgui = {
-		Create = function(...)
-			local ret = _vgui.Create(...)
-			local _ = ret and ret:IsValid() and recurse(ret)
-			timer.Simple(0, function()
-				local _ = ret and ret:IsValid() and recurse(ret)
-			end)
-			return ret
-		end,
-		CreateFromTable = function(...)
-			local ret = _vgui.CreateFromTable(...)
-			local _ = ret and ret:IsValid() and recurse(ret)
-			timer.Simple(0, function()
-				local _ = ret and ret:IsValid() and recurse(ret)
-			end)
-			return ret
-		end,
-
-	}
-	--timer.Simple(1,function() derma.RefreshSkins()  end)
-	setmetatable(vgui, { __index = _vgui })
-
-	function GetVGUI()
-		return vgui
-	end
-end
-
-
-
 require 'gmaparse'
 local cache = {}
 function AlreadyMounted(fpath, fd)

@@ -222,7 +222,6 @@ inc 'sv'		'sv'
 inc 'cows'		'cl'
 inc 'cl'		'cl'
 inc 'ui'		'cl'
-inc 'skin'		'cl'
 
 inc 'gui_about'	'cl'
 inc 'gui_ofworkshopicon'	'cl'
