@@ -6,100 +6,118 @@ module(Tag, package.seeall)
 
 
 
-local PANEL = {}
-function PANEL:Init()
-	self:SetSize(24, 24)
-	--self:Dock(RIGHT)
-end
+local RADIO_FONT = "BudgetLabel"
 
 local CCHECKED = Color(111, 255, 111, 255)
-local CNORMAL  = Color(66, 66, 66, 255)
-local CBG      = Color(30, 30, 30, 255)
-function PANEL:Paint(w, h)
-	if self.checked then
-		surface.SetDrawColor(100, 255, 100, 255)
-	else
-		surface.SetDrawColor(150, 150, 150, 255)
+local CSTROKE  = Color(200, 200, 200, 255)
+local CBGON    = Color(55, 55, 55, 255)
+local CBGSEL   = Color(70, 100, 70, 255)
+
+local function text_height(s, width)
+	surface.SetFont(RADIO_FONT)
+	local _, fh = surface.GetTextSize("Ay")
+	if fh <= 0 then fh = 13 end
+	if width <= 10 then width = 100 end
+	local lines = 0
+	for _, para in ipairs(string.Explode("\n", s or "")) do
+		local lw, count = 0, 1
+		local first = true
+		for _, word in ipairs(string.Explode(" ", para)) do
+			local ww = surface.GetTextSize(word)
+			local sp = surface.GetTextSize(" ")
+			if not first and lw + ww + sp > width then
+				count = count + 1
+				lw = ww
+			else
+				lw = lw + ww + sp
+			end
+			first = false
+		end
+		lines = lines + count
 	end
-	draw.RoundedBox(h * 0.5, 0, 0, h, h, CBG)
-	draw.RoundedBox(h * 0.5, 1, 1, h - 2, h - 2, self.checked and CCHECKED or CNORMAL)
-	surface.SetFont "BudgetLabel"
-	local txt = self.letter or ""
-	local tw, th = surface.GetTextSize(txt)
-	surface.SetTextColor(255, 255, 255, 255)
-	surface.SetTextPos(-tw * .5 + h * .5, h * .5 - th * .5)
-	surface.DrawText(txt)
+	return lines * fh
 end
 
-function PANEL:OnMouseReleased()
-	self:GetParent():SetChecked(self.n)
+local PANEL = {}
+function PANEL:Init()
+	self.checked = false
+	self:SetCursor("hand")
+	self:SetTall(20)
+	self.lbl = vgui.Create("DLabel", self, "radio label")
+	self.lbl:Dock(FILL)
+	self.lbl:DockMargin(18, 1, 4, 1)
+	self.lbl:SetFont(RADIO_FONT)
+	self.lbl:SetWrap(true)
+end
+
+function PANEL:SetDescription(s)
+	self.d = s or ""
+	self.lbl:SetText(self.d)
+	self:SetTooltip(self.d)
 end
 
 function PANEL:SetChecked(checked)
 	self.checked = checked
 end
 
-function PANEL:PerformLayout()
-	--self:SetSize(16,16)
-	--self:SetWide(self:GetTall())
+function PANEL:OnMousePressed(mc)
+	if mc ~= MOUSE_LEFT then return end
+	surface.PlaySound("ui/buttonclick.wav")
+	self:GetParent():SetChecked(self.n)
 end
 
+function PANEL:PerformLayout(w, h)
+	self.lbl:SetSize(w, h)
+end
+
+function PANEL:Paint(w, h)
+	draw.RoundedBox(3, 0, 0, w, h, self.checked and CBGSEL or CBGON)
+	if self.checked then
+		surface.SetDrawColor(CCHECKED)
+		surface.DrawRect(2, 2, 8, 8)
+	end
+end
 local radiobtn = vgui.RegisterTable(PANEL, "EditablePanel")
+
 
 
 
 
 local PANEL = {}
 function PANEL:Init()
-	self.lbl = vgui.Create('DLabel', self, 'description')
-	--self.lbl:Dock(FILL)
-	self.lbl:SetTextColor(Color(255, 255, 255, 255))
-	self.lbl:SetFont("BudgetLabel")
-	self:SetSpaceX(2)
-	self:SetSpaceY(2)
-	self:SetBorder(2)
-
-	self.lbl:SetText "Radio buttons tester"
-	--self:SetLayoutDir( LEFT )
-	self.lbl.Paint = function(self, w, h)
-		self:NoClipping(false)
-	end
+	self.radios = self.radios or {}
 end
 
 function PANEL:OnSelected(n, pnl)
-	print(self, "OnSelected", n, pnl)
 end
 
 function PANEL:SetText(t)
-	self.lbl:SetText(t)
-	self.lbl:SizeToContents()
-	self.lbl:SetContentAlignment(5)
-	self.lbl:SetWide(8 + self.lbl:GetWide())
-	self.lbl:SetTooltip(t)
-
+	if not self.header then
+		self.header = vgui.Create("DLabel", self, "group header")
+		self.header:Dock(TOP)
+		self.header:DockMargin(2, 4, 2, 2)
+		self.header:SetFont(RADIO_FONT)
+		self.header:SetWrap(true)
+		self.header:SetAutoStretchVertical(true)
+	end
+	self.header:SetText(t)
 	self:InvalidateLayout()
 end
 
 function PANEL:AddOption(description, letter)
-	self.n = self.n or 0
-	self.n = self.n + 1
+	self.n = (self.n or 0) + 1
 	local n = self.n
 
 	local pnl = vgui.CreateFromTable(radiobtn, self, 'radiolist')
 	pnl.n = n
-	pnl.letter = letter
-
-	pnl:SetTooltip(description)
-	pnl.d = description:sub(1, 1)
-	pnl:DockMargin(n > 1 and 2 or 1, 1, 1, 1)
+	pnl:SetDescription(description == "" and "disable" or description)
+	pnl:Dock(TOP)
+	pnl:DockMargin(2, 1, 2, 1)
 
 	self.radios = self.radios or {}
 	self.radios[n] = pnl
 	return n, pnl
 end
-
---function PANEL:Think()
---end
 
 function PANEL:SetChecked(n)
 	for k, v in next, self.radios do
@@ -108,19 +126,31 @@ function PANEL:SetChecked(n)
 	self:OnSelected(n)
 end
 
---function PANEL:PerformLayout()
---	self:SizeToChildren(true,true)
---end
+function PANEL:PerformLayout(w, h)
+	local t = 0
+	if IsValid(self.header) then
+		self.header:SetWide(w)
+		t = t + self.header:GetTall() + 6
+	end
+	for k, v in next, self.radios do
+		v:SetTall(math.max(20, text_height(v.d, w) + 4))
+		t = t + v:GetTall() + 2
+	end
+	self:SetTall(t)
+end
 
+vgui.Register('OFRadioBatton', PANEL, "EditablePanel")
 
-
-vgui.Register('OFRadioBatton', PANEL, "DIconLayout")
-
-
-
-
-
-local vgui = GetVGUI()
+local PrettyName = function(name)
+	name = name and name:gsub("%.smd$", "") or ""
+	name = name:gsub("([a-z0-9])([A-Z])([a-z])",
+		function(q, a, b)
+			return q .. ' ' .. a:lower() .. b
+		end)
+	name = name:gsub("[_%.%-]", " ")
+	name = name:gsub("(%s)%s*", "%1")
+	return name
+end
 
 
 
@@ -198,33 +228,16 @@ function PANEL:CreatePanels()
 		local r = self:Add("OFRadioBatton")
 		r.OnSelected = function(r, n) self:OnSelected(part, n - 1) end
 
-		r:SetText(part.name:gsub("%.smd$", "")
-			:gsub("([a-z0-9])([A-Z])([a-z])",
-				function(q, a, b)
-					return q .. ' ' .. a:lower() .. b
-				end)
-			:gsub("[_%.%-]", " ")
-			:gsub("(%s)%s*", "%1"))
+		r:SetText(PrettyName(part.name))
 		r:Dock(TOP)
-		--r:SizeToContents()
+
 		local n = 0
 		for k, partmdl in next, part.models do
-			local name = partmdl.name
-				:gsub("%.smd$", "")
-				:gsub("([a-z0-9])([A-Z])([a-z])",
-					function(q, a, b)
-						return q .. ' ' .. a:lower() .. b
-					end)
-				:gsub("[_%.%-]", " ")
-				:gsub("(%s)%s*", "%1")
-			name = name == "" and "" or name
+			local name = PrettyName(partmdl.name)
 			if name ~= "" then
 				n = n + 1
 			end
 			local n, pnl = r:AddOption(name == "" and "disable" or name, name == "" and "" or n)
-			if name == "" then
-				pnl:SetZPos(-10)
-			end
 		end
 
 		r:SetChecked((activeBodyGroups[part.name] or 0) + 1)
@@ -233,6 +246,7 @@ end
 
 function PANEL:SetModel(mdl)
 	self.model = mdl
+	if not mdl then return end
 	self:Refresh()
 end
 

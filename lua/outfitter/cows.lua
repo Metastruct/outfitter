@@ -54,6 +54,20 @@ local function SYNCWS(wsid, cbs, ...)
 	return SYNC(cbs, ...)
 end
 
+-- Forget a workshop item's cached failure state so the next FetchWS/NeedWS
+-- attempt actually retries instead of instantly returning the old error.
+function ResetWS(wsid)
+	wsid = tostring(wsid)
+	if fetching[wsid] == false then
+		fetching[wsid] = nil
+	end
+	res[wsid] = nil
+	skip_maxsizes[wsid] = nil
+	if _load_info_history then
+		_load_info_history[wsid] = nil
+	end
+end
+
 local function steamworks_Download_work(fileid)
 	local instant
 	local path, fd
@@ -181,7 +195,7 @@ function coFetchWS(wsid, skip_maxsize)
 	if dat then
 		if dat == true then
 			local fileinfo = co_steamworks_FileInfo(wsid)
-			if istable(fileinfo) and IsAddonNSFWBlocked(fileinfo) then
+			if istable(fileinfo) and IsAddonNSFWBlocked(fileinfo, wsid) then
 				dbg("BLOCKED",wsid)
 				return SYNCWS(wsid, dat, cantmount(wsid, "blocked title"))
 			end
@@ -273,7 +287,7 @@ function coFetchWS(wsid, skip_maxsize)
 	if not fileinfo or not fileinfo.title then
 		return SYNCWS(wsid, dat, cantmount(wsid, "fileinfo"))
 	end
-	if IsAddonNSFWBlocked(fileinfo) then
+	if IsAddonNSFWBlocked(fileinfo, wsid) then
 		return SYNCWS(wsid, dat, cantmount(wsid, "blocked title"))
 	end
 
@@ -313,7 +327,7 @@ function coFetchWS(wsid, skip_maxsize)
 	end
 
 	if not IsUGCFilePath(path) and file.Size(path, 'MOD') <= 512 then
-		return SYNCWS(wsid, dat, cantmount(wsid, "file"))
+		return SYNCWS(wsid, dat, cantmount(wsid, "file-corrupt"))
 	end
 
 	-- Decompress manually
@@ -326,7 +340,7 @@ function coFetchWS(wsid, skip_maxsize)
 
 		if not IsUGCFilePath(path) and not file.Exists(path, 'MOD') then
 			dbg(path, "IsUGCFilePath", IsUGCFilePath(path), "file.Exists", file.Exists(path, 'MOD'))
-			return SYNCWS(wsid, dat, cantmount(wsid, "file"))
+			return SYNCWS(wsid, dat, cantmount(wsid, "file-missing"))
 		end
 	end
 
@@ -670,7 +684,7 @@ function NeedWS(wsid, pl, mdl, dependency_manifest)
 	-- already mounted, don't mount again
 	if steamworks.IsSubscribed(wsid) and file.Exists(mdl, 'GAME') then
 		local fileinfo = co_steamworks_FileInfo(wsid)
-		if istable(fileinfo) and IsAddonNSFWBlocked(fileinfo) then
+		if istable(fileinfo) and IsAddonNSFWBlocked(fileinfo, wsid) then
 			dbg("NeedWS", wsid, "NSFW blocked on re-mount")
 			return nil, "blocked title"
 		end
@@ -710,7 +724,7 @@ function NeedWS(wsid, pl, mdl, dependency_manifest)
 
 	if not ok then
 		dbge("NeedWS", "GMABlacklist", wsid, "->", err)
-		return
+		return nil, err or "gma-parse"
 	end
 
 	local mdls, extra, errlist = GMAPlayerModels(path)

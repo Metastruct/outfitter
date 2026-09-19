@@ -173,7 +173,11 @@ function PANEL:Init(asd)
 		end
 	end
 
-	local pnl = vgui.Create('DScrollPanel', self)
+	local wrap = vgui.Create('DPanel', self)
+	wrap:DockPadding(4, 4, 4, 4)
+	wrap:Dock(FILL)
+
+	local pnl = vgui.Create('DScrollPanel', wrap)
 	self.content = pnl
 
 	-- HACK
@@ -195,7 +199,6 @@ function PANEL:GenDesc()
 	local txt = ("Workshop cache: %d addons!"):format(amt)
 	lbl_desc:SetText(txt)
 	lbl_desc:DockMargin(4, 4, 4, 4)
-	lbl_desc:SetTextColor(Color(255, 255, 255, 255))
 	lbl_desc:SetFont "BudgetLabel"
 	lbl_desc:SetAutoStretchVertical(true)
 	lbl_desc:SetWrap(true)
@@ -207,7 +210,7 @@ function PANEL:GenDesc()
 	lbl_desc:SetText [[#outfitter_desc]]
 	lbl_desc:DockMargin(4, 4, 4, 14)
 	--lbl_desc:SetFont(fdesc)
-	lbl_desc:SetDark(false)
+	lbl_desc:SetDark(true)
 	lbl_desc:SetAutoStretchVertical(true)
 	lbl_desc:SetWrap(true)
 	lbl_desc:Dock(TOP)
