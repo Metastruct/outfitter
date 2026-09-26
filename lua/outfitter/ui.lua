@@ -54,7 +54,7 @@ function UIMounting(yes)
 		_mounting = true
 		if mounting then return end
 		notification.AddProgress(Tag,
-			"(LAG WARNING) Mounting outfitter outfit!")
+			"#outfitter_lagwarn")
 		SOUND(GENERIC)
 	else
 		if not mounting then return end
@@ -63,14 +63,14 @@ function UIMounting(yes)
 
 			notification.Kill(Tag)
 		end)
-		notification.AddProgress(Tag, "Outfit mounted!")
+		notification.AddProgress(Tag, "#outfitter_mounted")
 		SOUND "garrysmod/content_downloaded.wav"
 	end
 	mounting = yes
 end
 
 function UIFullupdate()
-	notification.AddLegacy("Refreshing playerstate...", NOTIFY_ERROR, 4)
+	notification.AddLegacy("#outfitter_refplystate", NOTIFY_ERROR, 4)
 	SOUND 'items/cart_explode_trigger.wav'
 end
 
@@ -92,7 +92,7 @@ function SetUIFetching(wsid, is, FR, force)
 		title = true
 		fstatus[wsid] = title
 		if canDlNotify then
-			notification.AddProgress(ID, "Downloading " .. wsid)
+			notification.AddProgress(ID, "#outfitter_downloadingnotif" .. wsid)
 		end
 		SOUND('ui/hint.wav')
 
@@ -110,7 +110,7 @@ function SetUIFetching(wsid, is, FR, force)
 			if not title2 or title2 ~= title then return end
 			fstatus[wsid] = name
 			if canDlNotify then
-				notification.AddProgress(ID, name .. ' (Downloading)')
+				notification.AddProgress(ID, name .. '#outfitter_downloadbrack')
 			end
 			--TODO: Timeout?
 		end)
@@ -121,7 +121,7 @@ function SetUIFetching(wsid, is, FR, force)
 		local _title = title
 		title = title ~= true and title or wsid
 		if canDlNotify then
-			notification.AddProgress(ID, title .. " (" .. (FR and tostring(FR) or "Finished") .. ")")
+			notification.AddProgress(ID, title .. " (" .. (FR and tostring(FR) or "#outfitter_finished") .. ")")
 		end
 		co(function()
 			co.sleep(FR and 4 or 1.5)
@@ -195,12 +195,12 @@ end
 
 concommand.Add(Tag .. '_cmd', function(_, _, args, line)
 	if not line then
-		chat.AddText("[Outfitter] Something is messing with the concommand library (outdated addon?)")
+		chat.AddText("#outfitter_warnoutdatedaddon")
 		line = args[1]
 	end
 	if line:find "https?:$" then
 		MsgC(Color(255, 155, 111, 255), 'Invalid usage! ', Color(255, 240, 240, 255),
-			'Please quote the URL. Example: outfitter "https://steamcommunity.com/sharedfiles/filedetails/?id=1234"\n')
+			'#outfitter_quoteurl')
 		return
 	end
 	if args and args[1] then
@@ -222,12 +222,12 @@ end, nil, "Reset outfit to default player model")
 
 concommand.Add(Tag, function(_, _, args, line)
 	if not line then
-		chat.AddText("[Outfitter] Something is messing with the concommand library (outdated addon?)")
+		chat.AddText("#outfitter_warnoutdatedaddon")
 		line = args[1]
 	end
 	if line:find "https?:$" then
 		MsgC(Color(255, 155, 111, 255), 'Invalid usage! ', Color(255, 240, 240, 255),
-			'Please quote the URL. Example: outfitter "https://steamcommunity.com/sharedfiles/filedetails/?id=1234"\n')
+			'#outfitter_quoteurl')
 		return
 	end
 	if args and args[1] then
@@ -282,7 +282,7 @@ end, nil, "Set skin number for current outfit")
 
 concommand.Add("outfitter_bodygroups_set", function(_, cmd, args, line)
 	if not line then
-		chat.AddText("[Outfitter] Something is messing with the concommand library (outdated addon?)")
+		chat.AddText("#outfitter_warnoutdatedaddon")
 		line = args[1]
 	end
 	if line:Trim() == "" then
@@ -637,7 +637,7 @@ function UIChoseWorkshop(wsid, opengui, review_dependencies)
 		elseif dependency_manifest then
 			chosen_dependency_manifest = dependency_manifest
 		elseif err then
-			UIError("Dependency review failed: " .. tostring(err))
+			UIError("#outfitter_depreviewfailed" .. tostring(err))
 		end
 	end
 
@@ -649,7 +649,7 @@ function UIChoseWorkshop(wsid, opengui, review_dependencies)
 			UIMsg(" " .. k .. ". " .. tostring(mdl and MDLToUI(mdl.Name)))
 		end
 	elseif mdls[1] then
-		UIMsg("Got model: " .. tostring(MDLToUI(mdls[1].Name)))
+		UIMsg("#outfitter_gotmodel" .. tostring(MDLToUI(mdls[1].Name)))
 	end
 
 	chosen_download_info = wsid
@@ -659,7 +659,7 @@ function UIChoseWorkshop(wsid, opengui, review_dependencies)
 	mount_path = path
 
 	if mdls[2] then
-		UIMsg "Write !outfit <model number> to choose a model"
+		UIMsg "#outfitter_choosemodelmnumber"
 		if opengui then GUIOpen() end
 	else
 		UIChangeModelToID(1, opengui)
