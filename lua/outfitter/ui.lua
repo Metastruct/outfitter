@@ -347,7 +347,7 @@ end
 
 local ns = 0
 function UIMsg(...)
-	local t = { Color(50, 200, 10), '[Outfitter] ', CWHITE, ... }
+	local t = { Color(50, 200, 10), '#outfitter_titlebrack', CWHITE, ... }
 	local now = RealTime()
 	if ns < now then
 		ns = now + 1
@@ -422,7 +422,7 @@ function coUIReviewDependencies(wsid, dependency_manifest)
 end
 
 function UICancelAll()
-	UIMsg "Unsetting everything"
+	UIMsg "#outfitter_unsetting"
 
 	mdllist = nil
 	mdllist_extra = nil
@@ -521,7 +521,7 @@ hook.Add("OutfitApply", Tag, function(pl, mdl)
 		notification.AddLegacy("Outfit changed!", NOTIFY_UNDO, 2)
 		SOUND(GENERIC)
 		if silent_apply_mdl ~= mdl then
-			UIMsg "Write '!outfit send' to send this outfit to everyone"
+			UIMsg "#outfitter_sendoutfit"
 		end
 		silent_apply_mdl = nil
 		if opengui then
@@ -564,9 +564,9 @@ function UIChoseWorkshop(wsid, opengui, review_dependencies)
 	SetUIFetching(wsid, false, not path and (err and tostring(err) or "FAILED?"))
 
 	if not path then
-		dbg("UIChoseWorkshop", wsid, "FetchWS failed:", err, err2)
+		dbg("UIChoseWorkshop", wsid, "#outfitter_fetchfail", err, err2)
 		if opengui then GUIOpen() end
-		return UIError("Download failed for workshop " ..
+		return UIError("#outfitter_dlfailws" ..
 		wsid .. ": " .. tostring(err ~= nil and tostring(err) or GetLastMountErr and GetLastMountErr()))
 	end
 	co.sleep(.2)
@@ -582,7 +582,7 @@ function UIChoseWorkshop(wsid, opengui, review_dependencies)
 		local newpath, extramodelinfos = coDecompress(path)
 		if not newpath then
 			if opengui then GUIOpen() end
-			return UIError("Download failed for workshop " ..
+			return UIError("#outfitter_dlfailws" ..
 			wsid ..
 			": " ..
 			tostring(extramodelinfos ~= nil and tostring(extramodelinfos) or GetLastMountErr and GetLastMountErr()))
@@ -598,17 +598,17 @@ function UIChoseWorkshop(wsid, opengui, review_dependencies)
 	if not mdls then
 		dbge("UIChoseWorkshop", wsid, "GMAPlayerModels failed for:", extramodelinfos, err)
 		notification.AddLegacy(
-		'[Outfitter] ' .. tostring(extramodelinfos == "nomdls" and "no valid models found" or extramodelinfos),
+		'#outfitter_titlebrack' .. tostring(extramodelinfos == "nomdls" and "no valid models found" or extramodelinfos),
 			NOTIFY_ERROR, 2)
 		if opengui then GUIOpen() end
-		return UIError("Parsing workshop addon " ..
+		return UIError("#outfitter_parsingaddon" ..
 		wsid .. " failed: " .. tostring(extramodelinfos == "nomdls" and "no valid models found" or extramodelinfos))
 	end
 
 	local ok, err = GMABlacklist(path)
 	if not ok then
 		if opengui then GUIOpen() end
-		return UIError("OUTFIT BLOCKED: " .. tostring(err == "oversize vtf" and "Contains too big textures" or err))
+		return UIError("#outfitter_oversizeoutfit" .. tostring(err == "oversize vtf" and "Contains too big textures" or err))
 	end
 
 	if not mdls[1] then
@@ -616,7 +616,7 @@ function UIChoseWorkshop(wsid, opengui, review_dependencies)
 
 		if opengui then GUIOpen() end
 
-		UIError("Workshop addon " .. wsid .. " has no valid playermodels")
+		UIError("#outfitter_wsaddon" .. wsid .. "#outfitter_validplywarn")
 		if extramodelinfos and istable(extramodelinfos) and extramodelinfos.discards and next(extramodelinfos.discards) then
 			for mdl, dat in next, extramodelinfos.discards or {} do
 				mdl = MDLToUI(mdl)
@@ -644,7 +644,7 @@ function UIChoseWorkshop(wsid, opengui, review_dependencies)
 	co.sleep(.2)
 
 	if mdls[2] then
-		UIMsg("Models:")
+		UIMsg("#outfitter_models")
 		for k, mdl in next, mdls do
 			UIMsg(" " .. k .. ". " .. tostring(mdl and MDLToUI(mdl.Name)))
 		end
@@ -685,9 +685,9 @@ function UIChoseHTTPGMA(download_info, opengui)
 	co.sleep(.1)
 	SetUIFetching(id, false, not data and (err and tostring(err) or "FAILED?"))
 	if not data then
-		dbg("UIChoseHTTPGMA", id, "FetchWS failed:", err, err2)
+		dbg("UIChoseHTTPGMA", id, "#outfitter_fetchfail", err, err2)
 		if opengui then GUIOpen() end
-		return UIError("Download failed for workshop " ..
+		return UIError("#outfitter_dlfailws" ..
 		id .. ": " .. tostring(err ~= nil and tostring(err) or GetLastMountErr and GetLastMountErr()))
 	end
 	co.sleep(.2)
@@ -704,7 +704,7 @@ function UIChoseHTTPGMA(download_info, opengui)
 		local newpath, extramodelinfos = coDecompress(path)
 		if not newpath then
 			if opengui then GUIOpen() end
-			return UIError("Download failed for workshop " ..
+			return UIError("#outfitter_dlfailws" ..
 			id ..
 			": " .. tostring(extramodelinfos ~= nil and tostring(extramodelinfos) or
 			GetLastMountErr and GetLastMountErr()))
@@ -720,17 +720,17 @@ function UIChoseHTTPGMA(download_info, opengui)
 	if not mdls then
 		dbge("UIChoseHTTPGMA", id, "GMAPlayerModels failed for:", extramodelinfos, err)
 		notification.AddLegacy(
-		'[Outfitter] ' .. tostring(extramodelinfos == "nomdls" and "no valid models found" or extramodelinfos),
+		'#outfitter_titlebrack' .. tostring(extramodelinfos == "nomdls" and "no valid models found" or extramodelinfos),
 			NOTIFY_ERROR, 2)
 		if opengui then GUIOpen() end
-		return UIError("Parsing addon " ..
-		id .. " failed: " .. tostring(extramodelinfos == "nomdls" and "no valid models found" or extramodelinfos))
+		return UIError("#outfitter_parsefail" ..
+		id .. "#outfitter_parsefaill" .. tostring(extramodelinfos == "nomdls" and "no valid models found" or extramodelinfos))
 	end
 
 	local ok, err = GMABlacklist(path)
 	if not ok then
 		if opengui then GUIOpen() end
-		return UIError("OUTFIT BLOCKED: " .. tostring(err == "oversize vtf" and "Contains too big textures" or err))
+		return UIError("#outfitter_oversizeoutfit" .. tostring(err == "oversize vtf" and "Contains too big textures" or err))
 	end
 
 	if not mdls[1] then
@@ -738,7 +738,7 @@ function UIChoseHTTPGMA(download_info, opengui)
 
 		if opengui then GUIOpen() end
 
-		UIError("Workshop addon " .. id .. " has no valid playermodels")
+		UIError("#outfitter_wsaddon" .. id .. "#outfitter_validplywarn")
 		if extramodelinfos and istable(extramodelinfos) and extramodelinfos.discards and next(extramodelinfos.discards) then
 			for mdl, dat in next, extramodelinfos.discards or {} do
 				mdl = MDLToUI(mdl)
@@ -754,12 +754,12 @@ function UIChoseHTTPGMA(download_info, opengui)
 	co.sleep(.2)
 
 	if mdls[2] then
-		UIMsg("Models:")
+		UIMsg("#outfitter_models")
 		for k, mdl in next, mdls do
 			UIMsg(" " .. k .. ". " .. tostring(mdl and MDLToUI(mdl.Name)))
 		end
 	elseif mdls[1] then
-		UIMsg("Got model: " .. tostring(MDLToUI(mdls[1].Name)))
+		UIMsg("#outfitter_gotmodel" .. tostring(MDLToUI(mdls[1].Name)))
 	end
 
 	chosen_download_info = download_info
@@ -769,7 +769,7 @@ function UIChoseHTTPGMA(download_info, opengui)
 	mount_path = path
 
 	if mdls[2] then
-		UIMsg "Write !outfit <model number> to choose a model"
+		UIMsg "#outfitter_choosemodelmnumber"
 		if opengui then GUIOpen() end
 	else
 		UIChangeModelToID(1, opengui)
@@ -797,10 +797,10 @@ function SetAutowear()
 		}
 
 		util.SetPData("0", Tag .. '_autowear', json.encode(t))
-		UIMsg("Autowear ON")
+		UIMsg("#outfitter_autowearon")
 	else
 		util.RemovePData("0", Tag .. '_autowear')
-		UIMsg("Autowear OFF")
+		UIMsg("#outfitter_autowearoff")
 	end
 end
 
@@ -819,8 +819,8 @@ function coUIOversizeMsg(pl, wsid)
 		szstr = ("(%s) "):format(string.NiceSize(fileinfo.size or 0))
 	end
 
-	UIMsg("The outfit of ", pl,
-		(" is too big %saccording to your settings (%s) so it was not mounted!"):format(szstr, maxsz))
+	UIMsg("#outfitter_plyoutfitwarn", pl,
+		("#outfitter_plyoutfitwarnd"):format(szstr, maxsz))
 end
 
 local dependency_failures = {}
@@ -830,12 +830,12 @@ function coUIDependencyFailureMsg(pl, wsid, err, err2)
 	dependency_failures[key] = true
 
 	local detail = err2 and " (" .. (err == "oversize" and string.NiceSize(err2) or tostring(err2)) .. ")" or ""
-	local msg = ("Dependencies for the outfit of %s were not fully mounted: %s%s"):format(tostring(pl), tostring(err), detail)
+	local msg = ("#outfitter_mounterror"):format(tostring(pl), tostring(err), detail)
 
-	Msg("[Outfitter] ")
+	Msg("#outfitter_titlebrack")
 	print(msg)
 	UIMsg(msg)
-	notification.AddLegacy("[Outfitter] " .. msg, NOTIFY_ERROR, 4)
+	notification.AddLegacy("#outfitter_titlebrack" .. msg, NOTIFY_ERROR, 4)
 end
 
 -- This is a horrible hack because of forethought was lacking when the rest of the code was made
@@ -863,8 +863,8 @@ function coDoAutowear()
 	SetUIFetching(wsid, false, not path and (err and tostring(err) or "FAILED?"))
 
 	if not path then
-		dbg("coDoAutowear", wsid, "FetchWS failed:", err, err2)
-		return UIError("Download failed for workshop " ..
+		dbg("coDoAutowear", wsid, "#outfitter_fetchfail", err, err2)
+		return UIError("#outfitter_dlfailws" ..
 		wsid .. ": " .. tostring(err ~= nil and tostring(err) or GetLastMountErr and GetLastMountErr()))
 	end
 	co.sleep(.2)
@@ -887,7 +887,7 @@ function coDoAutowear()
 		if not mdls and extramodelinfos == 'notgma' and TestLZMA(path) then
 			local newpath, extramodelinfos = coDecompress(path)
 			if not newpath then
-				return UIError("Download failed for workshop " ..
+				return UIError("#outfitter_dlfailws" ..
 				wsid ..
 				": " ..
 				tostring(extramodelinfos ~= nil and tostring(extramodelinfos) or GetLastMountErr and GetLastMountErr()))
@@ -901,22 +901,22 @@ function coDoAutowear()
 
 
 		if not mdls then
-			dbge("coDoAutowear", wsid, "GMAPlayerModels failed for:", extramodelinfos, err)
+			dbge("coDoAutowear", wsid, "#outfitter_gmaplymodelfail", extramodelinfos, err)
 			notification.AddLegacy(
 			'[Outfitter] ' .. tostring(extramodelinfos == "nomdls" and "no valid models found" or extramodelinfos),
 				NOTIFY_ERROR, 2)
-			return UIError("Parsing workshop addon " ..
+			return UIError("#outfitter_parsingaddon" ..
 			wsid .. " failed: " .. tostring(extramodelinfos == "nomdls" and "no valid models found" or extramodelinfos))
 		end
 
 		local ok, err = GMABlacklist(path)
 		if not ok then
-			return UIError("OUTFIT BLOCKED: " .. tostring(err == "oversize vtf" and "Contains too big textures" or err))
+			return UIError("#outfitter_outfitblocked" .. tostring(err == "oversize vtf" and "Contains too big textures" or err))
 		end
 
 		if not mdls[1] then
 			dbge("coDoAutowear", "GMAPlayerModels", wsid, "no models!?")
-			return UIError("Workshop addon " .. wsid .. " has no playermodels")
+			return UIError("#outfitter_wsaddon" .. wsid .. "#outfitter_noplsmodels")
 		end
 	end
 
@@ -931,7 +931,7 @@ function coDoAutowear()
 		local ok, err = coMountWS(mount_path)
 
 		if not ok then
-			return UIError("The workshop addon could not be mounted: " .. tostring(err))
+			return UIError("#outfitter_wsaddonfailmount" .. tostring(err))
 		end
 	end
 
@@ -975,6 +975,6 @@ function UIWarnDownloadFailures(wsid)
 	if not warned then
 		warned = true
 		chat.AddText(Color(255, 100, 100, 255), "!!! ALERT !!! ", Color(255, 144, 144, 255),
-			"Workshop download may have timed out (a steam bug). Open downloads tab in steam and check if GarrysMod workshop updating has paused, try resuming it. More info: https://steamcommunity.com/workshop/filedetails/discussion/882463775/3096727865549498026/ Other downloads will not resume before this is done.")
+			"#outfitter_steambugalert")
 	end
 end
