@@ -470,16 +470,16 @@ function UIChangeModelToID(n, opengui)
 
 	if not chosen_download_info then
 		if opengui then GUIOpen() end
-		return UIError "Type only !outfit first to choose workshop addon"
+		return UIError "#outfitter_typeonly"
 	end
 	if not mdllist or #mdllist == 0 then
 		if opengui then GUIOpen() end
-		return UIError "No models to choose from"
+		return UIError "#outfitter_whatmodel"
 	end
 	local mdl = mdllist[n]
 	if not mdl then
 		if opengui then GUIOpen() end
-		return UIError "Invalid model index"
+		return UIError "#outfitter_invalidindex"
 	end
 
 	assert(mount_path, "mount_path missing for " .. tostring(chosen_download_info))
@@ -487,7 +487,7 @@ function UIChangeModelToID(n, opengui)
 
 	if not ok then
 		if opengui then GUIOpen() end
-		return UIError("The workshop addon could not be mounted: " .. tostring(err))
+		return UIError("#outfitter_mountwserror" .. tostring(err))
 	end
 
 	assert(mdl.Name)
@@ -518,7 +518,7 @@ hook.Add("OutfitApply", Tag, function(pl, mdl)
 
 		if NOUI then return end
 
-		notification.AddLegacy("Outfit changed!", NOTIFY_UNDO, 2)
+		notification.AddLegacy("#outfitter_changed", NOTIFY_UNDO, 2)
 		SOUND(GENERIC)
 		if silent_apply_mdl ~= mdl then
 			UIMsg "#outfitter_sendoutfit"
