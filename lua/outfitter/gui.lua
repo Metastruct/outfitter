@@ -297,128 +297,209 @@ end
 
 
 
+local HISTORY_ICON_SIZE = 72
+
 local PANEL = {}
-function PANEL:Init()
-	local leftscroll = self:Add('DScrollPanel', 'settings')
-	leftscroll:Dock(LEFT)
-	leftscroll:SetWidth(377)
-	leftscroll:SetHeight(300)
-	leftscroll:DockMargin(4, 1, 24, 0)
-	leftscroll:SetPaintBackground(false)
 
-	local functions = leftscroll:Add('DPanel', 'settings')
-	functions:Dock(TOP)
-	functions:SetHeight(560)
-	functions:SetPaintBackground(false)
+function PANEL:CreateOutfitPage(page)
+	page:DockPadding(8, 8, 8, 8)
 
-	local function Add(itm, b)
-		local c = vgui.Create(itm, functions, b)
-		--settingslist:AddItem(c)
-		c:Dock(BOTTOM)
-		return c
+	local status_row = page:Add('EditablePanel')
+	status_row:Dock(TOP)
+	status_row:SetTall(24)
+
+	local clear = status_row:Add('DButton')
+	self.btn_clear = clear
+	clear:Dock(RIGHT)
+	clear:SetWide(130)
+	clear:SetText("#outfitter_remove")
+	clear:SetTooltip("#outfitter_remoutfit")
+	clear:SetImage('icon16/cancel.png')
+	clear.DoClick = function()
+		UICancelAll()
+		self:DoRefresh()
 	end
 
-	do
-		local b = functions:Add('DButton', 'choose button')
-		self.btn_choose = b
+	local status = status_row:Add('DLabel')
+	self.lbl_status = status
+	status:Dock(FILL)
+	status:SetFont("DermaDefaultBold")
+	status:SetDark(true)
 
-		b:Dock(TOP)
-		b:SetText("#open_workshop")
-		b:SetTooltip [[#outfitter_choosemdl]]
+	local source_row = page:Add('EditablePanel')
+	source_row:Dock(TOP)
+	source_row:DockMargin(0, 8, 0, 0)
+	source_row:SetTall(24)
 
-		b.DoClick = function()
-			self:GetParent():Hide()
-			GUIWantChangeModel(nil, true)
-		end
-		b:DockMargin(0, 4, 1, 8)
-		b:SetImage 'icon16/folder_user.png'
-		b.PaintOver = function(b, w, h)
-			if not next(self.mdllist:GetLines()) then
-				b:NoClipping(false)
-				surface.SetDrawColor(140, 255, 140, 255 * .5 + 255 * .3 * math.sin(RealTime() * 4))
-
-				surface.DrawOutlinedRect(-1, -1, w + 2, h + 2)
-				surface.DrawOutlinedRect(0, 0, w, h)
-				b:NoClipping(true)
-			end
-		end
+	local choose = source_row:Add('DButton')
+	self.btn_choose = choose
+	choose:Dock(LEFT)
+	choose:SetWide(150)
+	choose:SetText("#outfitter_browse")
+	choose:SetTooltip("#outfitter_choosemdl")
+	choose:SetImage('icon16/folder_user.png')
+	choose.DoClick = function()
+		self:GetParent():Hide()
+		GUIWantChangeModel(nil, true)
 	end
-	do
-		local wrap = functions:Add('EditablePanel', 'url wrap')
-		wrap:Dock(TOP)
-		wrap:DockMargin(0, 4, 1, 8)
-		wrap:SetTall(28)
 
-		local b = wrap:Add('DTextEntry', 'url input')
-		self.input_mdlsource = b
+	local url_entry = source_row:Add('DTextEntry')
+	self.input_mdlsource = url_entry
+	url_entry:Dock(FILL)
+	url_entry:DockMargin(6, 0, 0, 0)
+	url_entry:SetPlaceholderText("#outfitter_url_placeholder")
 
-		b:Dock(FILL)
-		b:SetText("")
-		b:SetPlaceholderText("https://steamcommunity.com/sharedfiles/filedetails/?id=1234")
-
-		local function SubmitURL(url, hidegui)
-			if url == "puze" then
-				url = "https://g2cf.metastruct.net/delme/puze.gma"
-			end
-			local wsid = UrlToWorkshopID(url, true)
-			dbg("GUI", "UrlToWorkshopID", url, wsid)
-			if wsid then
-				surface.PlaySound "npc/vort/claw_swing1.wav"
-				UIChoseWorkshop(wsid, true, true)
-				hidegui()
-			else
-				if IsHTTPURL(url) then
-					if AllowedHTTPURL(url) then
-						hidegui()
-						UIChoseHTTPGMA(url, true)
-					else
-						chat.AddText("#outfitter_warnlist")
-						surface.PlaySound "common/warning.wav"
-					end
+	local function SubmitURL(url, hidegui)
+		if url == "puze" then
+			url = "https://g2cf.metastruct.net/delme/puze.gma"
+		end
+		local wsid = UrlToWorkshopID(url, true)
+		dbg("GUI", "UrlToWorkshopID", url, wsid)
+		if wsid then
+			surface.PlaySound "npc/vort/claw_swing1.wav"
+			UIChoseWorkshop(wsid, true, true)
+			hidegui()
+		else
+			if IsHTTPURL(url) then
+				if AllowedHTTPURL(url) then
+					hidegui()
+					UIChoseHTTPGMA(url, true)
 				else
-					dbg("Not HTTP URL", url)
+					chat.AddText("#outfitter_warnlist")
 					surface.PlaySound "common/warning.wav"
 				end
+			else
+				dbg("Not HTTP URL", url)
+				surface.PlaySound "common/warning.wav"
 			end
-		end
-
-		b.OnEnter = function()
-			local url = b:GetValue():Trim()
-			local hidegui = function() self:GetParent():Hide() end
-			local submit = function()
-				SubmitURL(url, hidegui)
-			end
-			if UrlToWorkshopID(url, true) then
-				return submit()
-			end
-			if not outfitter_debug_cefcheck:GetBool() then
-				return submit()
-			end
-			CheckCEFCodec(function(codec_ok)
-				if codec_ok then
-					submit()
-				else
-					dbg("CEF codec not installed, opening URL in Steam overlay", url)
-					gui.OpenURL(url, true)
-				end
-			end)
 		end
 	end
 
-	local l = functions:Add("DLabel", 'chosen')
-	self.lbl_chosen = l
-	l:Dock(TOP)
-	l:DockMargin(1, 1, 1, 1)
-	l:SetWrap(true)
-	l:SetTooltip [[#outfitter_ws_title]]
-	l:SetText("#outfitter_choose_ws")
-	l:SetTall(44)
-	l:SetFont "BudgetLabel"
+	url_entry.OnEnter = function()
+		local url = url_entry:GetValue():Trim()
+		local hidegui = function() self:GetParent():Hide() end
+		local submit = function()
+			SubmitURL(url, hidegui)
+		end
+		if UrlToWorkshopID(url, true) then
+			return submit()
+		end
+		if not outfitter_debug_cefcheck:GetBool() then
+			return submit()
+		end
+		CheckCEFCodec(function(codec_ok)
+			if codec_ok then
+				submit()
+			else
+				dbg("CEF codec not installed, opening URL in Steam overlay", url)
+				gui.OpenURL(url, true)
+			end
+		end)
+	end
 
-	local dependencies = functions:Add("DButton", 'dependencies')
+	local history = page:Add('EditablePanel')
+	self.history_row = history
+	history:Dock(TOP)
+	history:DockMargin(0, 8, 0, 0)
+	history:SetTall(HISTORY_ICON_SIZE + 26)
+
+	local history_header = history:Add('EditablePanel')
+	history_header:Dock(TOP)
+	history_header:DockMargin(0, 0, 0, 4)
+	history_header:SetTall(22)
+
+	local clear_history = history_header:Add('DButton')
+	self.btn_clearhist = clear_history
+	clear_history:Dock(RIGHT)
+	clear_history:SetWide(70)
+	clear_history:SetText("#gameui_clearbutton")
+	clear_history:SetImage('icon16/bin.png')
+	clear_history.DoClick = function()
+		GUIClearHistory()
+	end
+
+	local history_label = history_header:Add('DLabel')
+	history_label:Dock(FILL)
+	history_label:SetFont("DermaDefaultBold")
+	history_label:SetDark(true)
+	history_label:SetText("#outfitter_recent")
+
+	local mdlhist = history:Add('DHorizontalScroller')
+	self.mdlhist = mdlhist
+	mdlhist:Dock(FILL)
+	mdlhist:SetOverlap(-4)
+
+	local actions = page:Add('EditablePanel')
+	actions:Dock(BOTTOM)
+	actions:DockMargin(0, 4, 0, 0)
+	actions:SetTall(28)
+
+	local send = actions:Add('DButton')
+	self.btnSendOutfit = send
+	send:Dock(LEFT)
+	send:SetWide(150)
+	send:SetText("#outfitter_apply")
+	send:SetTooltip("#outfitter_broadcastof")
+	send:SetImage('icon16/transmit.png')
+	send.DoClick = function()
+		GUIBroadcastMyOutfit()
+	end
+
+	local thirdperson = actions:Add('DCheckBoxLabel')
+	self.chk_thirdperson = thirdperson
+	thirdperson:Dock(LEFT)
+	thirdperson:DockMargin(12, 6, 0, 6)
+	thirdperson:SetText("#outfitter_thirdperson")
+	thirdperson:SetTooltip("#outfitter_thirdptip")
+	thirdperson:SetDark(true)
+	thirdperson:SizeToContents()
+	thirdperson.OnChange = function(_, value)
+		ToggleThirdperson(value and true or false)
+	end
+
+	local autowear = actions:Add('DCheckBoxLabel')
+	self.chk_autowear = autowear
+	autowear:Dock(LEFT)
+	autowear:DockMargin(12, 6, 0, 6)
+	autowear:SetText("#outfitter_wearonjoin")
+	autowear:SetTooltip("#outfitter_autoweartip")
+	autowear:SetDark(true)
+	autowear:SizeToContents()
+	autowear.OnChange = function(_, value)
+		if value then
+			SetAutowear()
+		else
+			ClearAutowear()
+		end
+		self:RefreshStatus()
+	end
+
+	local load_saved = actions:Add('DButton')
+	self.btn_loadsaved = load_saved
+	load_saved:Dock(RIGHT)
+	load_saved:SetWide(130)
+	load_saved:SetText("#outfitter_loadsaved")
+	load_saved:SetImage('icon16/transmit_go.png')
+	load_saved.DoClick = function()
+		co(coDoAutowear)
+	end
+
+	local hint = page:Add('DLabel')
+	self.lbl_hint = hint
+	hint:Dock(BOTTOM)
+	hint:DockMargin(0, 6, 0, 0)
+	hint:SetTall(20)
+	hint:SetDark(true)
+
+	local chosen_row = page:Add('EditablePanel')
+	chosen_row:Dock(TOP)
+	chosen_row:DockMargin(0, 8, 0, 4)
+	chosen_row:SetTall(24)
+
+	local dependencies = chosen_row:Add('DButton')
 	self.btn_dependencies = dependencies
-	dependencies:Dock(TOP)
-	dependencies:DockMargin(0, 1, 1, 4)
+	dependencies:Dock(RIGHT)
+	dependencies:SetWide(130)
 	dependencies:SetText("#outfitter_deps")
 	dependencies:SetImage("icon16/bricks.png")
 	dependencies:SetTooltip("#outfitter_review_deps")
@@ -439,101 +520,160 @@ function PANEL:Init()
 		end)
 	end
 
+	local chosen = chosen_row:Add('DLabel')
+	self.lbl_chosen = chosen
+	chosen:Dock(FILL)
+	chosen:SetTooltip("#outfitter_ws_title")
+	chosen:SetDark(true)
+	chosen:SetText("")
 
-
-	local mdllist = functions:Add("DListView", 'modelname')
+	local mdllist = vgui.Create('DListView', page)
+	self.mdllist = mdllist
 	mdllist:SetMultiSelect(false)
 	mdllist:AddColumn("#gameui_playermodel")
-	self.mdllist = mdllist
-	mdllist:SetTooltip [[#outfitter_choose_of]]
-	mdllist:DockMargin(0, 5, 0, 0)
-	mdllist:Dock(TOP)
-	mdllist:SetTall(200)
-	mdllist.OnRowSelected = function(mdllist, n, itm)
-		local ret = GUIChooseMDL(n)
-		if not ret then
+	mdllist:SetTooltip("#outfitter_choose_of")
+	mdllist.OnRowSelected = function(_, n)
+		if not GUIChooseMDL(n) then
 			surface.PlaySound "common/warning.wav"
 		end
 	end
-	--TODO : OnRowRightClick
 
-	mdllist.PaintOver = function(b, w, h)
-		if next(mdllist:GetLines()) and not mdllist:GetSelectedLine() then
-			mdllist:NoClipping(false)
-			surface.SetDrawColor(255, 66, 22, 255 * .5 + 255 * .3 * math.sin(RealTime() * 4))
+	local customize = vgui.Create('DPanel', page)
+	customize:DockPadding(6, 6, 6, 6)
 
-			surface.DrawOutlinedRect(-1, -1, w + 1, h + 1)
-			surface.DrawOutlinedRect(0, 0, w, h)
-			mdllist:NoClipping(true)
-		end
+	local customize_label = customize:Add('DLabel')
+	customize_label:Dock(TOP)
+	customize_label:SetFont("DermaDefaultBold")
+	customize_label:SetDark(true)
+	customize_label:SetText("#outfitter_bodygroups")
+
+	local customize_scroll = customize:Add('DScrollPanel')
+	self.bg_scroll = customize_scroll
+	customize_scroll:Dock(FILL)
+	customize_scroll:DockMargin(0, 4, 0, 0)
+
+	self.bg_edit_disabled = customize_scroll:Add('DLabel')
+	self.bg_edit_disabled:Dock(TOP)
+	self.bg_edit_disabled:SetText("#outfitter_submitfirst")
+	self.bg_edit_disabled:SetDark(true)
+	self.bg_edit_disabled:SetWrap(true)
+	self.bg_edit_disabled:SetAutoStretchVertical(true)
+
+	self.bg_edit = vgui.CreateFromTable(bodygroups_factor, customize_scroll, 'bodygroups editor')
+	self.bg_edit:Dock(TOP)
+
+	local div = page:Add('DHorizontalDivider')
+	div:Dock(FILL)
+	div:SetCookieName(Tag .. '_outfit')
+	div:SetLeft(mdllist)
+	div:SetRight(customize)
+	div:SetDividerWidth(6)
+	div:SetLeftMin(200)
+	div:SetRightMin(160)
+	div:SetLeftWidth(380)
+end
+
+function PANEL:CreateSettingsPage(page)
+	page:DockPadding(4, 4, 4, 4)
+
+	local categories = page:Add('DCategoryList')
+	categories:Dock(FILL)
+
+	local function Form(name, expanded)
+		local form = vgui.Create('DForm')
+		form:SetName(name)
+		form:SetExpanded(expanded)
+		categories:AddItem(form)
+		return form
 	end
 
-	local sheet = self:Add("DPropertySheet")
-	self.sheet = sheet
-	sheet:Dock(FILL)
-
-	local mdlhistpanel = self:Add("EditablePanel")
-	self.mdlhistpanel = mdlhistpanel
-	sheet:AddSheet("#servers_history", mdlhistpanel, "icon16/user.png")
-	local settingswrap = self:Add("DPanel")
-	settingswrap:DockPadding(4, 4, 4, 4)
-	local settingspnl = settingswrap:Add("DScrollPanel")
-	self.settingspnl = settingspnl
-	settingspnl:Dock(FILL)
-	sheet:AddSheet("#spawnmenu.utilities.settings", settingswrap, "icon16/cog.png")
-	local blocklistPanel = self:Add("DPanel")
-	self.blocklistPanel = blocklistPanel
-	sheet:AddSheet("#Blocklist", blocklistPanel, "icon16/stop.png")
-	local infopanel = self:Add("EditablePanel")
-	self.infopanel = infopanel
-	infopanel.Think = function()
-		infopanel.Think = function() end
-
-		local p = vgui.CreateFromTable(about_factory, infopanel)
-		self.aboutpnl = p
-		--print"create about"
-		infopanel.aboutpnl = p
-		p:Dock(FILL)
-	end
-	infopanel:Dock(FILL)
-	sheet:AddSheet("#information", infopanel, "icon16/information.png")
-
-	local function AddS(itm, b)
-		local c = vgui.Create(itm, settingspnl, b)
-		--settingslist:AddItem(c)
-		c:Dock(TOP)
-		if c.Label then
-			c.Label:SetDark(true)
-		end
-		return c
+	local function Check(form, text, convar, tooltip)
+		local check = form:CheckBox(text, convar)
+		if tooltip then check:SetTooltip(tooltip) end
+		return check
 	end
 
+	local function Slider(form, text, convar, max, tooltip)
+		local slider = form:NumSlider(text, convar, 0, max, 0)
+		slider:SetTooltip(tooltip)
+		return slider
+	end
 
+	local function FixButton(form, text, image, callback)
+		local button = form:Button(text)
+		button:SetImage(image)
+		button.DoClick = callback
+		return button
+	end
 
+	local general = Form("#outfitter_set_general", true)
+	Check(general, "#outfitter_show_outfits", Tag .. "_enabled", "#outfitter_on_tip")
+	Check(general, "#outfitter_friendsonly", Tag .. "_friendsonly", "#outfitter_friendsonlytip")
+	Check(general, "#outfitter_guesschands", Tag .. "_hands", "#outfitter_guesschandstip")
+	Check(general, "#outfitter_uisfx", Tag .. "_sounds", "#outfitter_uisfxtip")
+	Check(general, "#outfitter_dimgui", Tag .. "_gui_focusdim", "#outfitter_dimguitip")
+	Check(general, "#outfitter_ofitinfocontext", Tag .. "_info_hud", "#outfitter_ofitinfocontexttip")
 
-	----------------------------------------------------
+	local downloads = Form("#outfitter_set_downloads", true)
+	Slider(downloads, "#outfitter_maxdlsize", Tag .. "_maxsize", 256, "#outfitter_maxdlsizetip")
+	Check(downloads, "#outfitter_allow_wsdeps", Tag .. "_allow_dependencies", "#outfitter_allow_wsdepstip")
+	Slider(downloads, "#outfitter_dldistance", Tag .. "_distance", 5000, "#outfitter_dldistancetip")
 
+	local distance_mode
+	local combo = downloads:ComboBox("#outfitter_distmode_label", Tag .. "_distance_mode")
+	combo:SetTooltip("#outfitter_distmode")
+	combo.OnSelect = function(_, val)
+		distance_mode = distance_mode or GetConVar(Tag .. '_distance_mode')
+		local choose = val == 1 and -1 or val == 2 and 0 or 1
+		dbgn(2, "ChooseDistanceMode", val, '->', choose)
+		distance_mode:SetInt(choose)
+	end
+	combo:AddChoice("#outfitter_def", '-1')
+	combo:AddChoice("#outfitter_sao", '0')
+	combo:AddChoice("#outfitter_noo", '1')
 
-	blocklistPanel:DockPadding(2, 1, 2, 1)
+	Check(downloads, "#outfitter_dlnotif", Tag .. "_download_notifications", "#outfitter_dlnotiftip")
 
+	local links = Form("#outfitter_set_links", false)
+	Check(links, "#outfitter_outsidews", Tag .. "_allow_http_test", "#outfitter_outsidewstip")
+	Check(links, "#outfitter_untrustedurl", Tag .. "_allow_unsafe_http", "#outfitter_untrustedurltip")
 
-	local txt = blocklistPanel:Add('DLabel', 'infomsg')
+	local troubleshooting = Form("#outfitter_set_troubleshooting", false)
+	FixButton(troubleshooting, "#outfitter_fixlplyanim", 'icon16/transmit_error.png', function()
+		FixLocalPlayerAnimations(true)
+	end)
+	FixButton(troubleshooting, "#outfitter_fixfullupdate", 'icon16/transmit_error.png', function()
+		Fullupdate()
+	end)
+	FixButton(troubleshooting, "#outfitter_clrmdlblacklist", 'icon16/tag_blue_delete.png', function()
+		RunConsoleCommand "outfitter_blacklist_clear"
+	end)
+	Check(troubleshooting, "#outfitter_autoblock", Tag .. "_use_autoblacklist", "#outfitter_autoblocktip")
+	Check(troubleshooting, "#outfitter_failsafe", Tag .. "_failsafe", "#outfitter_failsafetip")
+	Check(troubleshooting, "#outfitter_legacy", Tag .. "_animfix_oldmethod", "#outfitter_legacytip")
+	Check(troubleshooting, "#debug", Tag .. "_dbg", "#outfitter_debugtip")
+	Check(troubleshooting, "#outfitter_unsafe", Tag .. "_unsafe", "#outfitter_removesafetychecks")
+end
+
+function PANEL:CreateBlocklistPage(page)
+	page:DockPadding(8, 8, 8, 8)
+
+	local txt = page:Add('DLabel', 'infomsg')
 	txt:Dock(TOP)
 	txt:SetText "#outfitter_titlebl"
-	txt:SetWrap(true)
+	txt:SetDark(true)
 
-
-
-	local check = blocklistPanel:Add("DCheckBoxLabel", 'nsfwtoggle')
+	local check = page:Add("DCheckBoxLabel", 'nsfwtoggle')
 	check:SetConVar("nsfw")
 	check:SetText("#outfitter_allownsfw")
 	check:SizeToContents()
 	check:SetTooltip [[#outfitter_allownsfwtip]]
-	if check.Label then check.Label:SetDark(true) end
-	check:DockMargin(1, 0, 1, 1)
+	check:SetDark(true)
+	check:DockMargin(0, 2, 0, 6)
 	check:Dock(TOP)
 
-	local TextEntry = blocklistPanel:Add("DTextEntry", "blocklist")
+	local TextEntry = page:Add("DTextEntry", "blocklist")
+	self.blocklist_entry = TextEntry
 	TextEntry:SetSize(100, 200)
 	TextEntry:Dock(FILL)
 	TextEntry:SetValue(table.concat(GetTitleBlocklist(), "\n"))
@@ -547,447 +687,125 @@ function PANEL:Init()
 		SetTitleBlocklist(TextEntry:GetValue())
 		TextEntry:SetValue(table.concat(GetTitleBlocklist(), "\n"))
 	end
-	----------------------------------------------------
+end
 
-	mdlhistpanel:DockPadding(2, 1, 2, 1)
+function PANEL:SaveBlocklist()
+	local entry = self.blocklist_entry
+	if not IsValid(entry) then return end
 
-	local function hr()
-		local b = AddS('EditablePanel')
-		b:SetTall(2)
-		b:DockMargin(1, 24, 1, 2)
-		b.Paint = function(b, w, h)
-			surface.SetDrawColor(240, 240, 240, 200)
-			surface.DrawRect(0, 0, w, h)
-		end
-		local hr_line1 = b
+	local value = entry:GetValue()
+	if value ~= table.concat(GetTitleBlocklist(), "\n") then
+		SetTitleBlocklist(value)
 	end
+end
 
-	local scroll = mdlhistpanel:Add("DScrollPanel", 'mdlhistscroll')
-	scroll:Dock(FILL)
-	local mdlhist = scroll:Add("DIconLayout", 'mdlhist')
-	mdlhist:DockMargin(4, 4, 4, 4)
-	--mdlhist:SetMultiSelect( false )
-	--mdlhist:AddColumn( "#name" )
-	--mdlhist:AddColumn( "#gameui_playermodel" )
-	self.mdlhist = mdlhist
+function PANEL:CreateSettingsSheet(frame)
+	local sheet = frame:Add("DPropertySheet")
+	sheet:Dock(FILL)
 
+	local settings_page = frame:Add("DPanel")
+	self:CreateSettingsPage(settings_page)
+	sheet:AddSheet("#outfitter_tab_preferences", settings_page, "icon16/wrench.png")
 
-	mdlhist:Dock(FILL)
-	mdlhist.OnRowSelected = function(mdlhist, n, itm)
-		local dat = GUIGetHistory()[n]
-		if not dat then return end
-		if not self:WantOutfitMDL(unpack(dat)) then
-			surface.PlaySound "common/warning.wav"
-		end
+	local blocklist_page = frame:Add("DPanel")
+	self:CreateBlocklistPage(blocklist_page)
+	sheet:AddSheet("#outfitter_tab_blocklist", blocklist_page, "icon16/stop.png")
+
+	local infopanel = frame:Add("EditablePanel")
+	infopanel.Think = function()
+		infopanel.Think = function() end
+
+		local p = vgui.CreateFromTable(about_factory, infopanel)
+		p:Dock(FILL)
 	end
-
-	function mdlhist:Clear()
-		local chld = self:GetChildren()
-		for k, v in pairs(chld) do
-			v:Remove()
-		end
-	end
-
-	local b = mdlhistpanel:Add('DButton', 'choose button')
-	self.btn_clearhist = b
-
-	b:Dock(BOTTOM)
-
-	b:SetText("#gameui_clearbutton")
-	b.DoClick = function()
-		GUIClearHistory()
-	end
-	b:DockMargin(0, 5, 0, 0)
-	b:SetImage 'icon16/bin.png'
-
-
-
-	local check = AddS("DCheckBoxLabel")
-	check:SetConVar(Tag .. "_enabled")
-	check:SetText("#gameui_enabled")
-	check:SizeToContents()
-	check:SetTooltip [[#outfitter_on_tip]]
-	check:DockMargin(1, 0, 1, 1)
-	local btn_en = check
-
-	local check = AddS("DCheckBoxLabel")
-	check:SetConVar(Tag .. "_friendsonly")
-	check:SetText("#outfitter_friendsonly")
-	check:SetTooltip [[#outfitter_friendsonlytip]]
-	check:SizeToContents()
-
-	check:DockMargin(1, 4, 1, 1)
-	local d_5 = check
-
-	hr()
-
-	local slider = AddS("DNumSlider")
-	slider:SetText("#outfitter_dldistance")
-	slider:SizeToContents()
-	slider:DockPadding(0, 16, 0, 0)
-	slider.Label:Dock(TOP)
-	slider.Label:DockMargin(0, -16, 0, 0)
-	slider:SetTooltip [[#outfitter_dldistancetip]]
-
-	slider:DockMargin(1, 12, 1, 1)
-	slider:SetMin(0)
-	slider:SetMax(5000)
-	slider:SetDecimals(0)
-	slider:SetConVar(Tag .. '_distance')
-	local sld_dist = slider
-
-	local c = AddS("DComboBox")
-	c:SetSize(100, 20)
-	c:SetTooltip [[#outfitter_distmode]]
-	--c.SetValue = function(c,val)
-	--	local setv = val==0 and 2 or val==1 and 3 or 1
-	--	dbgn(2,"ChooseDistanceModeCtrl",val,'->',setv)
-	--	c:ChooseOptionID(setv)
-	--end
-	local distance_mode
-	c.OnSelect = function(c, val)
-		distance_mode = distance_mode or GetConVar(Tag .. '_distance_mode')
-		local choose = val == 1 and -1 or val == 2 and 0 or 1
-		dbgn(2, "ChooseDistanceMode", val, '->', choose)
-		distance_mode:SetInt(choose)
-	end
-	c:AddChoice("#outfitter_def", '-1')
-	c:AddChoice("#outfitter_sao", '0')
-	c:AddChoice("#outfitter_noo", '1')
-
-	c:SetConVar(Tag .. '_distance_mode')
-	local d_4 = c
-	c:DockMargin(0, 12, 0, 0)
-
-
-	hr()
-
-	local slider = AddS("DNumSlider")
-	slider:SetText("#outfitter_maxdlsize")
-	slider:SizeToContents()
-	slider:DockPadding(0, 16, 0, 0)
-	slider.Label:Dock(TOP)
-	slider.Label:DockMargin(0, -16, 0, 0)
-
-	slider:SetTooltip [[#outfitter_maxdlsizetip]]
-
-	slider:DockMargin(1, 4, 1, 1)
-	slider:SetMin(0)
-	slider:SetMax(256)
-	slider:SetDecimals(0)
-	slider:SetConVar(Tag .. '_maxsize')
-	local sld_dl = slider
-
-	local check = AddS("DCheckBoxLabel")
-	check:SetConVar(Tag .. "_allow_dependencies")
-	check:SetText("#outfitter_allow_wsdeps")
-	check:SizeToContents()
-	check:SetTooltip [[#outfitter_allow_wsdepstip]]
-	check:DockMargin(1, 12, 1, 1)
-
-	--TODO
-	--local check = functions:Add( "DCheckBoxLabel" )
-	-- 	check:SetConVar(Tag.."_ask")
-	--	check:SetText( "Ask mode")
-	--	check:SizeToContents()
-	--	check:Dock(TOP)
-	--	check:DockMargin(1,4,1,1)
-
-
-	hr()
-
-	local check = AddS("DCheckBoxLabel")
-	check:SetConVar(Tag .. "_hands")
-	check:SetText("#outfitter_guesschands")
-	check:SetTooltip [[#outfitter_guesschandstip]]
-	check:SizeToContents()
-
-	check:DockMargin(1, 4, 1, 1)
-	local d_6 = check
-
-	local check = AddS("DCheckBoxLabel")
-	check:SetConVar(Tag .. "_sounds")
-	check:SetText("#outfitter_uisfx")
-	check:SetTooltip [[#outfitter_uisfxtip]]
-	check:SizeToContents()
-
-	check:DockMargin(1, 4, 1, 1)
-	local d_7 = check
-
-	local check = AddS("DCheckBoxLabel")
-	check:SetConVar(Tag .. "_gui_focusdim")
-	check:SetText("#outfitter_dimgui")
-	check:SetTooltip [[#outfitter_dimguitip]]
-	check:SizeToContents()
-	check:DockMargin(1, 4, 1, 1)
-
-	hr()
-	local check = AddS("DCheckBoxLabel")
-	check:SetConVar(Tag .. "_allow_http_test")
-	check:SetText("#outfitter_outsidews")
-	check:SetTooltip [[#outfitter_outsidewstip]]
-	check:SizeToContents()
-
-	check:DockMargin(1, 4, 1, 1)
-
-
-
-
-	local check = AddS("DCheckBoxLabel")
-	check:SetConVar(Tag .. "_allow_unsafe_http")
-	check:SetText("#outfitter_untrustedurl")
-	check:SetTooltip [[#outfitter_untrustedurltip]]
-	check:SizeToContents()
-
-	check:DockMargin(1, 4, 1, 1)
-
-	hr()
-
-	local debug = AddS("DCheckBoxLabel")
-	debug:SetConVar(Tag .. "_dbg")
-	debug:SetText("#debug")
-	debug:SetTooltip [[#outfitter_debugtip]]
-	debug:SizeToContents()
-
-	debug:DockMargin(1, 14, 1, 1)
-	local d_3 = debug
-
-	local check = AddS("DCheckBoxLabel")
-	check:SetConVar(Tag .. "_unsafe")
-	check:SetText("#outfitter_unsafe")
-	check:SizeToContents()
-
-	check:SetTooltip [[#outfitter_removesafetychecks]]
-	check:DockMargin(1, 4, 1, 1)
-	local d_1 = check
-	local check = AddS("DCheckBoxLabel")
-	check:SetConVar(Tag .. "_failsafe")
-	check:SetText("#outfitter_failsafe")
-	check:SizeToContents()
-	check:SetTooltip [[#outfitter_failsafetip]]
-
-	check:DockMargin(1, 4, 1, 1)
-	local d_2 = check
-
-	local check = AddS("DCheckBoxLabel")
-	check:SetConVar(Tag .. "_use_autoblacklist")
-	check:SetText("#outfitter_autoblock")
-	check:SizeToContents()
-	check:SetTooltip [[#outfitter_autoblocktip]]
-	check:DockMargin(1, 4, 1, 1)
-	local d_2 = check
-
-	hr()
-	local check = AddS("DCheckBoxLabel")
-	check:SetConVar(Tag .. "_animfix_oldmethod")
-	check:SetText("#outfitter_legacy")
-	check:SizeToContents()
-	check:SetTooltip [[#outfitter_legacytip]]
-
-	check:DockMargin(1, 4, 1, 1)
-
-	local check = AddS("DCheckBoxLabel")
-	check:SetConVar(Tag .. "_download_notifications")
-	check:SetText("#outfitter_dlnotif")
-	check:SizeToContents()
-	check:SetTooltip [[#outfitter_dlnotiftip]]
-
-	check:DockMargin(1, 4, 1, 1)
-
-	local check = AddS("DCheckBoxLabel")
-	check:SetConVar(Tag .. "_info_hud")
-	check:SetText("#outfitter_ofitinfocontext")
-	check:SizeToContents()
-	check:SetTooltip [[#outfitter_ofitinfocontexttip]]
-
-	check:DockMargin(1, 4, 1, 1)
-
-	local check = AddS("DButton")
-	check:SetText("#outfitter_clrmdlblacklist")
-	check:DockMargin(1, 4, 1, 1)
-	check.DoClick = function()
-		RunConsoleCommand "outfitter_blacklist_clear"
-	end
-	check:SetImage 'icon16/tag_blue_delete.png'
-
-	local check = AddS("DButton")
-	check:SetText("#outfitter_fixfullupdate")
-	check:DockMargin(1, 4, 1, 1)
-	check.DoClick = function()
-		Fullupdate()
-	end
-	check:SetImage 'icon16/transmit_error.png'
-
-	local check = AddS("DButton")
-	check:SetText("#outfitter_fixlplyanim")
-	check:DockMargin(1, 4, 1, 1)
-	check.DoClick = function()
-		FixLocalPlayerAnimations(true)
-	end
-	check:SetImage 'icon16/transmit_error.png'
-
-
-
-	--local b = Add('EditablePanel')
-	--b:SetTall(1)
-	--b:DockMargin(-4,24,-4,1)
-	--b.Paint = function(b,w,h)
-	--	surface.SetDrawColor(240,240,240,200)
-	--	surface.DrawRect(0,0,w,h)
-	--end
-	--local hr_line1 = b
-
-	--------------------------------------------------
-
-
-
-	-- second layer
-	local cont = functions:Add('EditablePanel', 'container')
-	cont:SetTall(24)
-	cont:Dock(TOP)
-
-	local b = cont:Add('DButton', 'Autowear button')
-	self.btn_autowear = b
-	b:SetTooltip [[#outfitter_autoweartip]]
-	b:SetText("#makepersistent")
-	b:Dock(FILL)
-	b:SizeToContents()
-	b.DoClick = function()
-		local m = DermaMenu()
-		m:AddOption("#makepersistent", function()
-			SetAutowear()
-		end):SetIcon 'icon16/vcard_edit.png'
-		m:AddOption("#vgui_htmlreload", function()
-			if co.make() then return end
-			coDoAutowear()
-		end):SetIcon 'icon16/transmit_go.png'
-		m:Open()
-	end
-	b:SetImage 'icon16/disk.png'
-
-
-	--------------------------------------------------
-
-
-	local cont = functions:Add('EditablePanel', 'container')
-	cont:SetTall(32)
-	cont:Dock(TOP)
-
-	local b = cont:Add('DButton', 'Send button')
-	self.btn_send = b
-	b:Dock(LEFT)
-	b:SetText("#gameui_submit")
-	b:SetTooltip [[#outfitter_broadcastof]]
-	b.DoClick = function()
-		GUIBroadcastMyOutfit()
-		b._set_enabled = false
-		self:GetParent():Hide()
-	end
-	b:SetImage 'icon16/transmit.png'
-	b.PerformLayout = function(b, w, h)
-		DButton.PerformLayout(b, w, h)
-		b:SetWide(b:GetParent():GetWide() * .5)
-	end
-	self.btnSendOutfit = b
-	function b.SetEnabled2(b, v)
-		b:SetDisabled(not v)
-		b._set_enabled = v
-	end
-
-	b.PaintOver = function(b, w, h)
-		if b._set_enabled then
-			if UIGetChosenMDL() and UIGetMDLList() and LocalPlayer().latest_want ~= UIGetMDLList()[UIGetChosenMDL()] then
-				surface.SetDrawColor(55, 240, 55, 40 + 25 * math.sin(RealTime() * 7) ^ 2)
-				surface.DrawRect(1, 1, w - 2, h - 2)
+	infopanel:Dock(FILL)
+	sheet:AddSheet("#information", infopanel, "icon16/information.png")
+
+	return sheet
+end
+
+function PANEL:Init()
+	local outfit_page = self:Add("DPanel")
+	outfit_page:Dock(FILL)
+	self:CreateOutfitPage(outfit_page)
+end
+
+function PANEL:RefreshBGE()
+	local data = api and api.get_player_networked_data(LocalPlayer())
+	local mdllist = UIGetMDLList()
+	local chosen = UIGetChosenMDL()
+	local chosen_dat = mdllist and chosen and mdllist[chosen]
+	local mdl = chosen_dat and chosen_dat.Name or data and data.mdl
+	if mdl and (file.Exists(mdl, 'workshop') or file.Exists(mdl, 'GAME')) then
+		self.bg_edit_disabled:SetVisible(false)
+		self.bg_edit:SetVisible(true)
+		if self.bg_edit.model ~= mdl or #self.bg_edit:GetChildren() == 0 then
+			local ok, err = pcall(self.bg_edit.SetModel, self.bg_edit, mdl)
+			if not ok then
+				dbgelvl(3, err)
+				self.bg_edit:Clear()
+				self.bg_edit:SetVisible(false)
+				self.bg_edit_disabled:SetVisible(true)
 			end
 		end
+	else
+		self.bg_edit:SetVisible(false)
+		self.bg_edit:Clear()
+		self.bg_edit_disabled:SetVisible(true)
+	end
+	self.bg_scroll:InvalidateLayout()
+end
+
+local function ManifestKey(manifest)
+	local normalized = NormalizeDependencyManifest(manifest)
+	if not normalized or #normalized.dependencies == 0 then return "" end
+	return DependencyManifestID(normalized)
+end
+
+function PANEL:RefreshStatus()
+	local pl = LocalPlayer()
+	local networked = api and api.get_player_networked_data(pl)
+	local worn_mdl = networked and networked.mdl
+	local current = api and api.get_current()
+	local current_mdl = current and current.mdl
+
+	if current_mdl and current_mdl ~= worn_mdl then
+		self.lbl_status:SetText(language.GetPhrase("outfitter_status_preview"):format(MDLToUI(current_mdl)))
+	elseif worn_mdl then
+		self.lbl_status:SetText(language.GetPhrase("outfitter_status_worn"):format(MDLToUI(worn_mdl)))
+	else
+		self.lbl_status:SetText("#outfitter_status_none")
 	end
 
+	local mdllist = UIGetMDLList()
+	local chosen = UIGetChosenMDL()
+	local chosen_dat = mdllist and chosen and mdllist[chosen]
+	local chosen_name = chosen_dat and chosen_dat.Name
 
+	local dependency_manifest = ShouldMountChildren() and UIGetDependencyManifest() or nil
+	local applied = chosen_name and chosen_name == worn_mdl and
+		ManifestKey(dependency_manifest) == ManifestKey(networked.dependency_manifest)
 
-	local b = cont:Add('DButton', 'Clear button')
-	self.btn_clear = b
-	b:SetTooltip [[#outfitter_remoutfit]]
-	b:SetText("#gameui_cancel")
-	b:Dock(FILL)
-	b:SizeToContents()
-	b.DoClick = function()
-		UICancelAll()
-		self:DoRefresh(trychoose_mdl)
-		--self:GetParent():Hide()
-	end
-	b:SetImage 'icon16/cancel.png'
-
-	local b = functions:Add('DButton', 'thirdperson')
-	b:SetText("#tool.camera.name")
-	b:SetTooltip [[#outfitter_thirdptip]]
-	b:Dock(TOP)
-	b:DockMargin(16, 2, 16, 1)
-	b.DoClick = function() ToggleThirdperson() end
-	b:SetImage 'icon16/find.png'
-
-	-- bodygroup and skin editor, only usable once an outfit is submitted
-	self.bg_edit_disabled = vgui.Create('DLabel', functions, 'bodygroups disabled label')
-	self.bg_edit_disabled:Dock(TOP)
-	self.bg_edit_disabled:DockMargin(4, 8, 4, 4)
-	self.bg_edit_disabled:SetText("#outfitter_submitfirst")
-	self.bg_edit_disabled:SetFont("DermaDefaultBold")
-	self.bg_edit_disabled:SetWrap(true)
-	self.bg_edit_disabled:SetAutoStretchVertical(true)
-
-	self.bg_edit = vgui.CreateFromTable(bodygroups_factor, functions, 'bodygroups editor')
-	self.bg_edit:Dock(TOP)
-	self.bg_edit:DockMargin(0, 4, 0, 0)
-
-	function self:RefreshBGE()
-		local data = api and api.get_player_networked_data(LocalPlayer())
-		local mdl = data and data.mdl
-		if mdl and (file.Exists(mdl, 'workshop') or file.Exists(mdl, 'GAME')) then
-			self.bg_edit_disabled:SetVisible(false)
-			self.bg_edit:SetVisible(true)
-			if self.bg_edit.model ~= mdl or #self.bg_edit:GetChildren() == 0 then
-				local ok, err = pcall(self.bg_edit.SetModel, self.bg_edit, mdl)
-				if not ok then
-					dbgelvl(3, err)
-					self.bg_edit:Clear()
-					self.bg_edit:SetVisible(false)
-					self.bg_edit_disabled:SetVisible(true)
-				end
-			end
-		else
-			self.bg_edit:SetVisible(false)
-			self.bg_edit:Clear()
-			self.bg_edit_disabled:SetVisible(true)
-		end
+	if not mdllist then
+		self.lbl_hint:SetText("#outfitter_hint_browse")
+	elseif not chosen_name then
+		self.lbl_hint:SetText("#outfitter_hint_pick")
+	elseif applied then
+		self.lbl_hint:SetText("#outfitter_hint_applied")
+	else
+		self.lbl_hint:SetText("#outfitter_hint_apply")
 	end
 
-	local div = self:Add "DHorizontalDivider"
-	div:Dock(FILL)
+	self.btn_clear:SetEnabled((worn_mdl or current_mdl or mdllist) and true or false)
+	self.btnSendOutfit:SetEnabled((chosen_name and UIGetDownloadInfoX() and not applied) and true or false)
 
-	leftscroll:Dock(NODOCK)
-	sheet:Dock(NODOCK)
-	div:SetCookieName(Tag)
-	div:SetLeft(leftscroll)
-	div:SetRight(sheet)
-	div:SetDividerWidth(4) --set the divider width. DEF: 8
-	div:SetLeftMin(150)   --set the minimun width of left side
-	div:SetRightMin(0)
-	div:SetLeftWidth(377)
+	self.chk_thirdperson:SetChecked(InThirdperson() and true or false)
 
-	function functions.PerformLayout(functions, w, h)
-		DPanel.PerformLayout(functions, w, h)
-		local t = 0
-		for k, v in next, functions:GetChildren() do
-			local a, b = v:GetDockMargin()
-			t = t + v:GetTall() + a + b
-		end
-		if t ~= functions:GetTall() then
-			functions:SetTall(t)
-		end
-	end
-	functions:InvalidateLayout()
-
-	--------------------------------------------------
+	local saved = GetAutowear()
+	local saved_current = saved and current and saved.mdl == current.mdl and tostring(saved.wsid) == tostring(current.download_path)
+	self.chk_autowear:SetChecked(saved_current and true or false)
+	self.chk_autowear:SetEnabled((current or saved_current) and true or false)
+	self.btn_loadsaved:SetVisible((saved and not saved_current) and true or false)
 end
 
 gui_readytosend = false
@@ -1020,14 +838,6 @@ function PANEL:WantOutfitMDL(wsid, mdl, title)
 	end)
 
 	return worker
-end
-
-function PANEL:WSChoose()
-	self:Hide()
-	if self.chosen_id then
-		surface.PlaySound "npc/vort/claw_swing1.wav"
-		UIChoseWorkshop(self.chosen_id, false, true)
-	end
 end
 
 function GUIBroadcastMyOutfit()
@@ -1075,10 +885,25 @@ function GUIChooseMDL(n)
 		dbg("GUIChooseMDL", "FINISH", n)
 		want_n = nil
 		choosing = false
+		GUIRebuildBGE()
 		GUICheckTransmit()
 	end)
 	return mdl
 end
+
+function GUIRebuildBGE()
+	local gui = GUIPanel()
+	if not gui then return end
+
+	gui.content.bg_edit.model = nil
+	gui.content:RefreshBGE()
+end
+
+hook.Add("OutfitApply", Tag .. '_bge', function(pl, mdl)
+	if pl == LocalPlayer() and mdl then
+		GUIRebuildBGE()
+	end
+end)
 
 function GUIClearHistory()
 	GUIDelHistory(-1)
@@ -1104,7 +929,10 @@ function GUIAddHistory(wsid, title, mdl)
 	end
 	for k, v in next, hist do
 		local wsid2, mdl2 = v[1], v[2]
-		if wsid2 == wsid and mdl2 == mdl then return end
+		if tostring(wsid2) == tostring(wsid) and mdl2 == mdl then
+			table.remove(hist, k)
+			break
+		end
 	end
 
 	local t = { wsid, mdl, title }
@@ -1137,8 +965,7 @@ function GUICheckTransmit()
 	local self = gui.content
 	if not self then return end
 
-	local cansend = UIGetChosenMDL() and UIGetDownloadInfoX() and UIGetMDLList()
-	self.btnSendOutfit:SetEnabled2(cansend)
+	self:RefreshStatus()
 	self:RefreshDependencyButton()
 end
 
@@ -1182,13 +1009,11 @@ function PANEL:DoRefresh(trychoose_mdl)
 	self:RefreshBGE()
 	self.mdlhist:Clear()
 
-	self.lbl_chosen:SetText("#outfitter_slctwsaddon")
+	self.lbl_chosen:SetText("")
 
 	local wsid = UIGetWSID()
 
 	co(function()
-		self.lbl_chosen:SetText("-")
-
 		if wsid and tonumber(wsid) then
 			self.lbl_chosen:SetText("#outfitter_loadinginfo")
 			local info = co_steamworks_FileInfo(wsid)
@@ -1199,7 +1024,7 @@ function PANEL:DoRefresh(trychoose_mdl)
 				return
 			end
 			if not info or not info.title then
-				self.lbl_chosen:SetText("-")
+				self.lbl_chosen:SetText("")
 			else
 				local str = ("%s (%s)"):format(info.title, string.NiceSize(info.size or 0))
 				self.lbl_chosen:SetText(str)
@@ -1216,7 +1041,6 @@ function PANEL:DoRefresh(trychoose_mdl)
 	end)
 
 
-	local tm = UITriedMounting()
 	local mdllist = UIGetMDLList()
 
 	GUICheckTransmit()
@@ -1224,6 +1048,7 @@ function PANEL:DoRefresh(trychoose_mdl)
 
 	-- model list
 	local chosen
+	local current = UIGetChosenMDL()
 	for k, dat in next, mdllist or {} do
 		if trychoose_mdl and trychoose_mdl == dat.Name then
 			chosen = true
@@ -1233,30 +1058,34 @@ function PANEL:DoRefresh(trychoose_mdl)
 		if chosen and chosen == true then
 			chosen = pnl
 		end
+
+		if k == current then
+			pnl:SetSelected(true)
+		end
 	end
 
 	local extra = UIGetMDLListExtra()
 	if extra and extra.discards then
 		for k, dat in next, extra.discards or {} do
-			local pnl = self.mdllist:AddLine(dat.Name and MDLToUI(dat.Name) or "???")
+			local name = dat.Name and MDLToUI(dat.Name) or "???"
+			local pnl = self.mdllist:AddLine(language.GetPhrase("outfitter_invalidmodel"):format(name))
 			pnl:SetTooltip(dat.error_player or dat.error_vvd or "INVALID MODEL")
-			local Paint = pnl.Paint or function() end
-			pnl.Paint = function(pnl, w, h)
-				local r = Paint(pnl, w, h)
-				surface.SetDrawColor(240, 30, 30, 120)
-				surface.DrawRect(0, 0, w, h)
-				return r
-			end
 		end
 	end
 
-	for _, v in next, GUIGetHistory() do
+	local history = GUIGetHistory()
+	self.history_row:SetVisible(#history > 0)
+	self.history_row:GetParent():InvalidateLayout()
+
+	for i = #history, 1, -1 do
+		local v = history[i]
 		local wsid, mdl, title = unpack(v)
 
 
-		local pnl = self.mdlhist:Add('DOWorkshopIcon')
+		local pnl = vgui.Create('DOWorkshopIcon')
 		pnl:SetAddon({ wsid = wsid, title = MDLToUI(mdl) })
-		self.mdlhist:Layout()
+		pnl:SetWide(HISTORY_ICON_SIZE)
+		self.mdlhist:AddPanel(pnl)
 		pnl:SetTooltip(title .. '\n' .. mdl)
 		pnl._OnMousePressed = pnl.OnMousePressed
 		pnl.OnMousePressed = function(pnl, mc)
@@ -1294,8 +1123,6 @@ function PANEL:DoRefresh(trychoose_mdl)
 	end
 end
 
-local factory = vgui.RegisterTable(PANEL, 'EditablePanel')
-
 function PANEL:Think()
 	if not self.bg_edit then return end
 	local pl = LocalPlayer()
@@ -1303,8 +1130,11 @@ function PANEL:Think()
 	if new ~= self._bge_lastnvar then
 		self._bge_lastnvar = new
 		self:RefreshBGE()
+		self:RefreshStatus()
 	end
 end
+
+local factory = vgui.RegisterTable(PANEL, 'EditablePanel')
 
 
 
@@ -1327,70 +1157,27 @@ function PANEL:Init()
 
 	self:SetCookieName "ofp"
 	self:SetTitle "#outfitter_maintitle"
-	self:SetMinHeight(290)
-	self:SetMinWidth(312)
+	self:SetIcon 'icon16/user.png'
+	self:SetMinHeight(420)
+	self:SetMinWidth(560)
+	self:SetSize(math.min(ScrW() - 64, 720), math.min(ScrH() - 64, 600))
 	self:SetPos(32, 32)
-	self:SetDeleteOnClose(false)
-	self.btnMinim:SetEnabled(true)
-	self.btnMaxim:SetEnabled(true)
-	local had_max = self:GetCookie("pmax", "") == '1'
-
-	if had_max then
-		self:SetSize(640, 586)
-	else
-		self:SetSize(377, 586)
-	end
-
-	self.btnMaxim.DoClick = function()
-		self:SetSize(640, 586)
-		self:SetCookie("pmax", '1')
-		had_max = true
-		self:CenterVertical()
-	end
-
 	self:CenterVertical()
-
-	if not had_max then
-		self.btnMaxim.PaintOver = function(b, w, h)
-			if had_max then return end
-			b:NoClipping(false)
-			surface.SetDrawColor(255, 66, 22, 255 * .5 + 255 * .3 * math.sin(RealTime() * 4))
-
-			surface.DrawOutlinedRect(-1, -1, w + 1, h + 1)
-			surface.DrawOutlinedRect(0, 0, w, h)
-			b:NoClipping(true)
-		end
-	end
-	self.btnMinim.DoClick = function()
-		self:SetSize(377, 586)
-		self:CenterVertical()
-	end
+	self:SetDeleteOnClose(false)
 	self:SetDraggable(true)
 	self:SetSizable(true)
+	self.btnMinim:SetVisible(false)
+	self.btnMaxim:SetVisible(false)
 
-	local title = self.lblTitle
-	if title then
-		self:SetIcon 'icon16/user.png'
-		--local img = vgui.Create('DImage',title)
-		--img:SetImage("icon16/user.png")
-		--img:Dock(LEFT)
-		--img.PerformLayout = function()
-		--	img:SetWide(img:GetTall())
-		--	title:SetTextInset(img:GetTall() + 5,0)
-		--end
+	local settings = self:Add("DImageButton")
+	self.btnSettings = settings
+	settings:SetImage('icon16/cog.png')
+	settings:SetSize(16, 16)
+	settings:SetTooltip("#spawnmenu.utilities.settings")
+	settings.DoClick = function()
+		self:ToggleSettings()
+	end
 
-		local check = self:Add("DCheckBoxLabel")
-		check:SetConVar(Tag .. "_enabled")
-		check:SetText("#gameui_enabled")
-		check:SizeToContents()
-		check:SetTooltip [[#outfitter_on_tip]]
-		self.btnCheck = check
-	end
-	local OnMouseReleased = self.OnMouseReleased
-	self.OnMouseReleased = function(...)
-		self.OnMouseReleasedHook(...)
-		return OnMouseReleased(...)
-	end
 	local Think = self.Think
 	self.Think = function(...)
 		Think(...)
@@ -1418,57 +1205,62 @@ function PANEL:Init()
 			f = f > 1 and 1 or f < 0 and 0 or f
 			self:SetAlpha(f * 200 + 55)
 		end
-
-		local x, y = self:CursorPos()
-		if x > 0 and x < 20 and y > 0 and y < 20 then
-			self:SetCursor("hand")
-		end
 	end
-end
-
-function PANEL:OnMouseReleasedHook(mc)
-	local x, y = self:CursorPos()
-	if x < 0 or x > 20 then return end
-	if y < 0 or y > 20 then return end
-
-
-	if mc == MOUSE_LEFT then
-		GUIAbout()
-		return
-	end
-
-	local menu = DermaMenu()
-
-	if UIGetChosenMDL() and UIGetMDLList() and LocalPlayer().latest_want ~= UIGetMDLList()[UIGetChosenMDL()] then
-		menu:AddOption("#gameui_submit", function() GUIBroadcastMyOutfit() end):SetImage 'icon16/transmit.png'
-	end
-
-	--menu:AddLine()
-
-	menu:AddOption("#outfitter_bout", function() GUIAbout() end):SetImage 'icon16/information.png'
-	menu:AddOption("#outfitter_close", function() self:Hide() end):SetImage 'icon16/door_out.png'
-	menu:Open()
 end
 
 function PANEL:PerformLayout(w, h)
 	DFrame.PerformLayout(self, w, h)
-	self.btnMinim:SetEnabled(w > (self:GetMinWidth() + 5) or h > (5 + self:GetMinHeight()))
 
-	local check = self.btnCheck
-	local cw, ch = 0, 0
-	if check then
-		cw, ch = check:GetSize()
+	local settings = self.btnSettings
+	local close = self.btnClose
+	if settings and close and close:IsValid() then
+		local bx, by = close:GetPos()
+		local sw, sh = settings:GetSize()
+		settings:SetPos(bx - sw - 8, by + close:GetTall() * .5 - sh * .5)
+	end
+end
+
+function PANEL:CloseSettings()
+	if IsValid(self.settings) then
+		self.settings:Remove()
+	end
+end
+
+function PANEL:ToggleSettings()
+	if IsValid(self.settings) then
+		self:CloseSettings()
+		return
 	end
 
-	local b = self.btnMinim or self.btnMaxim
-	if b and b:IsValid() then
-		local bw, bh = b:GetWide(), b:GetTall()
-		local bx, by = b:GetPos()
-		if check then
-			check:SetPos(bx - cw - 4, by + bh * .5 - ch * .5 + 1)
-			check:SetVisible(w > 256)
+	local frame = vgui.Create('DFrame')
+	self.settings = frame
+	frame:SetTitle("#spawnmenu.utilities.settings")
+	frame:SetIcon('icon16/cog.png')
+	frame:SetSize(math.min(ScrW() - 64, 560), math.min(ScrH() - 64, 600))
+	frame.btnMinim:SetVisible(false)
+	frame.btnMaxim:SetVisible(false)
+
+	local x, y = self:GetPos()
+	local right = x + self:GetWide() + 8
+	if right + frame:GetWide() <= ScrW() then
+		frame:SetPos(right, y)
+	else
+		frame:Center()
+	end
+	frame:MakePopup()
+
+	local content = self.content
+	frame.OnRemove = function()
+		if IsValid(content) then
+			content:SaveBlocklist()
 		end
 	end
+
+	content:CreateSettingsSheet(frame)
+end
+
+function PANEL:OnRemove()
+	self:CloseSettings()
 end
 
 function PANEL:Hide()
@@ -1478,6 +1270,7 @@ function PANEL:Hide()
 end
 
 function PANEL:OnClose()
+	self:CloseSettings()
 	self.want_thirdperson = InThirdperson()
 	ToggleThirdperson(false)
 end
@@ -1488,10 +1281,10 @@ function PANEL:Show(_, trychoose_mdl)
 	--end
 	self:SetVisible(true)
 	self:MakePopup()
-	self:DoRefresh(trychoose_mdl)
 	if self.want_thirdperson then
 		ToggleThirdperson(true)
 	end
+	self:DoRefresh(trychoose_mdl)
 end
 
 function PANEL:DoRefresh(trychoose_mdl)
