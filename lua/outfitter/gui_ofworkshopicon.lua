@@ -14,6 +14,15 @@ end
 -- TODO: Use coroutines, cache results
 
 local gDataTable = gDataTable or {}
+
+local function CacheFileInfo(wsid, result)
+	gDataTable[wsid] = result
+
+	if (! file.Exists('cache/workshop/' .. result.previewid .. '.cache', "GAME")) then
+		steamworks.Download(result.previewid, false, function(name) end)
+	end
+end
+
 function PANEL:SetAddon(data)
 	self.Addon = data
 	if (gDataTable[data.wsid]) then
@@ -22,18 +31,28 @@ function PANEL:SetAddon(data)
 	end
 
 	steamworks.FileInfo(data.wsid, function(result)
-		if not result then return end
+		if not result or not result.previewid then return end
 
-		gDataTable[data.wsid] = result
-
-		if (! file.Exists('cache/workshop/' .. result.previewid .. '.cache', "GAME")) then
-			steamworks.Download(result.previewid, false, function(name) end)
-		end
+		CacheFileInfo(data.wsid, result)
 
 		if (! IsValid(self)) then return end
 
 		self.AdditionalData = result
 	end)
+end
+
+function PANEL:SetFullBleed(fullbleed)
+	self.fullbleed = fullbleed
+end
+
+function PANEL:SetFileInfo(result)
+	if not result.previewid then return end
+
+	if (! gDataTable[result.id]) then
+		CacheFileInfo(result.id, result)
+	end
+
+	self.AdditionalData = gDataTable[result.id]
 end
 
 local missingMat = Material("../html/img/addonpreview.png", "nocull smooth")
@@ -52,6 +71,17 @@ function PANEL:Paint(w, h)
 		self.errored = false
 	end
 
+	if self.fullbleed then
+		if self.Image and not self.Image:IsError() then
+			surface.SetDrawColor(color_white)
+			surface.SetMaterial(self.Image)
+			surface.DrawTexturedRect(0, 0, w, h)
+		else
+			surface.SetDrawColor(27, 29, 33, 255)
+			surface.DrawRect(0, 0, w, h)
+		end
+		return
+	end
 
 	draw.RoundedBox(4, 0, 0, w, h, Color(0, 0, 0, 255))
 
