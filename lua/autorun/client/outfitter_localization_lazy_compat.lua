@@ -80,6 +80,13 @@ local function fetch_from_github()
 	end)
 end
 
+local function apply_game_language()
+	local lang = GetConVarString("gmod_language")
+	if lang == "" or lang == "en" then return end
+
+	apply_properties(file.Read("resource/localization/" .. lang .. "/outfitter.properties", "GAME"))
+end
+
 local function outfitter_localization_lazy_compat()
 	if localization_loaded() then return end
 
@@ -91,6 +98,7 @@ local function outfitter_localization_lazy_compat()
 		if content then
 			local adds = apply_properties(content)
 			if adds > 0 then
+				apply_game_language()
 				MsgC(red, "[Outfitter] Localization was not loaded, hot-loaded ")
 				MsgC(white, tostring(adds), red, " phrases from ", white, path, "\n")
 				return

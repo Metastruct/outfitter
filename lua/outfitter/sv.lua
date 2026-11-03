@@ -141,7 +141,7 @@ function NetData(pl, k, val)
 	local ret = hook.Run("CanOutfit", pl, mdl, download_info)
 	if ret == false then return false end
 
-	pl:OutfitSetInfo(mdl, download_info, nil, nil, dependency_manifest)
+	pl:OutfitSetInfo(mdl, download_info, pl.outfitter_skin, nil, dependency_manifest)
 
 	dbg("NetData", pl, "outfit", mdl, download_info, DependencyManifestID(dependency_manifest))
 
@@ -183,13 +183,7 @@ net.Receive(NTagSkin, function(len, pl)
 	dbgn(7, "setskin", pl, n, has_outfit and "" or "NO OUTFIT?")
 	pl.outfitter_skin = n
 	if hook.Run("OutfitterCanSkin", pl, n, has_outfit) == false then return end
-	if not has_outfit then
-		if n > 1 then
-			net.Start(NTagSkin)
-			net.Send(pl)
-		end
-		return
-	end
+	if not has_outfit then return end
 	pl:SetSkin(n)
 end)
 

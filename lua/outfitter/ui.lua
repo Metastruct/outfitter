@@ -274,7 +274,7 @@ concommand.Add("outfitter_bodygroups_list", function(_, _, _, mdl)
 end, nil, "List bodygroups of current or specified model")
 
 concommand.Add("outfitter_skin_set", function(pl, cmd, args, line)
-	local n = tonumber(args[1] or 1) or 1
+	local n = tonumber(args[1] or 0) or 0
 	RequestSkin(n)
 	LocalPlayer().outfitter_skin = n
 end, nil, "Set skin number for current outfit")
@@ -303,7 +303,7 @@ concommand.Add("outfitter_bodygroups_set", function(_, cmd, args, line)
 	local bodyparts = mdl:BodyParts()
 	local bp = mdlinspect.BodyPartBuilder(bodyparts, 0)
 
-	print(table.ToString(t))
+	dbgn(2, "outfitter_bodygroups_set", table.ToString(t))
 
 	pl.outfitter_bodygroups = {}
 
@@ -432,10 +432,10 @@ function UICancelAll()
 	chosen_mdl = nil
 	chosen_dependency_manifest = nil
 
-	RemoveOutfit()
-	EnforceHands()
 	UIClearBodyGroupData()
 	UIClearSkin()
+	RemoveOutfit()
+	EnforceHands()
 end
 
 function UIClearBodyGroupData()
@@ -443,8 +443,8 @@ function UIClearBodyGroupData()
 end
 
 function UIClearSkin()
-	LocalPlayer().outfitter_skin = 1
-	RequestSkin(1)
+	LocalPlayer().outfitter_skin = 0
+	RequestSkin(0)
 end
 
 function UIBroadcastMyOutfit()
@@ -799,9 +799,20 @@ function SetAutowear()
 		util.SetPData("0", Tag .. '_autowear', json.encode(t))
 		UIMsg("#outfitter_autowearon")
 	else
-		util.RemovePData("0", Tag .. '_autowear')
-		UIMsg("#outfitter_autowearoff")
+		ClearAutowear()
 	end
+end
+
+function ClearAutowear()
+	util.RemovePData("0", Tag .. '_autowear')
+	UIMsg("Autowear OFF")
+end
+
+function GetAutowear()
+	local dat = util.GetPData("0", Tag .. '_autowear')
+	if not dat or dat == "" or dat == "nil" then return end
+	local t = json.decode(dat)
+	return t and t.mdl and t.mdl ~= "" and t or nil
 end
 
 local oversized = {}
@@ -958,7 +969,7 @@ function coDoAutowear()
 		LocalPlayer():SetBodyGroupData(setbodygroupdata)
 	end
 	if skin then
-		skin = tonumber(skin or 1) or 1
+		skin = tonumber(skin or 0) or 0
 		LocalPlayer().outfitter_skin = skin
 		RequestSkin(skin)
 	end

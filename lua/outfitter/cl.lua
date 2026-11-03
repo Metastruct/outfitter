@@ -340,8 +340,3 @@ hook.Add("PlayerSlowThink", Tag, function(pl)
 		OnPlayerVisible(pl)
 	end
 end)
-
-net.Receive(NTagSkin, function()
-	notification.AddLegacy("You must have submitted an outfit before changing skin", NOTIFY_ERROR, 4)
-	surface.PlaySound("common/wpn_denyselect.wav")
-end)

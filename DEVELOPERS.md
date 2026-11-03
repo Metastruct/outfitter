@@ -10,7 +10,6 @@
 | [gmod-sqliteext](https://github.com/Metastruct/sqliteext.git) | Yes (bundled) | SQLite database extensions |
 | [gmod-clientchatcommand](https://github.com/Metastruct/glua_utilities.git) | Yes (bundled) | Client-side chat command handling |
 | [netext](https://github.com/Metastruct/glua_utilities.git) | Yes (bundled) | Networking extensions |
-| [webbrowser](https://github.com/Metastruct/glua_utilities.git) | Yes (bundled) | Embedded web browser integration |
 
 ## Developers: Mount Flow
 
@@ -18,7 +17,7 @@ Outfitter downloads and mounts outfits from either the Steam Workshop or HTTP UR
 
 ```mermaid
 flowchart TD
-    A[Player pastes workshop/gma URL or browses workshop via embedded browser] --> B{URL type}
+    A[Player pastes workshop/gma URL or picks from the workshop browser] --> B{URL type}
     B -->|Workshop ID| F[coResolveWSDependencies]
     B -->|HTTP URL| D[MakeURLDownloadable]
 

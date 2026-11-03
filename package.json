@@ -9,8 +9,7 @@
     "coext": "git+https://github.com/Metastruct/glua_utilities.git#coext",
     "helpers": "git+https://github.com/Metastruct/glua_utilities.git#helpers",
     "gmod-clientchatcommand": "git+https://github.com/Metastruct/glua_utilities.git#clientchatcommand",
-    "netext": "git+https://github.com/Metastruct/glua_utilities.git#netext",
-    "webbrowser": "git+https://github.com/Metastruct/glua_utilities.git#webbrowser"
+    "netext": "git+https://github.com/Metastruct/glua_utilities.git#netext"
   },
   "dependencies": {
     "gmod-imageutils": "git+https://github.com/Metastruct/gmod-imageutils.git",
@@ -19,8 +18,7 @@
     "coext": "git+https://github.com/Metastruct/glua_utilities.git#coext",
     "helpers": "git+https://github.com/Metastruct/glua_utilities.git#helpers",
     "gmod-clientchatcommand": "git+https://github.com/Metastruct/glua_utilities.git#clientchatcommand",
-    "netext": "git+https://github.com/Metastruct/glua_utilities.git#netext",
-    "webbrowser": "git+https://github.com/Metastruct/glua_utilities.git#webbrowser"
+    "netext": "git+https://github.com/Metastruct/glua_utilities.git#netext"
   },
   "bundledDependencies": [
     "gmod-imageutils",
@@ -29,8 +27,7 @@
     "coext",
     "helpers",
     "gmod-clientchatcommand",
-    "netext",
-    "webbrowser"
+    "netext"
   ],
   "devDependencies": {
     "gmod-packager": "git+https://github.com/Python1320/gmod-packager.git"

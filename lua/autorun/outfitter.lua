@@ -90,7 +90,7 @@ TODO
 		mdls appear valid but become errors after mapchange. OBBMins on player is invalid. 		
 ]]
 
-
+local Tag='outfitter'
 
 local function requireSH(name)
 	AddCSLuaFile(("includes/modules/%s.lua"):format(name))
@@ -127,8 +127,6 @@ requireSH 'sqlext'
 requireSH 'ubit'
 requireSH 'urlimage'
 
-
-local Tag='outfitter'
 
 --TODO:
  -- !outfitter 187243854
@@ -225,6 +223,7 @@ inc 'ui'		'cl'
 
 inc 'gui_about'	'cl'
 inc 'gui_ofworkshopicon'	'cl'
+inc 'gui_workshop'	'cl'
 inc 'gui_bodygroups'		'cl'
 inc 'gui'		'cl'
 
