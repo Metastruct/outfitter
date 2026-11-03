@@ -110,7 +110,7 @@ function GUIReviewDependencies(graph, dependency_manifest, cb)
 
 	local frame = vgui.Create('DFrame', nil, 'dependency selector')
 	frame:SetDeleteOnClose(true)
-	frame:SetTitle("Outfitter dependencies")
+	frame:SetTitle("#outfitter_ofdepslist")
 	frame:SetIcon('icon16/bricks.png')
 	frame:SetSize(math.min(ScrW() - 64, 720), math.min(ScrH() - 64, 560))
 	frame.Paint = paint_frame
@@ -227,11 +227,11 @@ function GUIReviewDependencies(graph, dependency_manifest, cb)
 		local maxsize = OutfitMaxSize()
 		local oversize = maxsize > 0.1 and size > maxsize
 
-		status:SetText(("%d selected, %s dependencies, %s with outfit, %s limit"):format(count,
+		status:SetText(("#outfitter_ofdepsinfo"):format(count,
 			string.NiceSize(dependency_size), string.NiceSize(size),
 			maxsize > 0.1 and string.NiceSize(maxsize) or "no"))
 		status:SetTextColor(oversize and status_error_color or status_ok_color)
-		accept:SetText(oversize and "Increase limit and accept" or "Use selected dependencies")
+		accept:SetText(oversize and "Increase limit and accept" or "#outfitter_acceptdeps")
 	end
 
 	local seen = {}
@@ -1347,7 +1347,7 @@ local icon = "icon64/outfitter.png"
 icon = file.Exists("materials/" .. icon, 'GAME') and icon or "icon64/playermodel.png"
 
 list.Set("DesktopWindows", Tag, {
-	title     = "Outfitter",
+	title     = "#outfitter_maintitle",
 	icon      = icon,
 	width     = 1,
 	height    = 1,

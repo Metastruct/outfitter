@@ -210,7 +210,7 @@ if CLIENT then
         MenuOpen = function(self, option, ent, tr)
             if not IsValid(ent) then return end
             local submenu = option:AddSubMenu()
-            submenu:AddOption("Open Outfitter", function()
+            submenu:AddOption("#outfitter_openof", function()
                 GUIOpen()
             end):SetImage("icon16/application_view_list.png")
             local mdl, download_path = ent:OutfitInfo()
@@ -231,21 +231,21 @@ if CLIENT then
                     submenu:AddOption(reason, function() end):SetImage("icon16/exclamation.png")
 
                     if api.is_blocked(netdata.mdl) then
-                        submenu:AddOption("Unblock Outfit", function()
+                        submenu:AddOption("#outfitter_unblockoutfit", function()
                             api.unblock(netdata.mdl)
                         end):SetImage("icon16/status_online.png")
                     end
 
-                    submenu:AddOption("Temporarily Unblock & Retry", function()
+                    submenu:AddOption("#outfitter_tempunblock", function()
                         api.retry_outfit(ent)
                     end):SetImage("icon16/arrow_refresh.png")
 
-                    submenu:AddOption("Copy model path", function()
+                    submenu:AddOption("#outfitter_copymodelpath", function()
                         SetClipboardText(netdata.mdl)
                     end):SetImage("icon16/page_white_copy.png")
 
                     if netdata.download_path and tonumber(netdata.download_path) then
-                        submenu:AddOption("Open Outfit Workshop Page", function()
+                        submenu:AddOption("#outfitter_openofwspage", function()
                             gui.OpenURL("https://steamcommunity.com/workshop/filedetails/?id=" .. netdata.download_path)
                         end):SetImage("icon16/picture.png")
                     end
@@ -255,28 +255,28 @@ if CLIENT then
 
             if mdl then
                 if api.is_blocked(mdl) then
-                    submenu:AddOption("Unblock Outfit", function()
+                    submenu:AddOption("#outfitter_unblockoutfit", function()
                         api.unblock(mdl)
                     end):SetImage("icon16/status_online.png")
                 else
-                    submenu:AddOption("Block Outfit", function()
+                    submenu:AddOption("#outfitter_blockof", function()
                         api.block(mdl)
                     end):SetImage("icon16/status_offline.png")
                 end
                 local failed = ent.outfitter_last_error
                     or (download_path and _load_info_history[download_path] and _load_info_history[download_path].state == "error")
                 if failed then
-                    submenu:AddOption("Temporarily Unblock & Retry", function()
+                    submenu:AddOption("#outfitter_tempunblock", function()
                         api.retry_outfit(ent)
                     end):SetImage("icon16/arrow_refresh.png")
                 end
-                submenu:AddOption("Copy model path", function()
+                submenu:AddOption("#outfitter_copymodelpath", function()
                     SetClipboardText(mdl)
                 end):SetImage("icon16/page_white_copy.png")
             end
 
             if download_path and tonumber(download_path) then
-                submenu:AddOption("Open Outfit Workshop Page", function()
+                submenu:AddOption("#outfitter_openofwspage", function()
                     gui.OpenURL("https://steamcommunity.com/workshop/filedetails/?id=" .. download_path)
                 end):SetImage("icon16/picture.png")
             end

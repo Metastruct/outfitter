@@ -99,7 +99,7 @@ local function requireSH(name)
 		hook.Add("Initialize",Tag..'fail',function()
 
 			timer.Simple(1,function()
-				chat.AddText(Color(200,50,10,255),"OUTFITTER LOADING FAILED:",Color(255,255,255,255),err)
+				chat.AddText(Color(200,50,10,255),"#outfitter_loadingfailed",Color(255,255,255,255),err)
 			end)
 
 		end)

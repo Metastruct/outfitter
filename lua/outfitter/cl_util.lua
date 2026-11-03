@@ -15,11 +15,11 @@ local Player = FindMetaTable "Player"
 
 function TranslateError(err, ...)
 	if err == 'maxverts' then
-		err = 'Model is too complex (too many vertexes). This would lag lower quality PCs.'
+		err = '#outfitter_complexmdlwarn'
 	elseif err == 'nobones' then
-		err = "Playermodel needs to have bones"
+		err = "#outfitter_nobone"
 	elseif err == 'noattachments' then
-		err = "Does not have eyes attachment, this breaks many addons"
+		err = "#outfitter_noeyeattach"
 	end
 	return err
 end
